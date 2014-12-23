@@ -1,0 +1,74 @@
+section = "babaG";
+key = "test";
+
+// GetSetMediaItemTakeInfo_String(tk, parmname, #stringNeedBig, setnewvalue)
+// Main_OnCommand(40289,0); 
+// Main_OnCommand(40421,0); 
+
+// Main_OnCommand(40182,0); 
+
+// item = GetSelectedMediaItem(0, 0); // store first selected item
+// curTake = SetMediaItemInfo_Value(item, "I_CURTAKE", 0);
+// UpdateArrange();
+
+// item = GetSelectedMediaItem(0, 0); // store first selected item
+// curTake = SetMediaItemInfo_Value(item, "I_CURTAKE", 1);
+
+// UpdateArrange()
+
+// SetExtState(section, key, "0", 0);
+// GetExtState(#retval, section, key);
+// // newValue = sprintf(#dest, "%s", #retval);
+// newValue = #retval;
+// ShowConsoleMsg(newValue);
+
+// SetExtState(section, key, "0", 0);
+// GetExtState(#retval, section, key);
+// newValue = #retval;
+
+
+
+item = GetSelectedMediaItem(0, 0); // store first selected item
+curTake = GetMediaItemInfo_Value(item, "I_CURTAKE");
+
+SetExtState("fuck", "me", curTake, 1);
+GetExtState(#retval, "fuck", "me");
+
+itemEdit = #retval;
+
+// ShowConsoleMsg(itemEdit);
+
+function msg_d(m)
+(
+  sprintf(#, "%d", m);
+);
+
+// ShowConsoleMsg(msg_d(#retval));
+
+
+(curTake == 1) ? (
+	ShowConsoleMsg("AAA");
+);
+
+// !HasExtState(section, key) ? (
+// 	ShowConsoleMsg("msg");
+// ) : (
+// 	GetExtState(#retval, section, key) == 0 ? (
+// 		item = GetSelectedMediaItem(0, 0); // store first selected item
+// 		curTake = SetMediaItemInfo_Value(item, "I_CURTAKE", 0);
+// 		UpdateArrange();		
+// 		SetExtState(section, key, sprintf(#, "%i", curTake), 0);
+// 	) : (
+// 		item = GetSelectedMediaItem(0, 0); // store first selected item
+// 		curTake = SetMediaItemInfo_Value(item, "I_CURTAKE", 1);
+// 		UpdateArrange();		
+// 		SetExtState(section, key, sprintf(#, "%i", curTake), 0);
+// 	);
+// );
+// ShowConsoleMsg(sprintf(#, "%i", curTake));
+
+// SetExtState(section, key, sprintf(#, "%i + s", curTake), 0);
+// GetExtState(#retval, section, key);
+// ShowConsoleMsg(#retval);
+
+

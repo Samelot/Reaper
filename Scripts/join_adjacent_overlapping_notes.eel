@@ -1,0 +1,27 @@
+// Join adjacent and overlapping notes by spk77 15.8.2014)
+
+function join_adjacent_and_overlapping_notes()
+(
+  (take = MIDIEditor_GetTake(MIDIEditor_GetActive())) ? (
+    //UpdateItemInProject(GetMediaItemTake_Item(take));
+    Undo_BeginBlock();
+    //MIDIEditor_OnCommand(MIDIEditor_GetActive(), 40659); // Correct overlapping notes
+    index = -1;
+    while((index = MIDI_EnumSelNotes(take, index)) != -1) (
+      MIDI_GetNote(take, index, is_selected, is_muted, start_pos, end_pos, chan, pitch, vol);
+      index_inner = index;
+      while((index_inner = MIDI_EnumSelNotes(take, index_inner)) != -1) (
+        MIDI_GetNote(take, index_inner, 0, 0, start_pos_next, end_pos_next, chan_next, pitch_next, 0);
+        chan == chan_next && pitch == pitch_next && end_pos >= start_pos_next  ? (
+          MIDI_SetNote(take, index, is_selected, is_muted, start_pos, end_pos_next, chan, pitch, vol);
+          index = -1;
+          MIDI_DeleteNote(take, index_inner);
+        );
+      );
+    );
+    Undo_EndBlock("Join adjacent and overlapping notes", -1);
+    //Undo_OnStateChange("Join adjacent and overlapping notes");
+  );
+);
+
+join_adjacent_and_overlapping_notes();

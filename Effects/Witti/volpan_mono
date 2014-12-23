@@ -1,0 +1,57 @@
+slider1:100<0,100,1>width
+slider2:0<-100,100,1>pan
+slider3:0<-6,6,0.5>pan law
+slider4:0<-60,24,0.1>volume
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+
+AMP_dB = 8.6858896380650365530225783783321;
+src_vol = tgt_vol = slider4 <= -60.0 ? 0.0 : exp(slider4/AMP_DB);
+src_pan = tgt_pan = 0.01*slider2;
+
+@slider
+
+dry = slider1 / 100;
+wet = (100 - slider1) / 100;
+
+tgt_vol = slider4 <= -60.0 ? 0.0 : exp(slider4/AMP_DB);
+tgt_pan = 0.01*slider2;
+panlaw = exp(slider3/AMP_dB);
+pancomp = (panlaw > 1.0 ? 1.0/panlaw : panlaw);
+
+@block
+
+d_vol = (tgt_vol-src_vol)/samplesblock;
+d_pan = (tgt_pan-src_pan)/samplesblock;
+tvol = src_vol;
+tpan = src_pan;
+src_vol = tgt_vol;
+src_pan = tgt_pan;
+
+@sample
+
+spl0=((spl1+spl0)/2 * wet) + (spl0 * dry);
+spl1=(spl0 * wet) + (spl1 * dry);
+
+tvol += d_vol;
+tpan += d_pan;
+
+adj = tvol;
+
+panlaw != 1.0 ? (
+panlaw > 1.0 ? adj *= panlaw;
+panatt = abs(tpan);
+adj *= pancomp+(1.0-pancomp)*(2.0/(2.0-panatt)-1.0);  
+);
+
+adj0 = adj1 = adj;
+tpan < 0.0 ? adj1 *= 1.0+tpan;
+tpan > 0.0 ? adj0 *= 1.0-tpan;
+
+spl0 *= adj0;
+spl1 *= adj1;

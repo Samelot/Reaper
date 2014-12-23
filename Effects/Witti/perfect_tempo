@@ -1,0 +1,39 @@
+/*
+More infos here: http://provideocoalition.com/cmg_keyframes/story/magic_tempos/
+*/
+
+desc: Read info...
+
+slider1:60<0,120,10>--Seconds in a Minute
+slider2:0<0,3,1{30,29.97 NTSC,25 PAL,24}>Frame Rate (fps)
+slider3:15<9,30,1>Frames per Beat (fpb)
+slider4:0,>>>> Beats per Minute (BPM)
+
+in_pin:none
+out_pin:none
+
+@block
+
+slider2 == 0 ? (
+BeatsPerMinute = slider1 * 30 / slider3; 
+slider4 = (ceil(BeatsPerMinute*1000))/1000;
+sliderchange(slider4);
+);
+
+slider2 == 1 ? (
+BeatsPerMinute = slider1 * (30/1.001) / slider3; 
+slider4 = (ceil(BeatsPerMinute*1000))/1000;
+sliderchange(slider4);
+);
+
+slider2 == 2 ? (
+BeatsPerMinute = slider1 * 25 / slider3; 
+slider4 = (ceil(BeatsPerMinute*1000))/1000;
+sliderchange(slider4);
+);
+
+slider2 == 3 ? (
+BeatsPerMinute = slider1 * 24 / slider3; 
+slider4 = (ceil(BeatsPerMinute*1000))/1000;
+sliderchange(slider4);
+);

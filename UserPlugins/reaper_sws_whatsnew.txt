@@ -1,0 +1,2735 @@
+!v2.5.1 #0 pre-release build (November 24, 2014)
+<strong>REAPER v4.74+ is required!</strong>
+New API functions were introduced in this version, they enable various improvements in the SWS/S&M Extension.
+Thank you Cockos!
+
+<strong>Contextual toolbars</strong>
++Functionality in general:
+ - Feature relies heavily on existing REAPER toolbars. The basic concept is fairly simple. User assigns different REAPER toolbars to different contexts (things like TCP, item, piano roll, etc...) and loads them under mouse cursor by calling a single action. The action will then load an appropriate toolbar for a thing under the mouse cursor, http://wiki.cockos.com/wiki/images/3/3c/Contextual_toolbars_example.gif|like this.|
+ - For more information, please http://wiki.cockos.com/wiki/index.php/Contextual_toolbars_with_SWS|visit the wiki on the subject| (which is also accessible from the Contextual toolbars dialog). In case you want to contribute to the wiki, you're more than welcome.
++Contextual toolbars dialog:
+ - To open a dialog for setting up contextual toolbars either run the action SWS/BR: Contextual toolbars... or go to Main menu > Extensions > Contextual toolbars...
+ - Dialog is divided into 3 parts, preset selector, list of possible contexts, and various options tied to those contexts. Select an arbitrary preset and right click contexts to assign them toolbars. Options can be found on the right and are executed only when toolbar is loaded. Once set up, use provided actions to load toolbars for each preset.
++Added actions:
+  - SWS/BR: Contextual toolbars...
+  - SWS/BR: Exclusive toggle contextual toolbar under mouse cursor, preset x (8 presets) (added in all sections: Main, MIDI editor, etc...)
+   - Note: Actions work as toggle switches. If any of the toolbars set up in Contextual toolbars dialog is visible, all of them will get closed - otherwise toolbar corresponding to context under mouse cursor will get loaded.
++<strong>Feedback needed:</strong>
+ - Note that while new contexts won't get added at this time (but fades and volume handles are planned) now is the time to help us. Any feedback, comments and criticism of current contexts hierarchy is highly welcome. For example, http://wiki.cockos.com/wiki/index.php/Contextual_toolbars_with_SWS#Special_cases:_item_stretch_markers_and_take_envelopes|this workaround| would definitely benefit from discussion. Don't hesitate to express your opinion on http://forum.cockos.com/showthread.php?t=70185|our pre-release topic.| Thanks!
+
+Analyze and normalize loudness
++Analyze loudness dialog:
+ - Analyzer can now measure true peak (disabled by default since it prolongs analysis due to resampling - see Options to enable/disable)
+  - Double-click true peak cell to move edit cursor to true peak location (or right-click selected item/track in list view to reveal the option)
+ - Added user preference to display either LUFS or LU (see Options->Unit).
+  - To set reference level for 0 LU and formatting of LU unit, see Options->Global preferences (or run SWS/BR: Global loudness preferences)
+  - Right-click menu entry for normalizing follows Options->Unit and will alternate between "Normalize to -23 LUFS" and "Normalize to 0 LU"
+  - Normalizing to specific value can normalize to both LUFS and LU
+ - Export list of analyzed items/tracks to clipboard or file
+  - To export the list, select items in list view, right-click them and select "Export formated list to clipboard/file"
+  - For setting the format of exported items, see Options->Export format
+   - Formating supports wildcards. Wildcards description can be found in the same dialog. To hide description, simply resize the dialog
+   - Besides typing, wildcards can also be inserted using the "Wildcard" button.
+   - Previously used format patterns are stored in the "Wildcard" button submenu
+ - Analyzed objects are now restored on project load
+ - Other:
+  - Right-click menu entry for creating loudness graph no longer queries range, instead it uses range set in Options->Global preferences (or SWS/BR: Global loudness preferences)
+  - Normalize dialog is no longer modal (but will be closed if loudness analyzer is closed/hidden to avoid confusion)
+  - Display new items/tracks in list view as soon as they're analyzed
+  - Analyze button changes caption depending on what is to be analyzed
+  - Added Help... menu entry to options menus
+   - Note: opens http://wiki.cockos.com/wiki/index.php/Measure_and_normalize_loudness_with_SWS|wiki page on everything loudness related in SWS| which is currently unfinished (if you want to contribute you're more than welcome. Big thanks to user http://forum.cockos.com/member.php?u=1482|Airon| for the work so far)
+  - Various small fixes
++Added actions:
+ +SWS/BR: Global loudness preferences...
+  - Note: Preferences set here affect everything loudness related in SWS (analyze loudness dialog and separate normalize actions)
+   - 0 LU reference can be set to an arbitrary value (most common values are provided in the dropdown)
+   - LU unit format only affects display of LU unit in various dialogs
+   - Envelope graph range affects drawing range when drawing loudness envelopes in Analyze loudness dialog
+ +SWS/BR: Normalize loudness of selected items to 0 LU
+ +SWS/BR: Normalize loudness of selected tracks to 0 LU
++Other:
+ - Renamed SWS/BR: Normalize loudness of selected items to SWS/BR: Normalize loudness of selected items/tracks (also no longer modal)
+ - Removed SWS/BR: Normalize loudness of selected tracks
+
+Added actions
++Main:
+ - SWS/BR: Select envelope points on/between grid (2 versions: time selection and normal)
+ - SWS/BR: Add envelope points located on/between grid to existing selection (2 versions: time selection and normal)
+ - SWS/BR: Delete envelope points on/between grid (2 versions: time selection and normal)
+ - SWS/BR: Create project marker at mouse cursor
+ - SWS/BR: Create project marker at mouse cursor (obey snapping)
+ - SWS/BR: Insert 2 envelope points at time selection to all visible track envelopes
+ - SWS/BR: Insert 2 envelope points at time selection to all visible track envelopes in selected tracks
+ - SWS/BR: Show all active FX envelopes for selected tracks
+ - SWS/BR: Show all FX envelopes for selected tracks
+ - SWS/BR: Show all/volume/pan/mute active send envelopes for selected track
+ - SWS/BR: Show all/volume/pan/mute send envelopes for selected track
+  - Note: all show FX/send envelope actions come in 3 flavors : show, hide and toggle show
+ - SWS/BR: Show/hide track envelope for last adjusted send (3 verions)
+  - Note: that's right, due to API limitation it's last adjusted, not touched
+ - SWS/BR: Enable "Ignore project tempo" for selected MIDI items preserving time position of MIDI events (use tempo at item's start)
+  - Note: the action is meant for http://forum.cockos.com/showthread.php?p=1374175#post1374175|these kind of issues|
+ - SWS/BR: Select all MIDI/audio/video/click/timecode/empty/PiP items
+ - SWS/BR: Move closest project marker to edit/play/mouse cursor (2 versions: normal and obey snapping) (Issue 668)
+ - SWS/BR: Focus tracks
+ - SWS/BR: Unselect envelope
+ - SWS/BR: Increase/Decrease selected envelope points by x db (volume envelope only) (multiple versions: 0.1, 0.5, 1, 5 and 10 db)
+ - SWS/BR: Delete take under mouse cursor (Issue 124)
+ - SWS/BR: Select TCP/MCP track under mouse cursor (Issue 124)
+ - SWS/BR: Select envelope under mouse cursor (Issue 124)
+ - SWS/BR: Select/Delete envelope point under mouse cursor (2 versions: selected envelope only and whatever envelope is under mouse cursor) (Issue 124)
+ - SWS/BR: Split selected items at stretch markers
+ - SWS/wol: Select all tracks except folder parents
+ - SWS: Toggle horizontal zoom to selected items/time selection
++MIDI editor:
+ - SWS/BR: Save/Restore selected events in last clicked CC lane (8 slots) (Save has 2 versions: last clicked lane, lane under mouse cursor. Restore has 3 versions: last clicked lane, lane under mouse cursor, all visible lanes)
+ - SWS/BR: Insert CC event at edit cursor in CC lane under mouse cursor (active item only)
+ - SWS/BR: Hide last clicked/under mouse cursor CC lane
+ - SWS/BR: Hide all CC lanes except last clicked/under mouse cursor CC lane
+ - SWS/BR: Toggle hide all CC lanes except last clicked/mouse cursor CC lane (multiple versions: one normal and bunch of others that set lane to specific height)
+ - SWS/BR: Convert selected CC events to envelope points in selected envelope (multiple versions for different point shape and clearing existing envelope points)
+
+ReaScript
++BR_GetMouseCursorContext:
+ - Fixes related to MIDI editor (changes introduced in REAPER v4.7 broke it)
+ - Fixed segment detection in ruler
+ - Added support for stretch markers
++Changed envelope object type in BR_EnvAlloc and other functions to avoid confusion (existing scripts should be unaffected)
+
+Fixes
++Improved deleting tempo markers with different time signatures when using SWS/BR: Delete tempo marker and preserve position and length of items (including MIDI events)
++Preserve options between REAPER sessions set with these actions:
+ - SWS/BR: Set "Apply trim when adding volume/pan envelope"
+ - SWS/BR: Toggle "Playback position follows project timebase when changing tempo"
+ - SWS/wol: Set "Vertical/Horizontal zoom center"
++MIDI editor actions that hide/show used CC lanes now obey filter's channel settings
++Prevent toggling zoom with zoom actions when inappropriate (i.e. toggling zoom to selected items when there are no selected items)
++All SWS/BR actions now obey lock settings
++Zooming functionality:
+ - All zoom actions now obey track sizes set by custom themes (things like small/medium/full track height)
+ - Actions that zoom vertically to selected tracks/items never show track envelopes of the last selected item/track
+ - Fixed save/restore arrange view actions not working on envelopes with high point count (Issue 660)
++Fixed target BPM not updating when adjusting BPM by percent in Select and adjust tempo markers
++OSX: Fixed "Unselect tempo markers" child dialog of "Select and adjust tempo markers". It got hidden behind other dialogs when it lost focus
++Issue 678: removed duplicate configurable actions in the S&M.ini file
++Issue 671 and issue 673: fixed Region Playlist misbehavior
+
+Other
++Increased all SWS/BR slot actions to 8 slots
++Display proper dialog icon (same one REAPER uses) in all dialogs (win only)
++Added tempo actions to Main menu > Extensions > Tempo
++Renamed certain actions for uniformity (time sel to time selection, sel items to selected items etc...)
+
+!v2.4.0 #10 pre-release build (July 11, 2014)
+<strong>REAPER v4.70+ is required!</strong>
+New API functions were introduced in this version, they enable various improvements in the SWS/S&M Extension.
+Thank you Cockos!
+
+Analyze and normalize loudness
++Added an option to preserve already analyzed tracks/items when analyzing selected tracks/items
++Creating graph in selected envelope functionality now works with take envelopes
++Fixes:
+ - Analyzing items with different channel modes should now work properly
+ - Fixed analyzing short items/tracks
+ - Fixed undo when normalizing tracks
+ - Pressing DELETE key will delete selected list view entries
+
+Added actions
++Main:
+ - SWS/wol: Set selected envelope height to default/minimum/maximum
+ - SWS/wol: Adjust selected envelope height (MIDI CC relative/mousewheel)
+ - SWS/wol: Adjust selected envelope or last touched track height (MIDI CC relative/mousewheel)
+ - SWS/wol: Toggle enable extended zoom for envelopes in track lane
+ - SWS/wol: Toggle enable envelopes overlap for envelopes in track lane
+ - SWS/wol: Force overlap for selected envelope in track lane in its track height
+ - SWS/wol: Restore previous envelope overlap settings
+ - SWS/wol: Horizontal zoom to selected envelope in time selection
+ - SWS/wol: Full zoom to selected envelope in time selection
+ - SWS: Save/Restore current arrange view (5 slots)
+ - SWS/BR: Fit selected envelope points to time selection
+ - SWS/BR: Create project markers from stretch markers in selected items
+ - SWS/BR: Set closest (left side) envelope point's value to mouse cursor (perform until shortcut released)
+   - Note: these 2 actions are actually meant to solve the problem of freehand points editing in the tempo map. Use SWS/BR: Create tempo markers at grid after every selected tempo marker to set needed density of the tempo map and then use this action to easily edit the tempo map.
+ - SWS/BR: Trim MIDI item to active content
+ - SWS/AW: Grid to 1/64 notes
+ - SWS/AW: Grid to 1/128 notes
++Main and MIDI editor:
+ - SWS/BR: Play from mouse cursor position (3 versions)
++MIDI editor:
+ - SWS/BR: Preview active media item (lots of versions: from mouse position, selected notes only, measure sync etc...)
+ - SWS/BR: Save/Restore note selection from/to active take (5 slots)
+ - SWS/BR: Save/Restore edit cursor position (5 slots)
+  - Note: edit cursor slots are shared with already existing actions in Main
+ - SWS/FNG: Cycle through CC lanes
+ - SWS/FNG: Cycle through CC lanes (keep lane heights constant)
+ - SWS/FNG: Show only used CC lanes
+ - SWS/FNG: Hide unused CC lanes
+ - SWS/FNG: Show only top CC lane
+ - SWS/FNG: Select muted MIDI notes
+ - SWS/FNG: Select notes nearest edit cursor
+ - SWS/FNG: Apply groove to selected MIDI notes (within 16th)/(withing 32nd)
+ - SWS/BR: Show only used CC lanes (detect 14-bit)
+ - SWS/S&M: Restore displayed CC lanes, slot n - where 'n' is in [1; 8], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file)
+ - SWS/S&M: Save displayed CC lanes, slot n - where 'n' is in [1; 8], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file)
+   - Note: these 2 actions are also present in the main section. These new instances allow to bind them to MIDI toolbars, for ex.
+
+ReaScript
++BR_GetMouseCursorContext:
+ - Added support for MIDI editor
+ - Fixed BR_GetMouseCursorContext envelope detection when envelope is in track lane
+ - Changed return strings (ruler segments) in BR_GetMouseCursorContext
++Added functions:
+ - BR_EnvAlloc, BR_EnvCountPoints, BR_EnvDeletePoint, BR_EnvFind, BR_EnvFindNext, BR_EnvFindPrevious, BR_EnvFree, BR_EnvGetParentTake, BR_EnvGetParentTrack, BR_EnvGetPoint, BR_EnvGetProperties, BR_EnvSetPoint, BR_EnvSetProperties, BR_EnvVauelAtPos
+ - BR_MIDI_CCLaneRemove
+ - BR_MIDI_CCLaneReplace
+
+Fixes
++Cycle Actions / issue 636: fixed ON/OFF state corner case (as reported http://forum.cockos.com/showpost.php?p=1344403&postcount=1747|here|)
++Notes window / issue 642: fixed loading notes containing special characters
++Localization: fix for actions dealing with the Media Explorer
++Localization / Windows OS: fixed stuff that could potentially make things broken when using:
+ - SWS/BR: Preview media item under mouse
+ - SWS/BR: Move closest grid line to mouse cursor
+ - ReaScript BR_GetMouseCursorContext and similar functions
+ - Project navigation functionality (zoom/scroll etc...)
++Prevent moving project markers with the same ID:
+ - SWS: Auto Color/Icon
+ - SWS: Nudge marker under cursor left/right
+ - Xenakios/SWS: Rename project markers with ascending numbers
++Preview media item actions:
+  - Preview stops after last note/CC/sysex event when previewing MIDI
+  - Actions that pause playback should work properly now
+  - Prevent toggling preview state during recording
++Fixed unresponsive SWS/BR: Move closest envelope point to edit cursor
++SWS/FNG: Hide unused CC lanes in active midi editor:
+ - Wasn't working if all displayed lanes were empty
+ - Wasn't detecting 14-bit lanes properly
++SWS/FNG: Expand/Compress amplitude of selected envelope points around midpoint now obeys tempo map timebase
++These actions now work with take envelopes:
+ - SWS/BR: Move edit cursor to next/previous envelope point
+ - SWS/BR: Select next/previous envelope point
+ - SWS/BR: Expand/Shrink envelope point selection to the right/left
+ - SWS/BR: Shift envelope point selection left/right
+ - SWS/BR: Select peaks/dips in envelope
+ - SWS/BR: Unselect envelope points outside/in time selection
+ - SWS/BR: Set selected envelope points to next/previous/last selected/first selected point's value
+ - SWS/BR: Move closest (selected) envelope point to edit cursor
+ - SWS/BR: Insert 2 envelope points at time selection
+ - SWS/BR: Insert new envelope point at mouse cursor
+ - SWS/BR: Save/Restore envelope point selection
+ - SWS/FNG: Move selected envelope points up/down/left/right
+ - SWS/FNG: Shift selected envelope points up/down on left/right
+ - SWS/FNG: Expand/Compress amplitude of selected envelope points around midpoint
+ - SWS/FNG: Time compress/stretch selected envelope points
+ - Xenakios/SWS: Shift current envelope to left/right
++Fixed SWS/BR: Create project markers from notes in selected MIDI items not working properly with looped items
++OSX: Fixed various things when detecting mouse cursor at the top of arrange (ReaScript, Warp grid actions etc...)
++Issue 645: "Xenakios/SWS: Select takes in selected items, shuffled random" now does not select the same take number 1+ times consecutively
+
+Other:
++Renamed FNG MIDI actions in Main section (remove MIDI prefix and added "in active MIDI editor" description at the end)
++Capitalized certain FNG actions names
++OSX: Change mouse cursor while using SWS/BR: Move closest tempo marker/grid line to mouse cursor (this was win only feature until now)
++Renamed SWS: Save/Restore current arrange view to SWS: Save/Restore current arrange view, slot 1
++Renamed SWS/BR: Move closest tempo marker/grid line/ to mouse cursor (added (perform until shortcut released) to clearly reflect how they work)
++Renamed SWS/BR: Hide all but active envelope for all/selected tracks (so it's clear that it works only with selected track envelopes)
++Renamed SWS/BR: Insert new envelope point at mouse cursor (added "using value at current position (obey snapping)" at the end)
++S&M Notes maximum length raised to 64kb
++Better startup error message (can now be displayed over the splash window)
+
+!v2.4.0 #9 pre-release build (April 19, 2014)
+<strong>This version requires REAPER v4.62pre8+</strong>, an "Incompatible version" error message will be displayed otherwise...
+
+Cycle Actions support conditional statements (IF, IF NOT, etc) in the MIDI Editor
+
+Fixes
++Windows OS: fixed extension not being loaded
++Cycle Action editor: fixed "Run" context menu item
+
+!v2.4.0 #8 pre-release build (April 13, 2014)
+Cycle Actions can be registered in any section of the action list (e.g. MIDI Editor)
+Note: <strong>requires REAPER v4.62pre7+</strong>
+
+!v2.4.0 #7 pre-release build (April 9, 2014)
+Added actions in the MIDI Editor action list (<strong>requires REAPER v4.62pre7+</strong>)
++SWS/S&M: Hide all CC lanes
++SWS/S&M: Create CC lane
++SWS/S&M: Restore displayed CC lanes, slot n (where 'n' is in [1; 8], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file|, up to 99 slots)
++SWS/S&M: Save displayed CC lanes, slot n
+ Note: these actions were already present in the "Main" section of the action list, they will remain there (not to break users' configs), but these versions are deprecated now
+
+Snapshots: the default number of recall actions is now configurable in REAPER.ini
+Edit the key "DefaultNbSnapsRecall" in the section [SWS] (quit REAPER before editing this file!)
+
+!v2.4.0 #6 pre-release build (April 6, 2014)
+Misc
++Cycle Actions: improved toolbar refresh
++Exclusive toggle actions are now off on start-up
++Prevent conflicts with dupe/clone extensions
+
+Fixes
++Fixed some memory leaks (loudness, tempo)
++Fixed undo in certain instances when moving grid to mouse cursor
+
+!v2.4.0 #5 pre-release build (March 30, 2014)
+<strong>Analyze and normalize loudness</strong>
++Functionality in general:
+ - Loudness is measured according to EBU 3342 standard thanks to excellent http://github.com/jiixyj/libebur128|libebur128| by Jan Kokemuller
+ - Due to <b>limitations in Reaper API</b>, we can extract audio data only from certain parts of the audio chain. Chart can be found http://wiki.cockos.com/wiki/images/5/50/SWS_loudness_analysis_signal_flow_chart.png|here|. A few gotchas:
+   - You can't use item fades for extensive volume control
+   - If you need to use FX, current workaround is to put one item with needed FX in an empty track and measure that track
++Added actions:
+ - SWS/BR: Normalize loudness of selected items/tracks...
+ - SWS/BR: Normalized loudness of selected items/tracks to -23 LUFS
+ - SWS/BR: Analyze loudness...
++Analyze loudness dialog:
+ - Accessible from the Action list or Main menu > Extensions > Loudness...
+ - Right-click on the dialog or just click "Options" button for various settings
+ - Measures integrated, range, short-term and momentary loudness of selected items and tracks
+ - To normalize items or tracks, right-click analyzed targets in the list view - often faster than using separate actions because data for already analyzed targets in the dialog is cached (to prevent needles reanalyzing before normalization if nothing changed)
+ - Draw momentary and short-term loudness graph to selected envelope. Right-clicking analyzed item should reveal the feature. You can use dummy JS effects from http://stash.reaper.fm/v/20187/SWS%20dummy%20loudness%20graph|here| as a canvas for loudness graphs
+ - After the target is analyzed, it's possible to position edit cursor over maximum short-term and momentary loudness interval by double-clicking cells holding their measurements. There is also an option to create time selection over that part of the item/track.
+ - Dialog is designed to follow project state. If you rename or delete analyzed target, the change will get reflected in the dialog. For various settings relating to this, check dialog options
+ - Analyzing happens in a separate thread so user is free to keep on using Reaper while it's happening.
+
+Warp grid
++SWS/BR: Move closest grid line/tempo marker to mouse cursor:
+ - Prevent creating multiple undo points while shortcut is kept on being pressed
+ - Smoother reaction to mouse movements, not depending on the OS keyboard settings anymore
+ - While the shortcut is pressed, target grid gets "locked" to mouse so it isn't possible to accidentally edit surrounding grids
+ - Change mouse cursor when using the action (win only)
+ - Improved efficiency when dealing with high tempo marker count
+ - Note: due to the way upper improvements are made, you can't arm the action from the toolbar (as some users are doing http://forum.cockos.com/showthread.php?p=1332827#post1332827|here|). If you really need that, you can create a separate macro just for that:
+     - SWS/BR Save edit cursor position, slot x
+     - View: Move edit cursor to mouse cursor (no snapping)
+     - SWS/BR: Move closest grid to edit cursor
+     - SWS/BR Restore edit cursor position, slot x
++Added actions:
+ - SWS/BR: Move closest (measure) grid line to edit/play cursor (Issue 638)
+ - SWS/BR: Move closest left/right side grid line to edit cursor
+
+Project startup action
++Added "SWS/S&M: Show project startup action"
++Added dedicated menu items in Main menu > Extensions > Project startup action (for easier set-up)
++The action (and new menu item) "SWS/S&M: Set project startup action" now prompts to overwrite
+
+Cycle actions
++Added "LOOP x" statement (thanks wol!): prompts the user for the number of times to repeat something
++Tiny fixes (corner cases)
+
+Marker list
++Export formatted marker list to clipboard now works on OSX
+
+Added actions
++SWS/wol: Set "Vertical zoom center" to "Track at center of view"
++SWS/wol: Set "Vertical zoom center" to "Top visible track
++SWS/wol: Set "Vertical zoom center" to "Last selected track"
++SWS/wol: Set "Vertical zoom center" to "Track under mouse cursor"
++SWS/wol: Set "Horizontal zoom center" to "Edit cursor or play cursor (default)"
++SWS/wol: Set "Horizontal zoom center" to "Edit cursor"
++SWS/wol: Set "Horizontal zoom center" to "Center of view"
++SWS/wol: Set "Horizontal zoom center" to "Mouse cursor"
++SWS/BR: Copy take media source file path of selected items to clipboard
++SWS/BR: Toggle "Playback position follows project timebase when changing tempo"
++SWS/BR: Move closest (selected) envelope point to edit cursor
++SWS/BR: Insert 2 envelopes points at time selection
+
+Added ReaScript functions
++ULT_GetMediaItemNote
++ULT_SetMediaItemNote
+
+Fixes
++The action "SWS/BR: Delete tempo marker and preserve position and length of (selected) items (including MIDI events)" should now work properly
+ - Note: due to bug in the API, please update to 4.611 otherwise you will lose any text and sysex events
++Fixed rounding issues when converting projects markers to tempo markers in time selection (reported http://forum.cockos.com/showthread.php?p=1330369#post1330369|here|)
+
+!v2.4.0 #4 (March 13, 2014)
+<strong>REAPER v4.60+ is required!</strong>
+New API functions were introduced in this version, they enable various improvements in the SWS/S&M Extension.
+Thank you Cockos!
+
+Added actions
++SWS/BR: Preview media item under mouse (versions for pausing project playback during preview)
++SWS/BR: Toggle media item online/offline
++SWS/BR: Set selected envelope points to next/previous point's value
++SWS/BR: Set selected envelope points to first/last selected point's value
++SWS/BR: Delete tempo marker while preserving position and length of (selected) items (including MIDI events)
++SWS/BR: Move closest tempo marker to mouse cursor
++SWS/BR: Move closest (measure) grid line to mouse cursor (may create tempo marker)
+ Hint: There is an interesting effect if you keep shortcut key pressed while moving the mouse - grid/tempo marker will follow it.
+ The only con is that a bunch of undo points will get created
++Added stock toggle actions:
+ - SWS/S&M: Dummy toggle n (where 'n' is in [1; 8], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file|, up to 99 toggles)
+ - SWS/S&M: Exclusive toggle An (where 'n' is in [1; 4], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file|, up to 99 toggles)
+ - SWS/S&M: Exclusive toggle Bn (where 'n' is in [1; 4])
+ - SWS/S&M: Exclusive toggle Cn (where 'n' is in [1; 4])
+ - SWS/S&M: Exclusive toggle Dn (where 'n' is in [1; 4])
+   "Exclusive toggle" means only one toggle action is ON at a time.
+   For ex: in the set of toggles "A", if "Exclusive toggle A03" is ON, A01 A02 and A04 are OFF.
+   These actions come in handy with Cycle Actions for example, see details and use-cases http://forum.cockos.com/showpost.php?p=1315222&postcount=1652|here| (thanks Reno.thestraws!)
+
+Resources: auto-save media files improvements
+
+ReaConsole
++Issue 588: added option in the context menu to invert ENTER and  CRTL+ENTER (CMD+ENTER on OS X) key shortcuts:
+ - The ENTER key can either perform commands and let the console open, while CRTL+ENTER performs commands but closes it
+   Useful when ReaConsole is docked for example, default behavior
+ - Or the ENTER key can perform commands and close the console, while CRTL+ENTER performs commands but let it open
+   Useful when using ReaConsole the old-school way, as a dialog box
++New default shortcut 'c' to open ReaConsole ('C' might conflict with the native action "Insert time signature/tempo Marker")
+
+Cycle actions
++Issue 634: our new project member wol has added some conditional statements, thanks!
+ - IF AND: if both next actions are ON
+ - IF NAND: if at least 1 of the next 2 actions is OFF
+ - IF OR: if at least 1 of the next 2 actions is ON
+ - IF NOR: if both next actions are OFF
+ - IF XOR: if the next 2 actions' states are different
+ - IF XNOR: if the next 2 actions' states are the same
+ Note: these new statements must be followed by <strong>two</strong> actions that report a toggle state
++Editor: commands indentation
++Editor: better description of conditional statements (in plain English)
++Tweaks: better context menu, message dialog box, etc
+
+Added ReaScript functions
++BR_GetMouseCursorContext
++BR_GetMouseCursorContext_Envelope
++BR_GetMouseCursorContext_Item
++BR_GetMouseCursorContext_Position
++BR_GetMouseCursorContext_Take
++BR_GetMouseCursorContext_Track
++BR_ItemAtMouseCursor
++BR_PositionAtMouseCursor
++BR_TakeAtMouseCursor
++BR_TrackAtMouseCursor
++BR_GetMediaSourceProperties
++BR_SetMediaSourceProperties
++BR_SetTakeSourceFromFile2
+
+Fixes
++Preview media item actions now send all-notes-off when stopping MIDI item preview
++More efficient toolbars auto refresh in certain instances
++Action "SWS/BR: Create project markers from notes in selected MIDI items" now works properly with looped items
+
+!v2.4.0 #3 (February 5, 2014)
+Added actions
++Xenakios/SWS: Preview selected media item through track (toggle and normal)
++SWS/BR: Preview media item under mouse (lots of different versions, see action list) (Note: "Xenakios/SWS: Stop current media item preview" works on these too)
++SWS/BR: Select next/previous envelope point
++SWS/BR: Expand envelope point selection to the right/left (normal and end point only version)
++SWS/BR: Shrink envelope point selection from the right/left (normal and end point only version)
++SWS/BR: Shift envelope point selection left/right
++SWS/BR: Select peaks/dips in envelope
++SWS/BR: Unselect envelope points outside/in time selection
++SWS/BR: Insert new envelope point at mouse cursor
++SWS/BR: Save/Restore envelope point selection (5 slots)
++SWS/BR: Save/Restore edit cursor position (5 slots)
++SWS/BR: Toggle "Grid snap settings follow grid visibility"
++SWS/BR: Set "Apply trim when adding volume/pan envelopes"
++SWS/BR: Cycle through record modes
++SWS/BR: Focus arrange window
+
+Fixes
++<strong>Windows OS / Issue 619, issue 621:</strong>
+ fixed various features which were broken when using LangPacks and certain regional settings (i.e. comma as a decimal mark)
++OS X 64-bit: fixed broken list views (as reported http://forum.cockos.com/showpost.php?p=1307498&postcount=39|here|)
++Issue 613 / Region Playlist: fixed rounding issues (with adjacent regions)
++Issue 618: fixed cycle actions using toggle states from other cycle actions (starting with IF/IF NOT statements)
++Fixed broken actions "SWS: Set auto crossfade on/off"
++Action "Xenakios/SWS: Preview selected media item" now works properly with muted items
+
+Other
++OS X DMG / Issue 608: added info allowing Mavericks/10.9+ users to run the installation script
++Made .beats optional for the action "SWS/S&M: Insert silence (measures.beats)", e.g. enter 5 (or 5.0) to insert 5 measures of silence/empty space
++Cycle Actions & Live Configs editors: shorten action names when possible, e.g. "<s>SWS/S&M: </s>Insert silence (measures.beats)"
++Better Snapshot details/descriptions
++SWS: Exported marker list format dialog opens centered
++Added "..." to the end of all (hopefully) Xenakios dialog actions that were missing it
++Small renames of captions in SWS/BR dialogs
++Xenakios's preview actions will stop on transport stop (same goes for new SWS/BR preview actions)
++The following Xenakios' dialog boxes are now themed:
+ - Auto-rename selected takes
+ - Create new tracks
+ - Disk space calculator
+ - Find missing media for project's takes
+ - Insert random points to selected envelope
+ - Item property interpolator
+ - Normalize selected takes to dB value
+ - Process item with Rubberband/csound phase vocoder
+ - Project media
+ - Randomize item positions
+ - Remap item positions
+ - Rename selected takes
+ - Rename selected tracks
+ - Rename takes
+ - Render item to new take with tail
+ - Repeat paste
+ - Reposition selected items
+ - Scale item positions/lengths by percentage
+ - Search takes
+ - Set volume and pan of selected takes
+ - Set volume of selected items
+ - Show/hide floating item/track info
+ - Skip select items from selected items
+ - Skip select items in selected tracks
+ - Spread selected items over tracks
+ - Swing item positions
+ - Take mixer
+ - Toggle selected items selected randomly
+
+!v2.4.0 #2 (November 15, 2013)
+<strong>MIDI/OSC actions support learn with both MIDI Pitch and "normalized" OSC messages</strong>
++To enable this new option: set "LearnPitchAndNormOSC" to 1 in the section [General] of the S&M.ini file (quit REAPER first!)
++When the new option is enabled, all actions of the section "S&M Extension" can be learned with:
+ - <strong>New:</strong> OSC messages with floating-point argument in [0, 1] (14-bit resolution)
+   Useful for OSC controllers that cannot handle absolute float values, e.g. <strong>TouchOSC for Android needs this!</strong>
+ - <strong>New:</strong> MIDI Pitch messages (14-bit resolution)
+ - MIDI CC messages (absolute and relative modes, as usual)
+
+Region Playlist
++<strong>Fixed playback that could get out of sync randomly</strong>
++Added option "Smooth seek (seek immediately if disabled)" in the context menu, details http://forum.cockos.com/showthread.php?t=128371|here|
+
+Auto color/icon
++Issue 602: Marker/region rules now support the filters (any) and (unnamed)
++Issue 600 / Windows OS: fixed potential crash when changing colors
++Fixed marker/region auto-coloring rules not obeying priorities
+
+Cycle Actions
++Cycle Actions now support all 3rd party extensions' actions
++Issue 607: better recursion detection/protection, thanks Big Bob!
++Editor: reject unreliable command ids for SWS actions, macros and scripts
+
+Notes window
++Make it possible to monitor/edit marker/region names and subtitles separately,
+ i.e. added "Marker names", "Marker subtitles", "Region names" and "Region subtitles"
+ in the dropdown box (in addition to "Marker/region names" and "Marker/region subtitles")
++Added related actions:
+ - SWS/S&M: Open/close Notes window (marker names)
+ - SWS/S&M: Open/close Notes window (region names)
+ - SWS/S&M: Open/close Notes window (marker subtitles)
+ - SWS/S&M: Open/close Notes window (region subtitles)
++If REAPER >= v4.55: Mark project dirty (needing save) rather than creating undo points for each key stroke
++Potential fix for http://forum.cockos.com/showpost.php?p=1180135&postcount=1595|"things that smells like Pont-l'Évêque"|
++House cleaning: allow notes for macros and scripts (aka "Action help")
+ To easy copy/paste, string identifiers used to be displayed in the Notes window for macros/scripts.
+ This is now useless since the action list offers "Copy selected action cmdID/identifier string".
+
+Resources / Issue 591: make it possible to save and use new slots/files only via user macros (w/o tweaking the S&M.ini file, etc..)
++Made "Auto-save" slots/files <em>actions</em> more macro-friendly: they won't prompt for anything
+ Note: the "Auto-save" <em>button</em> still prompt to overwrite selected slots/files
++Added a "last slot" version for all existing slot actions (i.e. new actions to deal with "auto-saved slots")
+ A few examples:
+ - SWS/S&M: Resources - Apply track template to selected tracks, <em>last slot</em>
+ - SWS/S&M: Resources - Apply track template (+envelopes/items) to selected tracks, <em>last slot</em>
+ - SWS/S&M: Resources - Import tracks from track template, <em>last slot</em>
+ - etc..
++Added actions to cleanup things at the end of user macros, if needed:
+ - SWS/S&M: Resources - Delete last track template slot/file
+ - SWS/S&M: Resources - Delete last FX chain slot/file
+ - SWS/S&M: Resources - Delete last media slot/file
+ - SWS/S&M: Resources - Delete last project slot/file
+ - SWS/S&M: Resources - Delete last theme slot/file
+ - SWS/S&M: Resources - Delete last image slot/file
+
+Resources: other updates
++Tag bookmark names with [x] when relevant slot actions are attached to them
++Media files: added "Add media file" options in the context menu (+ related actions)
+ - Stretch/loop to fit time selection
+ - Try to match tempo 0.5x
+ - Try to match tempo 1x
+ - Try to match tempo 2x
+ <strong>Note: all existing "Add media file" slot actions obey these new options too</strong>
++Track templates: fixed the option "Offset items/envelopes by edit cursor" not being obeyed, sometimes
++Track templates: added actions where 'n' is in [1; 4], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file|:
+ - SWS/S&M: Resources - Paste (replace) template items to selected tracks, slot n
+ - SWS/S&M: Resources - Paste (replace) template items to selected tracks, last slot
+ - SWS/S&M: Resources - Paste template items to selected tracks, slot n
+ - SWS/S&M: Resources - Paste template items to selected tracks, last slot
++GUI tweaks, better wordings and undo point names (with slot numbers), etc..
++<strong>House cleaning: Removed all "prompt for slot" actions (*)</strong>
+ Prehistoric actions that used to make sense when there was no dedicated GUI...
++<strong>House cleaning: Deprecated the "project loader/selecter" tool (*)</strong>
+ This tool was useful to switch projects or select project tabs (during live performances, for ex.)
+ Instead, you can just create a new dedicated bookmark (say "Live projects": click the tiny button +),
+ add projects to it (drag-drop RPP files from an Explorer/Finder), and attach relevant slot actions to
+ it via the context menu > Bookmark > Attach project slot actions to this bookmark.
+ Deprecated actions have been replaced as follow:
+ - "Resources - Project loader/selecter: next (cycle)"  ->  "Resources - Open project, next slot (cycle)"
+ - "Resources - Project loader/selecter: previous (cycle)"  ->  "Resources - Open project, previous slot (cycle)"
+ Also added:
+ - SWS/S&M: Resources - Open project, next slot (new tab, cycle)
+ - SWS/S&M: Resources - Open project, previous slot (new tab, cycle)
++(*) If you have any trouble because of that, please http://code.google.com/p/sws-extension/issues/list|say something|!
+
+ReaScript function export
++Added function BR_SetTakeSourceFromFile()
++Issue 598: fixed potential crash with FNG_FreeMidiTake
+
+Ruler's drag zoom / Issue 540: added actions for better usability
++SWS: Toggle drag zoom enable (ruler top half)
++SWS: Toggle drag zoom enable (ruler bottom half)
+
+Fixes
++Issue 603: fixed potential crash when pasting track groups
++Localization / Windows OS: fixed broken features/actions when the extension was translated (thanks drikssaï & neilerua):
+ - Most of zoom features
+ - Xenakios "Scroll track view" actions
+ - S&M "Toggle offscreen item selection" actions
++Issue 595: cut/copy/paste take actions now handle multiple item selection
++The action "Cut active take" now removes items if needed (rather than leaving empty items)
++Issue 601: fixed marker <-> region conversion actions (and export actions) that could affect playback
++Issue 606 / OS X: fixed text display à la "Big Clock" for Notes, Region Playlist and Live Config Monitor windows
++S&M actions to switch FX presets now support concurrent use (e.g. tweaking 2 knobs at the same time)
++Fixed the toggle state reported by some "Toggle offscreen item selection" actions
+
+Other
++<strong>Various performance/timing improvements</strong>
++Various font rendering improvements
++Windows OS: ClearType font rendering is now enabled by default (still optionnal via the S&M.ini file)
++Update checker: wait for project to load completely before displaying startup dialog
++S&M project startup action: faster, safer, reject unreliable command ids for SWS actions, macros and scripts
++The About box is now modeless
++Issue 517 / OS X: S&M actions and commands that open the Finder now also reveal files (like on Windows OS)
++Issue 593: increased maximum cell length for all list views
+
+!v2.4.0 #1 (August 6, 2013)
+Fixed some actions learned with <strong>relative</strong> MIDI CC events
++SWS/S&M: Select project (MIDI CC/OSC only)
++SWS/S&M: Trigger preset for FX n of selected track (MIDI CC/OSC only) - where 'n' is in [1; 8]
+ Note: FX 4 to FX 8 are new actions
++SWS/S&M: Trigger preset for selected FX of selected track (MIDI CC/OSC only)
++Reminder: those actions belong to the section "S&M extension" of the action list (top-right dropdown box)
+
+Live Configs:
++Allow switches to "comments-only" configs (e.g. OSC feedback with random/custom strings)
++Added actions (where 'n' is in [1; 4], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file|):
+ - SWS/S&M: Live Config n - Preload next config
+ - SWS/S&M: Live Config n - Preload previous config
+ Notes: useful to preload configs with -/+ controllers (like pedals), there already are similar actions to switch to the next/previous config
++Monitor windows:
+ - Mouse wheel/trackpad gesture now cycles back to the first/last config
+ - Mouse wheel/trackpad gesture now obeys the option "Ignore switches to empty configs"
++Editor window tweaks:
+ - More guiding context menus
+ - Allow cell edition in the columns "Activate action" and "Deactivate action"
+ - Skinned knobs (if knob images are available in the current theme)
+
+Cycle Action editor: copy/paste commands with Ctrl-C, Ctrl-V, Ctrl-X (on OS X: CMD-C, etc..)
+
+!v2.3.0 #23 (July 22, 2013)
+Fixed theme actions http://forum.cockos.com/showthread.php?p=1213324#post1213324|vs some user preferences|, thanks Breeder!
+
+Resources window:
++Improved context menus (right-click the bookmark dropdown box, the attached project label, etc..)
++OS X: Context menu > "Edit file..." opens files with the default text editor (like on Windows OS)
+
+ReaScript function export:
++Truncate or delete midi notes which go past the all-notes-off event
++ConfigVar functions now cover global MIDI preferences too (in case it works on REAPER's end someday)
+
+!v2.3.0 #22 (July 15, 2013)
+Fixed screenset saving
+
+!v2.3.0 #21 (July 11, 2013)
+Fixes:
++Screenset fixes as reported http://forum.cockos.com/showpost.php?p=1209144&postcount=1329|here|
++Image window: restore last displayed image on startup
++Issue 507: Fix OS X ReaConsole character highlighting
+
+!v2.3.0 #20 (July 9, 2013)
+Added actions:
++SWS/BR: Hide all but active envelope for selected tracks
++SWS/BR: Enable "Ignore project tempo" for selected MIDI items (use tempo at item's start)
++SWS/BR: Disable "Ignore project tempo" for selected MIDI items
+
+Other:
++Cycle Action editor: improved context menu (http://forum.cockos.com/showpost.php?p=1205514&postcount=5|as discussed here|)
++Cycle Action editor: make it obvious when the Apply button is being disabled
++Live Config editor: various undo improvements
++Issue 577: Snapshot paste defaults to (none) for the destination track when non matching track is found
+
+Fixes:
++Prevent creating redundant undo points in SWS/BR: Randomize selected tempo markers...
++SWS/BR windows always refresh toolbar buttons properly
++SWS/BR: Increase/decrease tempo marker:
+ - fixed unresponsiveness in certain corner-cases involving square points
+ - fixed behavior for consequential selections
++SWS/BR: Alter slope of gradual tempo marker:
+ - fixed behavior for consequential selections
+
+Enabled more code optimizations on Windows builds to increase action speed in some cases, especially with x64.
+
+!v2.3.0 #19 (June 27, 2013)
+Fixes:
++Issue 585 / OS X: fixed font rendering crashes, thank YOU Justin!
++More screenset fixes (including http://code.google.com/p/sws-extension/source/detail?r=1077|these issues|)
+
+Added actions:
++SWS/BR: Hide all but active track envelope (issue 456)
+
+Other:
++<strong>Renamed a bunch of S&M "slot actions" to make it clear they are attached to the Resources window</strong>
+ For ex.: <em>SWS/S&M: Import tracks from track template, slot 3</em> has been renamed into <em>SWS/S&M: <strong>Resources - </strong>Import tracks from track template, slot 3</em>
++Cycle Action editor: display unregistered cycle actions as such (IDs in parenthesis)
++Actions that renumber marker/region IDs now create undo points
+
+!v2.3.0 #18 (June 9, 2013)
+Issue 517 / Windows OS: S&M actions and commands that open the Explorer now also reveal files
+OS X: better fonts in S&M windows (again!)
+
+Fixes:
++SWS/FNG: Compress/Expand amplitude of selected envelope points around midpoint (inconsistent behavior for playrate and width envelopes)
++More screenset fixes as reported http://forum.cockos.com/showpost.php?p=1172448&postcount=1283|here|
++Resources/Windows OS: fixed "Edit file..."
++Issue 576: fixed auto-icon crash
++Issue 581 / OS X port: the action "SWS/S&M: Set project startup action" now prompts for a command ID or an identifier string
+ (to copy such IDs, right-click an action in the Actions window > Copy selected action cmdID/identifier string)
+
+!v2.3.0 #17 (April 30, 2013)
+<strong>REAPER v4.33+ is required!</strong>
+New API functions were introduced in this version, they enable various improvements in the SWS/S&M Extension.
+Thank you Cockos!
+
+Cycle Action (CA)
++Cycle Actions for all sections (Media Explorer, Inline MIDI Editor, etc..)
++Support macros & scripts in all sections
++Improved the timing of Cycle Actions (again!)
++Support special macros using actions like "No-op", "Wait n seconds before next action", etc..
++Editor: various usability improvements, incl. a bit of issue 565
++Editor / Issue 562: added instruction LABEL to run Label Processor commands (and make your own "Label Processor actions")
+ Example: LABEL /Lmy_suffix
+ Reminder: the syntax is described in Main menu > Extensions > Label Processor
++Editor: fixed paranoid test that was preventing some valid CAs to be registered, thanks Big Bob!
++Fixed possible "no-op" CAs in the Action list
+
+Resources window and related "slot actions"
++<strong>Issue 560: added commands and options to attach/detach resource files to/from projects</strong>
+ When saving your work to another directory (using save as/copy media), all files that have been attached to the project in the Resources window will be backed up too.
+ When a bookmark is attached to a project, any file/slot that will be added to (or removed from) this bookmark will be automatically attached to (or detached from) the project.
+ Use-case examples: Comping, http://forum.cockos.com/showthread.php?t=121131|"Revolver tracks"|
+ - Added Context menu > Bookmark > "Attach bookmark to X.RPP" and "Detach bookmark from Y.RPP"
+ - Added option "Attach bookmark to this project" when creating new bookmarks
+ - Added label for the attached project name (if any), right-click to load/select the said project
++<strong>Added custom bookmarks</strong>: Context menu > Bookmark > New bookmark > Custom...
+ The definition format is: resource_directory_name,description,file_extensions (no spaces around commas)
+ - Example1: Configurations,ReaConfig,ReaperConfigZip
+   => Bank of configs example: auto-fill, then double-click slots to switch ReaConfigs (or, on Win, drag-drop slots to the arrange)
+ - Example2: Docs,Document,txt,rtf,pdf => Multiple file extensions example
+ - Example3: Misc,Any file,* => Can be useful to attach any type of file to a project, for example
++<strong>Theme bookmarks and related slots actions: OS X port + now support both .ReaperthemeZip and .ReaperTheme files</strong>
+ For Mac users, an interesting new action is "SWS/S&M: Load theme, slot n" - where 'n' is in [1; 4], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file|: up to 99 themes
++Image bookmarks and related slots actions now support the same image formats than REAPER: PNG, JPG, BMP, etc..
+ Note: Image bookmarks were limited to PNG files before this version (only the action "SWS/S&M: Show image, slot n" is still limited to PNG)
++Project bookmarks and related slots actions now support the same project files than REAPER: RPP, EDL, RPP-BAK, etc..
+ Note: Project bookmarks were limited to RPP files before this version
++Context menus: new commands
++Various tweaks, tiny fixes (localization, media file filters, etc..)
+
+Fixes:
++Notes window: undoing "remove tracks" now restores tracks notes, if any
++Removed default shortcut Ctrl+Shift+M ("SWS: Open marker list"): conflict with the default/native shortcut for "View: show track manager window"
++Removed default shortcut Ctrl+F (for "SWS/S&M: Find"): no known conflict but more future-proof
++Screenset load now sets size/position of undocked SWS windows as reported http://forum.cockos.com/showpost.php?p=1158117&postcount=1248|here|
+
+!v2.3.0 #16 (April 18, 2013)
+Added H:M:S.F to marker list export format
+
+Fixes:
++Fixed screensets broken in v2.3.0 #15
++OS X now supports all track template files, thanks mustgroove!
+ This fixes this http://forum.cockos.com/showpost.php?p=1157294&postcount=31|Resources window issue| (and probably other things on OS X)
++Issue 552: auto-saved track templates now sync to tempo (i.e. added beat information in auto-saved templates)
+
+!v2.3.0 #15 (April 8, 2013)
+Live Configs:
++Added basic OSC feedback
+ To bind an OSC device: Live Configs window > Context menu > OSC feedback, and choose a device in the list
+ Devices listed there are the OSC "control surfaces" defined in Options > Preferences > Control Surfaces
+ Note: only the name, IP, max packet size and output port parameters are required.
+ Unless you need REAPER feedback as well, you do not need to tick the option "Send to port"
+ Up to 4 OSC devices are managed, i.e. distinct feedback for Live Config #1, #2, #3 and #4
+ The possible OSC messages (with string arguments) are:
+ - /snm/liveconfig<strong>n</strong>/current/changed - when the active config changed for the Live Config #<strong>n</strong>
+ - /snm/liveconfig<strong>n</strong>/current/changing - when the active config is changing for the Live Config #<strong>n</strong> (same as grayed display in monitoring windows)
+ - /snm/liveconfig<strong>n</strong>/preload/changed - when the preloaded config changed for the Live Config #<strong>n</strong>
+ - /snm/liveconfig<strong>n</strong>/preload/changing - when the active config is changing for the Live Config #<strong>n</strong> (same as grayed display in monitoring windows)
++Fixed ~1s delay when switching configs (with the option "Send all notes off when switching configs"), thanks Breeder!
++Undoing config switches now properly update monitoring windows
+ Note: just fixed for the sake of it as it is recommended to disable undo points for live performances!
+
+Region Playlist:
++Support main transport pause
+ Before this version the playlist was stopped on pause, now it just plays again when "un-pausing", as expected
++Added basic OSC feedback
+ To bind an OSC device, etc.. see above: same as the Live Configs' OSC feedback
+ The possible OSC messages (with string arguments) are:
+ - /snm/rgnplaylist/current - current region
+ - /snm/rgnplaylist/next - next region
+
+Added actions:
++SWS: Set takes in selected item(s) to random custom color(s)
++SWS: Set takes in selected item(s) to color gradient
++SWS: Set takes in selected item(s) to ordered custom colors
++SWS/BR: Create tempo markers at grid after every selected tempo marker
++Issue 180:
+ - SWS/BR: Create project markers from selected items (name by item's notes)
+ - SWS/BR: Create regions from selected items (name by item's notes)
+
+Fixes:
++About box: fixed update checker connection issues in certain instances (Win only)
++Cycle actions: fixed ReaScript support broken in v2.3.0 #14, thanks gofer!
++OS X x64: fixed font rendering crash (when using alpha)
++Fixed crazy behavior (SWS stops working) when running these actions on empty items:
+ - SWS/BR: Create project markers from notes in selected MIDI items
+ - SWS/FNG: legato selected media items on same track (change rate)
+ - SWS/FNG: Time compress/stretch selected items
++Refresh arrange after running SWS/FNG: unselect items that do not start in time selection
++Prevent loss of item selection when running Xenakios/SWS: Remove muted items
++Small rename (for the sake of clarity) of 2 actions: Xenakios/SWS: Shuffle order of selected items
++Don't skip last fade shape when using Xenakios/SWS: Set next/previous fade in/out shape for items
++More consistent behavior for:
+ - Xenakios/SWS: Explode selected items to new tracks (keeping positions)
+ - Xenakios/SWS: Select takes in selected items, shuffled random
+ - Xenakios/SWS: Select takes of selected items cyclically
++These actions now work with empty items (issue 281):
+ - SWS: Create regions from sel item(s) named with take
+ - Xenakios/SWS: Create markers from selected items (name by take source file name)
+ - Xenakios/SWS: Explode selected items to new tracks (keeping positions)
+ - Xenakios/SWS: Remove muted items
+ - Xenakios/SWS: Reverse order of selected items
+ - Xenakios/SWS: Shuffle order of selected items
+ - Xenakios/SWS: Shuffle order of selected items (2)
+ - Xenakios/SWS: Select items under edit cursor on selected tracks
+ - Xenakios/SWS: Time selection adaptive delete
+ - Xenakios/SWS: Toggle selected items selected randomly
+
+Other:
++OS X: better font rendering
+
+!v2.3.0 #14 (March 23, 2013)
+Cycle Actions (CAs)
++Improved timing when performing CAs
++Issue 550: CAs can now contain <em>other</em> CAs, recursively
++The character comma (,) can now be used in CONSOLE instructions
++Added instruction ELSE
++Improved toggle states reporting
+ - CAs can now either report fake toggle states (like it was before v2.3.0 #9) or real ones (i.e. toggle state of the first relevant "sub-action")
+   This ensures transparent upgrades from older versions. This toggle state is configurable in the column "Toggle" of the editor, <strong>see details http://forum.cockos.com/showpost.php?p=1090262&postcount=1136|here|</strong>
+ - Better initialization for CAs that report real toggle states (i.e. <strong>avoid to run some of them one time before they sync properly</strong>)
++Editor: display MIDI action names (with REAPER >= v4.33pre16)
++Editor: new menu items to cut/copy/paste commands (works across CAs)
++Editor: new menu item to explode CAs, custom actions (i.e. macros) and ReaConsole actions into individual actions
+ <strong>This helps sharing Cycle Actions with other users, see important remarks http://forum.cockos.com/showpost.php?p=1170459&postcount=1267|here|</strong>
+ (before this version you probably had to share other files, now you just have to export a single file where all CAs have been "exploded")
++Editor tweaks: added CA text filter, more helpful messages (again), etc...
++Fixed missing undo points for CONSOLE commands (when the option "Consolidate undo points" was disabled)
++Removed "cycling tooltips" (when CAs were attached to toolbar buttons, the reason why is detailed http://forum.cockos.com/showpost.php?p=1212048&postcount=1331|here|)
+ Note: when the opetion "Consolidate undo points" is enabled, steps like !bla or !foo still provide distinct undo point names though ("Undo foo", "Undo bla")
+
+Live Configs
++Ignore preload over the current/active track
++Improved action learn: prompt to replace current bindings or to add a new binding (with REAPER >= v4.33pre20)
++Monitoring windows: improved redraw + click the "CURRENT" panel to show/hide the "PRELOAD" one
++Fixed Cut command and corner-cases
+
+Snapshot improvements: (Thanks for the contributions, Chris!)
++Added Previous and Next buttons for navigating snapshots and added associated actions
++Added Move Up & Down buttons for re-ordering snapshots list and added similar actions
++Added Notes field (limited to 100 characters)
++Changed the way snapshots are deleted so the sort column remains continuously numbered
+
+Added actions:
++Issue 543: SWS/S&M: Go to/select region n (obeys smooth seek)
+ where 'n' is in [1; 4], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file|: up to 99 actions/regions
++Issue 307: actions to increase/decrease the metronome volume (by steps of ~ 0.15dB)
+ SWS/S&M: Increase metronome volume
+ SWS/S&M: Decrease metronome volume
++SWS/BR: Move closest tempo marker to edit cursor
+
+Other:
++"SWS: Minimize selected track(s)" now returns a toggle state:
+ reports ON if the selected track (or all selected tracks) is (are) minimized
++ReaConcole: reduced minimum height and margins
++S&M project startup actions: tweaks to support theme switching on project load (details http://forum.cockos.com/showpost.php?p=1140973&postcount=18|here|)
+
+Fixes:
++<strong>S&M Notes window / OS X 10.7+: fixed refresh issues, thanks chriscomfort!</strong>
++OS X 10.7+ x64: fixed list views being right aligned
++All S&M windows: fixed button display for some themes (e.g. http://forum.cockos.com/showpost.php?p=1124199&postcount=169|Apollo theme|)
++Fixed action "SWS/S&M: Open project path in explorer/finder"
+ This action was opening the project's parent folder, not the project's folder
++About box: fixed disabled button in update checker in certain instances
++ReaMote: fixed unexpected "Version Incompatibility" error message
+
+!v2.3.0 #13 (February 2, 2013)
+ReaConsole updates
++Create actions made of console commands directly in the Cycle Action editor, see below + example and details http://forum.cockos.com/showpost.php?p=1115796&postcount=1179|here|
+ In other words, to create your own console actions, <strong>you do not need to create/tweak a text file anymore</strong> (i.e. reaconsole_customcommands.txt)
+ => better action names, for example: a custom "Select bass tracks" instead of "SWS: Run console command: s*bass*"
+ => simpler configuration (no file edition/re-start)
+ => benefit from other Cycle Actions' features: toggle state reporting, etc..
+ => indirectly fixes little issues on OS X
+ Note: although it is deprecated now, the file reaconsole_customcommands.txt still parsed for ascendant compatibility
++<strong>New command 'x' to add track FX</strong> by names, see examples and details http://forum.cockos.com/showpost.php?p=1115796&postcount=1179|here|
+ Note: the command will do nothing if the FX is already present
++<strong>New command '/' to send local OSC messages</strong> (as if they were sent by a device on the network), see examples and details http://forum.cockos.com/showpost.php?p=1115796&postcount=1179|here|
+ Longer console commands.. but this opens a bunch of doors: receives, sends, FX parameters, FX presets, etc..
++Issue 484: the ReaConsole window is now modeless, dockable, resizable, etc..
+ <strong>=> key shortcuts swap!</strong>
+ - The ENTER key runs a command and now keeps the Console window open
+ - CTRL+ENTER (CMD+ENTER on OS X) will now close the Console window after running a command
++Fixed a few console commands' undo points that were ignored
+
+Cycle Action editor updates
++Added instruction CONSOLE to run ReaConsole commands, see example and details http://forum.cockos.com/showpost.php?p=1115796&postcount=1179|here|
+ Example: CONSOLE x ReaComp
+ Reminder: the syntax of ReaConsole commands is detailed http://www.standingwaterstudios.com/reaconsole.php|here|
++More helpful messages
++Improved toggle states for cycle actions using instructions IF and IF NOT
+
+Ported more features to OS X:
++<strong>Theme helpers for OS X</strong> (actions referenced in the http://www.houseofwhitetie.com/reaper/walter_themers_guide.pdf|WALTER user manual|):
+ - SWS/S&M: Show theme helper (all tracks)
+ - SWS/S&M: Show theme helper (selected tracks)
++More toolbar auto-refresh actions:
+ - SWS/S&M: Toolbar - Toggle offscreen item selection (top)
+ - SWS/S&M: Toolbar - Toggle offscreen item selection (bottom)
++More CMD+A support in text fields (select all)
+
+Issue 524: new actions to detect and unselect offscreen items (just to unify the 4 existing actions "Toggle offscreen item selection (left/right/top/bottom)")
++SWS/S&M: Unselect offscreen items
++SWS/S&M: Toolbar - Toggle offscreen item selection
+ This one deselects offscreen items and reselects them on toggle
++Reminder: toolbar buttons of those actions automatically light-up when at least one selected item is offscreen
+ (the option "Main menu > Extensions > SWS options > Auto-refresh toolbars" must be enabled)
+
+Other:
++Cue buss dialog box: key shortcuts pass through to the main window
++Fixed potential issues with relative paths like "./stuff.rpp"
+
+!v2.3.0 #12 (January 30, 2013)
+Automatic check for updates:
++Option can be found in REAPER > Extensions > About SWS Extensions
+ - Performed once per day (startup check is silent, user gets notified only if new version is available)
+ - Turned on by default for official updates
+ - When searching manually (instead of startup search) both official and beta updates are checked
+
+Tempo improvements:
++Convert project markers to tempo markers:
+ - More sane results when creating gradual tempo changes (thanks to middle points)
+ - Option to split middle point into 2 points to smooth things out
++Added actions:
+ - SWS/BR: Randomize selected tempo markers...
+ - SWS/BR: Delete tempo marker (preserve overall tempo and positions if possible)
+ - SWS/BR: Set tempo marker shape to linear (preserve positions)
+ - SWS/BR: Set tempo marker shape to square (preserve positions)
+ - SWS/BR: Set tempo marker shape (options)...
+ - SWS/BR: Increase/Decrease tempo marker (preserve it's time position) (% and BPM versions)
+   => These actions are mostly intended for manipulation of linear (gradual) tempo. See documentation for more
+ - SWS/BR: Alter slope of gradual tempo marker (increase/decrease) (% and BPM versions)
+   => As the name suggest, these actions work only on gradual tempo markers. See documentation for more
+ - SWS/BR: Create project markers from selected tempo markers
+ - SWS/BR: Create project markers from notes in selected MIDI items
++Other:
+ - All dialogs under SWS/BR:
+     - Options are preserved through sessions
+     - Tiny OS X cosmetic fixes
+ - All existing tempo operations should be much faster when dealing with a lot of points
+ - Tiny renames of move actions for easier readability
+ - Documentations available on http://wiki.cockos.com/wiki/index.php/Category:Tempo|wiki.cockos.com|, namely http://wiki.cockos.com/wiki/index.php/Tempo-mapping_in_Reaper|here| and http://wiki.cockos.com/wiki/index.php/Tweaking_tempo|here|
+   => Big thanks to user http://forum.cockos.com/member.php?u=22191|G-Sun| for all the wiki work, suggestions and testing
+
+Added actions:
++Issue 544: SWS/S&M: Set project startup action (and SWS/S&M: Clear project startup action)
+ Note: startup actions are defined <strong>per project</strong>. If you need to run an action when launching REAPER (or with new blank projects),
+ define a project template (in Preferences > Project) and a startup action for this template.
++SWS/BR: Check for new SWS version...
+
+Fix for OSC & MIDI CC relative "mode 3" learn
+
+!v2.3.0 #11 (January 15, 2013)
+Fix for snapshot merge crash
+
+!v2.3.0 #10 (January 11, 2013)
+Live Configs: support OSC and rotary controllers
++Improved the "learnability" of the following actions of the "S&M Extension" section, they have been renamed accordingly:
+ - SWS/S&M: Apply Live Config n (MIDI CC absolute only)  ->  SWS/S&M: Apply Live Config n (MIDI CC/OSC only)
+ - SWS/S&M: Preload Live Config n (MIDI CC absolute only) ->  SWS/S&M: Preload Live Config n (MIDI CC/OSC only)
++Support all types of MIDI CC controllers (like endless rotary encoders)
+ - In addition to the "Absolute" mode, all "Relative" modes of the Learn dialog box are now supported too
+ - Acceleration is also supported
++Support OSC learn (OSC message with float parameter)
+ - Example: say you have learned the action "SWS/S&M: Apply Live Config 3 (MIDI CC/OSC only)" with the OSC message "/blabla",
+   sending "/blabla/f/107.0" will switch to the instrument/effect #107 of the Live Config #3
+
+Added actions (http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file|):
++SWS/S&M: Bypass all FX (except n) for selected tracks - where 'n' is in [1; 8] by default
+ - Might be useful for FX comparisons (A/B)
++SWS/S&M: Set all FX (except n) offline for selected tracks - where 'n' is in [1; 8] by default
+ - Might be useful for live applications
+The following new actions are a bit specific, so they are <strong>hidden by default</strong> (n=0 in the S&M.ini file)
++SWS/S&M: Unbypass all FX (except n) for selected tracks
++SWS/S&M: Set all FX (except n) online for selected tracks
++SWS/S&M: Dummy toggle n
+ - These actions just report a toggle state
++SWS/S&M: Exclusive toggle n
+ - These actions just report a toggle state, only one of them is ON at a time (all others are automatically turned OFF)
+
+ReaScript:
++Added function SNM_AddTCPFXParm()
++Hardened http://forum.cockos.com/showpost.php?p=1099358&postcount=1162|SNM_TieResourceSlotActions()|
+
+Auto color/icon:
++Fixed color edition in place in the list view
++Fixed possible crash when the extension is localized
+
+Other:
++Updated action "Xenakios/SWS: Randomize item positions...":
+ - Added an option to move all grouped items by the same amount
++All actions of the "S&M Extension" section now support OSC and rotary controllers
+
+!v2.3.0 #9 (December 23, 2012)
+<strong>Live Configs: big overhaul, merged a dedicated extension plugin.</strong>
+The fine details will be posted in this http://forum.cockos.com/showthread.php?p=1079515#post1079515|thread/PDF| (not up-to-date yet!), in the meantime major changes are:
++New "core" to ensure smooth/glitch-free config switches, new "All notes off" logic (now optional)
++Added Preload feature: you can prepare an instrument/effect while playing another
+ This can be done with a second controller (click the new "Learn" button) or multi-touch gesture (see below).
+ Once a config is preloaded, you can switch/switch-back between the preloaded and the current config with new actions like
+ "SWS/S&M: Live Config n - Apply preloaded config (swap preload/current)"
+ Preload comes in handy when switching FX chains, or Track Templates or with the new option "Offline all but active/preloaded tracks" (see below)
++<strong>Added Monitoring windows, demo http://stash.reaper.fm/14847/S%26M_LiveConfigMonitor.gif|here|</strong>
+ - Useful with controllers that do not provide visual feedback
+ - Support 2 fingers scroll gesture over "Current" and "Preload" areas, e.g. switch or preload instruments/effects with a trackpad
+ - Click on the "Preload" area to swap the preloaded and the current config
+ - Up to 4 Monitor Windows can be used simultaneously, i.e. one per Live Config/controller
++Added (per config) option: "Offline all but active/preloaded tracks (RAM savings)"
+ When enabled, instruments/effects will be only be loaded for the current and preloaded tracks.
+ Other tracks that are not part of the config will remain as they are, of course.
+ This option works without preload too (switches will be slower though).
+ Note: handle with care! Do not use <del>this option with</del> buggy instruments/effects!
++Added (per config) option: "Ignore switches to empty configs"
+ When enabled, you will switch to the next/previous valid config whatever is the gap of empty configs in between.
+ Especially useful for -/+ controllers (like pedals) and "Apply next/previous config" actions
++Added (per config) option: "Send all notes off when switching configs"
++Added (per config) option: "Select/scroll to track on list view click"
++Added (per config) option "Automatically update sends from the input track"
+ When enabled, sends of the "Input track" will be automatically created/updated,
+ each a new track is added/removed from the editor's list view, for example
++New logic for "Activation" and "Deactivation" actions/macros/scripts:
+ - If a track is defined for a config (a row), only this track will be selected when the
+   "Activation" (or "Deactivation") action is performed.
+   Track selection is restored right after the action is performed.
+   => Useful since many actions deal with "selected track(s)"
+ - If no track is defined for a config, no track will be selected when the "Activation" (or "Deactivation")
+   action is performed, track selection is restored right after
+   => Useful to master the current selection state when performing actions
++Added "Tiny fades" knob
+ It tweaks lengths of tiny fades-out/in when deactivating/activating configs.
+ Disabling fades is allowed but instrument/effect switches might be glitchy!
+ Note: when a config is made of trailing effects (delay, verb, etc..), you can either disable tiny fades,
+ or better, route the (tiny faded) audio to a track which is not used by the Live Configs
++Added "Learn" button: direct action learn for "Apply" and "Preload" actions
++Added "Create input track" in the context menu (creates a track with needed properties and sends)
++Added "Switch delay" knob (no more S&M.ini file tweaks needed). One "Switch delay" per config.
++Added a bunch of actions (preload, toggle options or tiny fades on/off, open/close monitoring windows, etc..): filter the action list with "Live Config"!
+ Note: some of the new actions are very specific and thus hidden by default (http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file|)
++New context menu items in the Live Configs editor:
+ - Copy/cut/paste configs (rows)
+ - Insert config (shift rows up/down) + obey INSERT key
+ - Apply/preload configs
+ - Shortcuts: "Show FX chain..." and "Show routing window..." in Track column and Input track context menus
+
+Region Playlist
++<strong>Playlist re-synchronization when seeking by hand or via actions</strong> (issue 532)
+ Use-case example: now, you can also use actions like "Regions: Go to region #n" to switch regions defined in a playlist
+ Note: when seeking to a position that is not part of the playlist, the extension will switch back ASAP to the region it was supposed to play
++Re-synchronize the playlist when editing it while playing (or when its regions are edited)
++Fixed various corner cases: audio block rounding, possible issues with unknown regions (e.g. deleted), etc..
++Improved monitoring mode (separate region numbers and region names, display number of remaining loops, new red "sync loss" status, etc..)
++Added options (in the context menu): "Seek play" and "Scroll view when selecting regions"
++Reorganized the window a bit: added columns, moved playlist length as tooltip, etc..
+
+Cycle actions
++<strong>Added basic instructions: IF, IF NOT, and LOOP n</strong>
+ This is mainly to ensure consistent toggle states for cycle actions but this also introduces conditional macros, see details and examples http://forum.cockos.com/showpost.php?p=1090262&postcount=1136|here|
+ This is a "basic" support because you cannot yet have nested LOOPs or nested IFs. However you can have an IF in a LOOP or a LOOP in an IF.
++Toggle cycle actions now report real toggle states (i.e. the state of the first relevant action)
++Cycle action editor
+ - Right list view: insert commands rather than adding them (avoids to systematically drag new commands)
+ - Right list view: added "Add/insert instruction" in the context menu
+ - Various tweaks, including new tiny buttons to enlarge list views
+
+Export functions to ReaScript
++Fixed possible FNG function crash
++Added functions:
+ - SNM_RemoveReceivesFrom()
+ - SNM_SelectResourceBookmark()
+ - http://forum.cockos.com/showpost.php?p=1099358&postcount=1162|SNM_TieResourceSlotActions()|
++Updated API, updated SNM_AddReceive() to obey preferences
+
+Added actions
++Added "go to" marker/region actions
+ REAPER already proposes 30 goto actions for markers and 40 for regions,
+ so those new actions are just meant to target up to 99 regions/markers, they are <strong>hidden by default!</strong>
+ This number of actions is http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file|
+ Note: comes in handy with the new Region Playlist "re-synchronization" feature, see above
+ - SWS/S&M: Go to marker n (obeys smooth seek)
+ - SWS/S&M: Go to region n (obeys smooth seek)
++Issue 528:
+ - SWS/S&M: Insert marker at edit cursor
+ - SWS/S&M: Insert marker at play cursor
++Issue 535:
+ - SWS: Select unmuted items
+ - SWS: Select unmuted items on selected tracks
++New on OS X (were already there on Windows OS):
+ - SWS/S&M: Dump action list (w/o SWS extension)
+ - SWS/S&M: Dump action list (SWS extension only)
+ - SWS/S&M: Dump action list (custom actions only)
+
+All list views:
++Obey to HOME, END, PAGE UP and PAGE DOWN keys
++OS X: obey to CMD-A like on Windows OS (select all)
++Windows OS: fixed a themed grid line glitch
+
+Other:
++Fixed possible Auto color/icon crash when exiting REAPER
++Fixed possible crash with FX selection actions
++OS X: directory browsers allow directory creation (issue 511)
++OS X: fixed single line tooltips
++The action "SWS/S&M: Insert silence (measures.beats)" now supports tempo/time signature markers
++Offline FX actions now fully unload VST plugins
++Localization: sorted menus like default English menus
++Snapshot window: replaced the button "show/hide options" with 2 tiny buttons, i.e. fixes http://forum.cockos.com/showpost.php?p=1034735&postcount=969|this report|
++Resources window: moved the tick box "Tie slot actions to this bookmark" to the context menu ("advanced" stuff)
++Updated all S&M windows: removed margins when possible, every pixel counts!
+
+!v2.3.0 #8 (November 1, 2012)
+<strong>Region playlist: http://forum.cockos.com/showpost.php?p=1063758&postcount=10|new features for live use!|</strong>
++Support for infinite region loops, screenshot http://stash.reaper.fm/14468/S%26M_rgnplaylist_infiniteloop.jpg|here|
+ Such regions will loop forever unless you switch to another region thanks to the new actions "Play previous/next region (smooth seek)".
++Added "Monitoring" mode, i.e. displays current/next regions with a "big font", screenshot http://stash.reaper.fm/14469/S%26M_rgnplaylist_monitoring.jpg|here|
+ Click the new lock button to toggle monitoring/edition modes (or use the new related action).
+ Note: the "big font" name can be customized in the S&M.ini file ("BigFontName" in the section [RegionPlaylist])
++Added actions:
+ - SWS/S&M: Region Playlist - Play previous region (smooth seek)
+ - SWS/S&M: Region Playlist - Play next region (smooth seek)
+ - SWS/S&M: Region Playlist - Toggle monitoring/edition mode
++Seek play when switching regions/playlists
++Project edition:
+ - Improved append/paste playlist/regions commands and actions (faster)
+ - Fixed possible undo unstability for "crop project to playlist" commands/actions
+
+Export functions to ReaScript
++Issue 531: fixed MIDI notes shrinking bug
++Fixed SNM_GetMediaItemTakeByGUID() crash
+
+Other
++Issue 174: improved S&M cut/copy/paste sends/receives/routings actions as detailed http://forum.cockos.com/showpost.php?p=1061214&postcount=1529|here|
++Notes window: improved "big font" rendering (now uses all the available width)
+
+!v2.3.0 #7 (October 17, 2012)
+Export functions to ReaScript
++Added functions (more details in REAPER > Main menu > Help > HTML Lists > ReaScript documentation):
+ - SNM_MoveOrRemoveTrackFX
+ - SNM_SetProjectMarker
+ - SNM_GetProjectMarkerName - because ReaScript cannot handle the char** param of RPR_EnumProjectMarkers()
++Issue 520: removed SNM_DeleteObject, added SNM_DeleteFastString
+
+Added actions
++Issue 517: SWS/S&M: Open selected item path in explorer/finder
++SWS/S&M: Remove selected FX for selected tracks
++SWS/S&M: Dump action list (custom actions only)
++SWS/BR: Move edit cursor to next/previous envelope point
++SWS/BR: Move edit cursor to next/previous envelope point and add to selection
+ Note: this last action (that adds points to selection) can make tinny changes to the envelope.
+ It's a bug in Reaper, you can read about it http://forum.cockos.com/project.php?issueid=4416|here|
+
+Other
++Cycle action editor: double-click in the "Id" column (or pressing the RETURN key) runs the selected cycle action
++Issue 488/Image window: display image filenames/slot numbers in tooltips
++Issue 525: the master track obeys the action "SWS: Minimize selected tracks"
++OS X / S&M windows: better fonts
+
+Fixes
++Issue 519: fixed "SWS: Hide docker" and "SWS: Show docker" (broken since REAPER v4 and multi-dockers)
++Fixed a possible crash in Convert project markers to tempo markers dialog
+
+House cleaning, renamed cryptic "auto-refreshed" toolbar actions:
++SWS/S&M: Toolbar left item selection toggle -> SWS/S&M: Toolbar - Toggle offscreen item selection (left)
++SWS/S&M: Toolbar right item selection toggle -> SWS/S&M: Toolbar - Toggle offscreen item selection (right)
++SWS/S&M: Toolbar top item selection toggle -> SWS/S&M: Toolbar - Toggle offscreen item selection (top)
++SWS/S&M: Toolbar bottom item selection toggle -> SWS/S&M: Toolbar - Toggle offscreen item selection (bottom)
++SWS/S&M: Toolbar track envelopes in touch/latch/write mode toggle -> SWS/S&M: Toolbar - Toggle track envelopes in touch/latch/write
+
+Tempo manipulation improvements:
++Convert project markers to tempo markers:
+ - Added an option to create gradual tempo changes (aka linear tempo points)
++Select and adjust tempo markers improvements:
+ - Option to invert selection only if marker obeys criteria. (possible usage: invert only within time selection)
+ - Added button for deselecting markers that conform to criteria
+ - Added button that toggles supplementary dialog which lets you deselect every Nth marker selected (possible usage: easier manipulation of linear points)
+
+!v2.3.0 #6 (October 3, 2012)
+<strong>Auto color for regions and markers, thanks Brado231!</strong> (issue 339)
++Added column "Type" (type = track, marker or region) in the "Auto color/icon" window's list
++Reorganized the window/context menus a bit
++Added options (new actions + new button "Options" + main menu > extensions > sws options)
+ - Enable auto marker coloring - Disabled by default!
+ - Enable auto region coloring - Disabled by default!
+
+<strong>Localization: (almost) everything can be translated!</strong>
+Fixes/improvements (thanks Mr Data!):
++Fixed unused translations in various windows/dialog boxes
++Fixed stupid assumption that plural strings always end with 's'
++Auto-resize some buttons according to string lengths
+Notes for translators:
++A new SWS Template LangPack file is available http://code.google.com/p/sws-extension/downloads/list|here|
++The following tools are intentionally not localized (to avoid useless translations):
+ - S&M Find (a new version will come at some point)
+ - SWS TrackList (might be removed at some point, over exceeded by the new native Track Manager)
+ - A few (exotic) Xenakios tools
+
+Export functions to ReaScript
++Added functions (more details in REAPER > Main menu > Help > HTML Lists > ReaScript documentation):
+ - SNM_GetSetObjectState()
+ - SNM_GetSetSourceState2()
+ - SNM_GetSourceType()
+ - SNM_RemoveReceive()
+ - SNM_CreateFastString()
+ - SNM_GetFastString()
+ - SNM_GetFastStringLength()
+ - SNM_SetFastString()
+ - SNM_DeleteObject()
+ - FNG_AllocMidiTake()
+ - FNG_FreeMidiTake()
+ - FNG_CountMidiNotes()
+ - FNG_GetMidiNote()
+ - FNG_GetMidiNoteIntProperty()
+ - FNG_SetMidiNoteIntProperty()
+ - FNG_AddMidiNote()
++Updated some APIs functions with WDL_FastString* parameters (tighter memory allocation + get rid of string length limitations for ReaScripters)
+ Might be temporary, see details & example http://forum.cockos.com/showpost.php?p=1040948&postcount=1016|here|
++<strong>To request some functions please use/see issue 513</strong> (exported functions wish-list)
+
+Added actions:
++SWS/BR: Move selected tempo markers forward
++SWS/BR: Move selected tempo markers back
++SWS/BR: Move selected tempo markers forward X ms
++SWS/BR: Move selected tempo markers back X ms
+ Note: These actions don't screw with unselected points positions. Ideal for extensive tempo manipulation.
+ First two actions move points depending on zoom, more zoom means less movement - recommended for keybinding.
+ Others move points by predetermined values in milliseconds
++SWS/BR: Select and adjust tempo markers...
++SWS/BR: Move edit cursor to next/previous envelope point and select it
++SWS/S&M: Pan active takes of selected items to 25%, 50%, and 75% left and right
++SWS/S&M: [developer] Write C++ API functions header
+ Internal stuff, for SWS devs only.
+
+Updated actions "Set selected tracks folder states"
++Renamed actions:
+ - "SWS/S&M: Set selected tracks folder states to on"  ->  "[...] to parent"
+ - "SWS/S&M: Set selected tracks folder states to off"  ->  "[...] to normal"
++Added actions (they were missing for the above ones to make sense..):
+ - SWS/S&M: Set selected tracks folder states to last of all folders
+ - SWS/S&M: Set selected tracks folder states to last in folder
+ Note: when this last action is performed on a track which is already the last one in a folder,
+ running it again will turn the track into the last in the innermost and next-innermost folders, etc..
+
+Region playlist
++Paste/crop to playlist: make sure envelopes are pasted too
+ (whatever is the pref. "Envelope points move with media items")
++Avoid "flashy" cursor while playing playlists
++Reorganized the window/context menus a bit
+
+Other
++Updated action "SWS/S&M: Remove all envelopes for selected tracks":
+ This action removes all track/plugin envelopes. Now it also removes parameter modulations.
++Cycle action editor: added button "Import/export..."
++Issue 516/Resources: auto-save actions now overwrite empty selected slots
++Issue 515/Find window: RETURN key = find next (reminder: F3/Shift-F3 = find next/previous)
++GUI tweaks: smaller fonts on OS X, preserve XP style for list views on Windows OS, etc..
+
+Fixes
++Issue 459: fixed possible crash when applying grooves
++Fixed some Xenakios actions related to takes
++Fixed inverted left/right channels for "SWS/S&M: Pan active takes of selected items to 100% left/right"
++Fixed faulty undo point for "Xenakios/SWS: Toggle selected takes normalized/unity gain"
++Minor fix in warning dialog for SWS/BR: Convert project markers to tempo markers
+
+!v2.3.0 #5 (September 13, 2012)
+<strong>Issue 432: Export functions to ReaScript and/or to other extensions. See documentation http://code.google.com/p/sws-extension/wiki/Functions_export_to_ReaScript|here|</strong>.
+Added functions:
++SNM_GetSetSourceState()
++SNM_GetMediaItemTakeByGUID()
++SNM_AddReceive()
++SNM_GetIntConfigVar()
++SNM_SetIntConfigVar()
++SNM_GetDoubleConfigVar()
++SNM_SetDoubleConfigVar()
+
+Convert project Markers dialog is now toggleable and has a state
+Issue 504: (re-)added horizontal scrollbar in the Notes window
+Issue 512: improved http://stash.reaper.fm/13968/sws_dmg.jpg|OS X install disk| (added a script that does all the job, just double-click on it!)
+
+Added "What's new?" (via HTML file generation)
++Added a button "What's new?" in the About box
++Added action "SWS/S&M - What's new?"
+
+Added actions:
++SWS/BR: Convert project markers to tempo markers
++SWS/BR: Split selected items at tempo markers
+
+Removed actions (were already available - use native actions):
++SWS/BR: Move edit cursor to next tempo marker
++SWS/BR: Move edit cursor to previous tempo marker
+
+!v2.3.0 #4 (August 30, 2012)
+<strong>REAPER v4.26+ is required</strong>
+
+A big welcome to our latest developer, Breeder!  He added actions:
++SWS/BR: Move edit cursor to next tempo marker
++SWS/BR: Move edit cursor to previous tempo marker
+
+External MIDI file support + MIDI source offset support (action "SWS/S&M: Takes - Remove empty MIDI takes/items among selected items", etc..)
+Improved "All notes off" handling (Live Configs tool + "All notes off" actions)
+Fixed/improved "Xenakios/SWS: Create markers from selected items" (bug reported http://forum.cockos.com/showpost.php?p=1022691&postcount=961|here|)
+OS X / Resources window: better text filter behavior
+
+!v2.3.0 #3 (August 22, 2012)
+Issue 498: OS X - Fixed docked SWS window close issues
+
+!v2.3.0 #2 (July 28, 2012)
+Fixed theming issues on Windows XP/7 (reported http://forum.cockos.com/showpost.php?p=1003969&postcount=918|here|)
+Fixed Label processor crash (reported http://forum.cockos.com/showpost.php?p=1004406&postcount=926|here|)
+More localization for the Groove tool
+
+!v2.3.0 #1 (July 22, 2012)
+<strong>REAPER v4.25+ is required</strong>
+
+!v2.2.0 #17 (July 13, 2012)
+Label processor:
++Added option to process all takes
++Added take count (/K) and take number (/k)
+
+Windows OS: fixed possible stuck tooltips and buttons stuck on hover state
+Fix for OS X ini files
+
+!v2.2.0 #16 (July 9, 2012)
+Full localization for "Fill gaps", "Snapshots merge" and "ReaConsole" tools
+Main dialog boxes are now themed
+Fixed actions "SWS/S&M: Move selected FX up/down in chain for selected tracks" (broken in v2.2.0 #3)
+Fixed actions "SWS/S&M: Active MIDI Editor - Save/Restore displayed CC lanes, slot n" (broken in v2.2.0 #3)
+House cleaning: removed actions "SWS/S&M: Takes - Build lanes for selected tracks/items" (those glorious actions are useless now: REAPER features take alignment)
+
+!v2.2.0 #15 (June 25, 2012)
+The following windows are now themed:
++Snapshots
++Auto Color/Icon
++MarkerList
++TrackList
++ProjectList
++Groove Tool
+
+OS X / Live Configs
++Browse FX user presets like on Windows OS
++Support for AU user presets
+
+List views
++OS X: themed grid lines (almost like on Windows OS)
++OS X: column reordering (drag-drop column headers like on Windows OS)
++Little fixes
+
+Localization for item/track color and snapshot context menus (thanks neilerua!)
+Removed smooth scroll, please use native version
+
+!v2.2.0 #14 (June 14, 2012)
+Resources window and related slots actions
++"Paste" and "Paste (replace)" items from a track template file that contains several tracks now obeys multi-track selection
++Applying a track template file that contains several tracks now obeys multi-track selection - http://forum.cockos.com/showthread.php?t=104140|Example|: applying folder tracks to other projects
+ Reminder: track template files can be applied in 2 different ways, either use items/envelopes present in template files or preserve existing items/envelopes, see details http://forum.cockos.com/showpost.php?p=979823&postcount=16|here|
+ The following updates deal with the latter option:
+ - Applying track templates now preserves all existing track envelopes (except FX parameter envelopes since FX Chains are replaced with templates' ones)
+ - Applying track templates now preserves folder states
+
+Region Playlist
++The playlist being played can be different from the displayed one
++SWS/S&M: Region Playlist #n - Play (where 'n' is in [1; 4], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file|: up to 99 playlists)
++SWS/S&M: Region Playlist - Set repeat off
++SWS/S&M: Region Playlist - Set repeat on
++SWS/S&M: Region Playlist - Toggle repeat
+
+Live Configs
++Activation/Deactivation columns: totally hide action IDs stuff for the user (action names are displayed instead, to edit: context menu > learn action)
++Fix for track template files containing more than 1 track
+
+Notes window: better refresh, fixed broken helper to copy/paste custom macro IDs
+Cue buss generator: fix for track template files containing more than 1 track
+Added undo points for track icon actions
+Issue 458: Fixed zoom actions that "hide others"
+Issue 486: added actions SWS/S&M: Show next/previous image slot
+
+!v2.2.0 #13 (June 6, 2012)
+Localization
++Fixed broken Resources window with non-English LangPacks
++Fixed UTF-8 issues in the Cue Buss Generator, Envelope Processor, LFO Generator and Fills Gaps window
++Full localization for the MarkerList (context menus, messages, etc..)
++Full localization for IX's Label Processor
+Note: a new SWS template LangPack will be released with the next official SWS version!
+
+!v2.2.0 #12 (June 3, 2012)
+Issue 476: Fix deleting of descriptions in MarkerList, Notes window too
+Notes window: now can select all text with Ctrl-A (Windows only)
+OS X: fixed macro learn (Cycle Action editor and Live Configs)
+OS X: list view selections behave like on Windows OS
+Fixed a few localized strings that were ignored
+
+!v2.2.0 #11 (May 31, 2012)
+Issue 475: region playlist stops in sync
+Issue 473/Resources window: the auto-save button now prompts to overwrite selected slots/files
+Fixed "file not found" label
+
+!v2.2.0 #10 (May 29, 2012)
+Resources window
++Pasting template envelopes obeys the option "Offset template items/envelopes by edit cusor" (in previous versions, only items were offseted according to this pref)
++Fixed "Paste" and "Paste (replace)" template items commands (when template files were containing more than 1 track)
++The tiny "+" button now adds a new bookmark without copying currents slots
++Creating new bookmarks now sets auto-save and auto-fill directories to the default resource path (i.e. you will not be promped for directories anymore)
+
+Region playlist: added repeat button
+Notes window: re-added marker/region names edition (and display Ã  la "Big clock" when text edition is locked)
+Added actions (for issue 470 & macros based on cue buss actions)
++SWS/S&M: Save default track send preferences
++SWS/S&M: Recall default track send preferences
++SWS/S&M: Set default track sends to audio and MIDI
++SWS/S&M: Set default track sends to audio only
++SWS/S&M: Set default track sends to MIDI only
+
+!v2.2.0 #9 (May 16, 2012)
+Added source filename (/s) to Label processor
+Issue 471: fixed file renaming from the Resources window
+
+!v2.2.0 #8 (May 11, 2012)
+Fixed lost actions (reported http://forum.cockos.com/showpost.php?p=957863&postcount=823|here|)
+Issue 469: fixed playlist loop
+
+!v2.2.0 #7 (May 8, 2012)
+Issue 466: fixed "add all regions" and related issues in Region Playlist window (broken in v2.2.0 #6)
+Issue 467: fixed possible crash when pasting text in the Notes window
+More UTF-8 fixes
+Added action "Export formatted marker list to file"
+
+Improved all S&M track FX actions: use new native APIs + configurable bypass/unbypass and online/offline actions (http://forum.cockos.com/showthread.php?p=984786#post984786|in the S&M.ini file|, up to 99 FX)
+Added very specific track FX actions (hidden by default, i.e. default number of actions = 0 in the S&M.ini file)
++SWS/S&M: Toggle all FX (except n) online/offline for selected tracks
++SWS/S&M: Toggle all FX (except n) bypass for selected tracks
+
+!v2.2.0 #6 (May 1, 2012)
+Region Playlist
++Fixed append/crop/paste playlist actions and commands
++"Paste playlist at edit cursor" can now insert playlists in the middle of projects (rather than "pasting over"). Demo: http://stash.reaper.fm/12421/S%26M%20Region%20Playlist%20-%20Paste%20plalist%20at%20edit%20cursor.gif|here|
++Context menu: added commands to append/paste selected regions
++Better list view refresh (new region lengths, renamed regions, etc..)
+
+Added actions
++Issue 345: SWS/S&M: Remove all envelopes for selected tracks - Works with the master track, fx param envelopes, frozen tracks (i.e. "frozen envelopes" are preserved), etc..
++SWS/S&M: Insert silence (seconds)
++SWS/S&M: Insert silence (measures.beats)
++SWS/S&M: Insert silence (samples)
+
+Other
++Fixed handling of midi events which precede the item start position by resizing the take and adjusting the take offset
++Added undo point for "SWS/gofer: Split selected items at mouse cursor (obey snapping)"
+
+!v2.2.0 #5 (April 23, 2012)
+Region Playlist
++<strong>Play preview: no more constraint on region ends, the play preview now exactly follows region boundaries! REAPER v4.23+ is required</strong> (pre-release at the moment)
+ Consequences: removed play preview options added in v2.2.0 #4 (useless now), added a warning message when there are nested regions/markers (due to the new smooth seek option)
++Do not force envelope points updates when pasting/cropping a playlist but obeys the preference "envelope points move with media items" instead (so both behaviors are now possible: copy/move envelope points or not)
++Fixed actions "Paste playlist" and "Append playlist" that were ignoring items smaller than region sizes
++Issue 461: fixed actions "Paste playlist" and "Append playlist" that were unexpectedly splitting items at region boundaries
+
+SWS localization
++Fixed many dialog boxes/windows that were ignoring translated strings
++Fixed UTF-8 issuess in action names (translations could be ignored)
++Win 7 (x64): fixed UTF-8 issues in list views and dropdown boxes
++Added/fixed localization for (few) missing action names
+
+OS X love:
++Fixed broken context menus. Important for the Resources window for example, where right-clicking auto-save and auto-fill buttons was impossible on OS X!
++Cycle action editor: added action learn (right-click in the right list view). Note: the editor is now exactly the same as on Windows OS.
++Live Configs: added action learn (right-click the columns "Activation" and "Deactivation"). Note: the Live Configs window is now exactly the same as on Windows OS.
++Better tooltips
+
+Other
++Fixed possible cue buss volume bug when no default send gain was defined in the prefs (reported http://forum.cockos.com/showpost.php?p=949269&postcount=1378|here|)
++Issue 358: now fixed everywhere in the extension
+
+!v2.2.0 #4 (April 9, 2012)
+<strong>SWS localization</strong>
+The SWS extension now also uses the language pack file defined in the preferences (just like REAPER).
+The SWS template LangPack file is available http://code.google.com/p/sws-extension/downloads/list|here| (it will be regulary updated for "official" SWS releases).
+This file should be merged with the main <strong>translated</strong> REAPER LangPack file as explained http://forum.cockos.com/showpost.php?p=941893&postcount=810|here|.
+All action names can be translated (and most of undo point names: same string). Many dialog boxes and windows can be translated.
+Full localization support for (on-going work..):
++Sanpshots
++Auto Color/Icon
++All S&M windows (+dynamically sized according to string lengths)
+
+Region playlist
++Fixes, tweaks (added tooltips, retain current playlist, etc..)
++Added options (right-click the play button): "Play regions until next measure" and "Play regions until next beat" (see the note in the v2.2.0 #3 changelog)
+Added actions (and new context menu items):
++SWS/S&M: Region Playlist - Crop project to playlist
++SWS/S&M: Region Playlist - Crop project to playlist (new project tab)
++SWS/S&M: Region Playlist - Append playlist to project
++SWS/S&M: Region Playlist - Paste playlist at edit cursor
+
+Other
++Fixed some dropped character bugs in Label processor
++ClearType for tooltips too
+ Optional: set "ClearTypeFont" to 1 in the section [General] of the S&M.ini file (quit REAPER first!)
++Refresh some S&M views when changing time mode
+
+!v2.2.0 #3 (March 25, 2012)
+<strong>Dropped support for REAPER v3.x, REAPER v4.20+ is required!</strong>
+
+<strong>REAPER localization support</strong>: fixed broken Snapshots and LFO Generator vs localized envelope names, fixed action learn in S&M windows, Theme helper, etc..
+Note: localization of the SWS extension is coming soon!
+
+<strong>Added new "S&M Region Playlist" window</strong> - http://reaper.mj-s.com/S&M_RegionPlaylist.jpg|Screenshot|
+Useful to preview different song structures (i.e. non-linear play) and apply them via the command "Crop project to playlist".
+Use the context menu to add/remove/etc.. regions, use drag-drop to reorder regions in the playlist. Undo points are created for playlist editions.
+Manage several playlists: top left dropdown box and tiny plus/minus buttons. Playlists are saved in project files.
+Note: the play preview is based on "smooth seeking" so regions are played until the next measure (start positions of regions do not matter). Croping a project to a playlist will respect regions boundaries, of course.
+Added related actions:
++SWS/S&M: Open/close Region Playlist window
++SWS/S&M: Play (Region Playlist)
+
+Live Configs:
++OS X: FX presets support like on Windows OS
++All FX presets are now supported via the new Learn command: VST patches (.fxp), AU factory/user Presets (.aupreset), etc.. Note: support was limited to user presets (.rpl files) before this version.
++Send all notes-off when deactivating a track
++Context menu: added "Learn current preset"
+
+Cue buss generator:
++New dropdown box "Cue buss settings": up to 8 different settings can be defined
++Added actions "SWS/S&M: Create cue buss from track selection, settings n" where 'n' is in [1; 8]
++Tweaks: removed confusing "save properties" button (settings are now saved on the fly), better OS X display, added error messages, etc..
+
+Resources window and related "slot actions":
++<strong>All "SWS/S&M: Apply track template" actions now preserve receives.</strong> This is to use track templates a bit like snapsshots (track sends were already preserved).
+ The same goes with "Apply track template" commands in the Resources window (on double-click or ENTER key).
++New option to sync auto-save and auto-fill directories: changing one changes the other
++Maximum number of bookmarks raised to 32
++Issue 450: retain the last used path when loading slots
+
+Label processor:
++Added item duration (/D) and source offset (/O)
+
+FX presets actions improvements: OS X support + improved on Windows OS (use new dedicated APIs)
+Added in the main section of the action list (new on OS X):
++SWS/S&M: Trigger next preset for FX n of selected tracks - where 'n' is in [1; 4], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file| (up to 99 slots)
++SWS/S&M: Trigger previous preset for FX n of selected tracks - where 'n' is in [1; 4], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file| (up to 99 slots)
++SWS/S&M: Trigger next preset for selected FX of selected tracks
++SWS/S&M: Trigger previous preset for selected FX of selected tracks
+Added in the "S&M extension" of the action list (new on OS X):
++SWS/S&M: Trigger preset for selected FX of selected tracks (MIDI CC absolute only)" }, "S&M_SELFX_PRESET", TriggerFXPreset, NULL, -1},
++SWS/S&M: Trigger preset for FX n of selected tracks (MIDI CC absolute only)- where 'n' is in [1; 4]
+Added new FX preset actions in the main section (new on OS X and Windows OS):
++SWS/S&M: Trigger next preset for last touched FX
++SWS/S&M: Trigger previous preset for last touched FX
+
+Marker list:
++Convert markers to regions
++Convert regions to markers
+
+Other, fixes:
++All S&M windows: optional Windows-rendered fonts (ClearType)
+ To enable this option set "ClearTypeFont" to 1 in the section [General] of the S&M.ini file (quit REAPER first!)
++Support the global preference "Disable saving full plugin states"
++Fixed all S&M copy/cut/paste sends/receives/routings actions (possible problem with multi track selection, see issue 174).
+ Note: this also fixes SWS smart cut/copy actions: "SWS: Copy items/tracks/env, obeying time sel" and "SWS: Cut items/tracks/env, obeying time sel"
++Auto Color/Icon: fixed broken drag-drop of rows (i.e. useful to order rule priorities - reminder: drag-drop only works when the sorted column is the 1st one!)
++SWS List views tweaks: drag-drop of multiple rows, no arrow displayed when not sortable, etc..
+
+Added other actions:
++SWS/IX: Import m3u/pls playlist. Imports local files from playlist to new track (streaming media ignored)
++SWS/S&M: Split and select items in region near cursor
++SWS/S&M: Select only track with selected envelope
+
+!v2.2.0 #2 (March 7, 2012)
+Fixed groove tool context menu
+Added label processor (Extensions->Label processor). Automatic labelling of selected items using various parameters.  <= Thanks IXix!
+
+!v2.2.0 #1 (February 13, 2012)
+<strong>Lots of changes from 2.1 -> 2.2.  The fine details are below, but the major changes are:</strong>
++Snapshots fully working with v4 - pans, frozen tracks, all envelopes, etc.
++Markerlist supports region/marker colors
++S&M windows are themed to match Reaper
++Cycle action editor for OS X
++Item normalizing to RMS
++Too many Resources window/Live Configs updates to list here
++Notes/help subtitle support
++Lots of stability and performance improvements.  We <strong>strongly</strong> recommend you update to v2.2 if you're still running SWS v2.1.0.
+
+Fixed support for REAPER 3.x
+Issue 449: fixed cue buss actions not copying track levels to buss' receives when in pre-fader mode
+Faster undos (UNDO_STATE_MISCCFG & UNDO_STATE_ALL)
+Fixed flickering of docked SWS and S&M windows when resizing them (http://stash.reaper.fm/11694/ShakeThisOut.gif|before fix|, http://stash.reaper.fm/11695/ShakeThisOut_fixed.gif|after|)
+List views: fixed wrong context menu when columns were hidden/moved (Auto Color/Icon, Live Configs, etc...)
+List views (Windows OS): fixed possible missing vertical grid lines and better grid display vs cell edition
+All S&M track group actions now also support the master track
+Issue 256: Fixed "SWS: Toggle auto add envelopes when tweaking in write mode" also affecting other preferences
+
+Live Configs:
++Added "Learn from Actions window" (in the context menu of columns "Activate action" and "Deactivate action") - Windows OS only
++GUI fixes and tweaks: fixed FX 1st preset display, "Edit" menu items, support for INSERT and F2 keys, etc..
+Added actions (useful to switch configs without MIDI CC controller, e.g. -/+ controllers (like pedals) sending MIDI note messages)
++SWS/S&M: Live Config #n - Next (where 'n' is in [1; 8])
++SWS/S&M: Live Config #n - Previous (where 'n' is in [1; 8])
+
+Resources window:
++More "macro friendly" slots actions: when the list view is empty, add the needed number of slots and browse for file (rather than displaying an error message)
++Auto-fill now hehaves like Auto-save: new top left button for auto-fill too, same context menu, etc.. (issue 436, indirectly)
++Added Bookmark commands in the context menu: new, delete and rename bookmarks (issue 436)
++Auto-save: fixed automatic building of filenames (strip forbidden characters)
++Dedicated context menus for auto-fill and auto-save buttons (faster access to options, http://stash.reaper.fm/11693/S%26M_ResourcesView_ContextMenu.gif|demo|)
++Tweaks: support for INSERT key (insert empty slot), better tooltips, etc..
+Resources/Track templates slots:
++Issue 441: new auto-save option to retain envelopes in templates (the option to retain items was already there)
++Added tick box for the new REAPER v4.15 option "Offset template items/envelopes by edit cusor"
++Added actions "SWS/S&M: Apply track template (with envelopes/items) to selected tracks, slot n" where 'n' is in [1; 4], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file| (up to 99 slots)
+
+Cycle action editor:
++Additional consistency checks before aplying/registering cycle actions
++Support for DELETE and F2 keys (remove/renames cycle actions and commands)
+
+House cleaning:
++All S&M windows: better/tighter context menus
++Tagged "Xenakios/SWS: Load project template" actions as deprecated (you can use "SWS/S&M: Open/select project template, slot n" instead: these new actions are not tied to paths/filenames)
++Renamed all toggle actions "SWS/S&M: Open [...] window" into "SWS/S&M: Open/close [...] window"
++Renamed all actions "[...]Notes/Subtitles/Help[...]" into "[...]Notes[...]"
++Beware! The following actions have new custom ids => an update is needed if they were used in toolbars, macros, etc.. (sorry about that! SWS localization side-effect..)
+ SWS/S&M: Open Cycle Action editor
+ SWS/S&M: Open Cycle Action editor (event list)
+ SWS/S&M: Open Cycle Action editor (piano roll)
+
+!v2.1.0 #28 (January 25, 2012)
+Fixed "SWS/AW: Split selected items at edit cursor w/crossfade on left" - now crossfade time is zoom independent
+
+!v2.1.0 #27 (January 23, 2012)
+Remove broken/confusing action "Toggle visibility of selected folder parent's children in mixer".  Replace with macro "sel children"/"toggle mixer vis" if you like.
+Move cursor left/right ms/config seconds now respects preference "When moving edit cursor via action or control surface: Scrub/Do not scrub"
+
+!v2.1.0 #26 (January 4, 2012)
+Fingers MIDI action fixes:
++Remove negative Midi Events before commiting
++Fix for MIDI event positioning when take has an offset and playrate != 1.0
+
+Issue 426: Fixed snapshots problem with 'frozen' tracks
+On Windows OS: all S&M list views now support grid lines, i.e. they use the color "Window list grid lines" of the Theme Editor
+OS X: Fixed "beachball" when running cycle actions
+
+!v2.1.0 #25 (January 1, 2012)
+Cycle actions: OS X cleanup/fixes (thanks to Kundalinguist and CaptainHook!)
++Fixed import and edition of cycle actions
++Added "Cycle Action Editor" in main menu > extensions (like on Windows OS)
++Cycle Action Editor it is now available out of the box
+
+Resources window:
++New auto-save preferences for FX chains: Context menu > Auto-save configuration > "Create filename from track/item name" (default) and "Create filename from 1st FX name" (useful to create FX libraries)
+Resources/Media file slots: new option and actions for playback synchronization
++SWS/S&M: Play media file in selected tracks (sync with next measure), slot n - where 'n' is in [1; 4], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file| (up to 99 slots)
++SWS/S&M: Loop media file in selected tracks (sync with next measure), slot n - where 'n' is in [1; 4], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file| (up to 99 slots)
++Added "advanced" option in the S&M.ini file to synchronously play/stop/pause/etc.. media files across tracks (see details in issue 435)
+
+Notes/Subtitles/Help window:
++Fixed refresh problem introduced in v2.1.0 #23
++The "big font" name can be customized in the S&M.ini file: "BigFontName" in the section [NOTES_HELP_VIEW]
++House cleaning: removed "Region/marker names" deprecated since v2.1.0 #23 (added marker and region subtitles/notes)
+
+Added other actions:
++SWS/S&M: Clear image window
++SWS/S&M: Open image window
+
+!v2.1.0 #24 (December 16, 2011)
+Image window:
++Fixed alpha channel problem
++Added stretch option in the context menu
+
+Resources window: bookmark names as defined by the user
+
+!v2.1.0 #23 (December 15, 2011)
+Notes/Help window -> Notes/Subtitles/Help
++Subtitles support: new mode "Marker/Region subtitles" in the top left dropdown box.
+ You can edit notes for regions and/or markers. Such notes are saved in project files.
+ When the view/text edition is locked, notes are displayed with a dynamic sized font (display Ã  la "Big clock") and they follow the play cursor position (i.e. subtitles!).
+ Useful for lyrics, video stuff (you can display subtitles or even to edit them in REAPER), etc...
+ Also added new buttons and actions to import/export SubRip subtitle files (.srt files, this format is supported by most video players) :
++SWS/S&M: Notes/Subtitles/Help - Import subtitle file... - It adds a region with notes for each subtitle of the loaded file
++SWS/S&M: Notes/Subtitles/Help - Export subtitle file... - It exports current region/marker notes as a subtitle file
+
+Resources window updates:
++Fixed few slot actions that could not be tied to bookmarks (they were not obeying the tick box "Tie slot actions")
+Added clear/delete slot actions (Issue 431):
++SWS/S&M: Delete all FX chain slots
++SWS/S&M: Delete all track template slots
++SWS/S&M: Delete all project template slots
++SWS/S&M: Delete all media file slots
++SWS/S&M: Delete all image slots
++SWS/S&M: Delete all theme slots - On Windows OS only
+ <strong>Important:</strong> a bit specific, so the following actions are hidden by default (i.e. 0 slot in the S&M.ini file but this is http://forum.cockos.com/showthread.php?p=984786#post984786|customizable|: up to 99 slots)
++SWS/S&M: Clear FX chain slot n
++SWS/S&M: Clear track template slot n
++SWS/S&M: Clear project template slot n
++SWS/S&M: Clear media file slot n
++SWS/S&M: Clear image slot n
++SWS/S&M: Clear theme slot n - On Windows OS only
+
+Resources/Media file slots improvements:
++Only send all notes off when MIDI files are stopped (i.e. no extra CC123 MIDI messages when MIDI files are played until the end). Useful for MIDI hardware outputs.
++Other improvements when stopping media files (better fix for issue 411)
+Added actions with pause:
++SWS/S&M: Play media file in selected tracks (toggle pause), slot n - where 'n' is in [1; 4], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file| (up to 99 slots)
++SWS/S&M: Play media file in selected tracks (toggle pause), prompt for slot
++SWS/S&M: Loop media file in selected tracks (toggle pause), prompt for slot - Infinite looping! To be stopped!
+ <strong>Important:</strong> due to its scary name, the following action is hidden by default (i.e. 0 slot in the S&M.ini file but this is http://forum.cockos.com/showthread.php?p=984786#post984786|customizable|: up to 99 slots)
++SWS/S&M: Loop media file in selected tracks (toggle pause), slot n - Infinite looping! To be stopped!
+
+New "Images" slot type in the Resources window: manage slots for PNG files (Issue 418)
++Reminder: you can switch the Resources window to "Images" in the top left dropdown box
++External drag-drop (e.g. drag a bunch of PNG files from an external tool -> drop them into the Resources window)
++Internal drag-drop (e.g. re-order slots, drag a slot from the Resources window -> drop it into a track) - Windows OS only
++Context menu: show image, set as track icon, etc.. various "auto-fill slots" features, insert/add/clear/etc..
+In this view, double-click and the ENTER key can be customized to:
++Show an image (in a dedicated dockable/resizable "S&M - Image" window)
++Set an image as track icon
++Add an image as an item to the current track
+Added slot actions for images:
++SWS/S&M: Open Resources window (images)
++SWS/S&M: Show image, slot n - where 'n' is in [1; 4], customizable in the S&M.ini file (up to 99 slots)
++SWS/S&M: Show image, prompt for slot
++SWS/S&M: Set track icon for selected tracks, slot n - where 'n' is in [1; 4], customizable in the S&M.ini file (up to 99 slots)
++SWS/S&M: Set track icon for selected tracks, prompt for slot
++SWS/S&M: Clear image slot...
++SWS/S&M: Open/clear image window
+
+Issue 430: Added Rename to Markerlist context menu, F2 renames too
+Issue 433: fixed creation of cycle actions broken in v2.1.0 #22
+
+House cleaning:
++Renamed all actions "SWS/S&M: Select/load project template [...]" into "Open/select project template [...]"
++Renamed all actions "SWS/S&M: Play/loop media file [...]" into "Loop media file [...]"
++Removed Media Pool dialog - replaced natively plus with Resource window "play" actions
+
+!v2.1.0 #22 (December 12, 2011)
+Resources window updates:
+Issue 408: added resource slot bookmarks
++New tiny add/delete bookmark buttons
++New tick box: slots actions can be tied to bookmarks instead of default resource types (FX chains, Track templates, etc..)
+Added actions (Issue 422):
++SWS/S&M: Auto-save FX Chain slots for selected tracks
++SWS/S&M: Auto-save input FX Chain slots for selected tracks
++SWS/S&M: Auto-save FX Chain slots for selected items
++SWS/S&M: Auto-save track template slots
++SWS/S&M: Auto-save track template (with items) slots
++SWS/S&M: Auto-save project template slot
++SWS/S&M: Auto-save media file slots for selected items
+Other:
++Added tooltips
++Issue 412: reorganized the GUI a bit, better docking/resizing behavior
++Default customizable action: the ENTER key now also acts as double-click
+
+Cycle action editor: re-fixed drag-drop of commands in the right list view re-broken in v2.1.0 #21
+Live Configs: the ENTER key activates the selected config
+Notes/help window: less flickering
+Properly keep marker/region colors when renumbering
+
+!v2.1.0 #21 (November 28, 2011)
+Cycle actions improvements:
++The Cycle action editor is now resizable, dockable, themable, etc..
+ Note: import, export and reset features have been moved to the context menu
++Cycle actions are now saved in a distinct file S&M_Cyclactions.ini (they were saved in the S&M.ini file before)
+ This is to ease REAPER's configurations export/import (ReaperConfigZip or copy/paste): the new S&M_Cyclactions.ini is exchangeable, not the S&M.ini file (which can contain local paths, etc..)
+ Auto upgrade: the new S&M_Cyclactions.ini file is automatically created with your current cycle actions (if needed, a S&M_Cyclactions.BAK file is also saved).
++OS X support: to be enabled in the S&M.ini file, details http://code.google.com/p/sws-extension/issues/detail?id=416#c0|here|: same editor than on Windows OS (minus the "action learn" feature)
+
+Live Configs:
++Fixed possible crash on Win 7 (when switching projects)
++Fixed possible loss of the "Input track" dropdown box (with veeeery long track names)
+
+Resources window:
++Track templates: new double click option, better context menu item names, etc..
++Fixed possible crash when removing a custom resource type from the S&M.ini file
++<strong>Limited "spam" in the action list: all slot actions now only have 4 instances by default</strong> (http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file|, up to 99 slots per action)
+ Note: your current numbers of slot actions are preserved, of course!
+
+Notes/help: do not update region/marker names when playing and editing (but only when the view is locked)
+
+<strong>S&M windows theming</strong>
+S&M windows now use themed buttons (i.e. toolbar_blank.png and composite_toolbar_overlay.png, if it exists)
+List views also obey following colors of the Theme Editor (REAPER > v4.11, on Windows OS and OS X!) :
++Window list selection bg
++Window list selection fg
++Window list selection inactive bg
++Window list selection inactive fg
+
+The following media item actions will work whatever is the current track selection:
++SWS/S&M: Takes - Move active up (cycling) in selected items
++SWS/S&M: Takes - Move active down (cycling) in selected items
++SWS/S&M: Takes - Activate lanes from selected items
++SWS/S&M: Takes - Activate lane under mouse cursor
+
+!v2.1.0 #20 (November 19, 2011)
+Added action:
++SWS/S&M: Send all notes off to selected tracks
+
+Resources window:
++Custom resource types !? Details http://forum.cockos.com/showpost.php?p=851041&postcount=690|here|.
++More REAPER-ish text filter (by name, by path and/or by comment, configurable in the context menu)
+Auto-save for media file slots:
++Select some items (incl. in-project MIDI items) and click on the top left Auto-save button
++The auto-save directory can be displayed/changed in the context menu
+Issue 411, fixes for S&M media files slot actions (thanks Anton9!):
++Fixed play and loop toggle actions when MIDI files are imported as in-project MIDI items (in the preferences)
++Fixed toggle states for all actions "Play/loop media file, slot n (toggle)" (toggle states were stuck to "off")
++Send all notes off when stopping MIDI files (i.e. fixed stuck notes)
+
+House cleaning:
++Renamed all "SWS/S&M: Apply FX chain [...]" actions into "Paste (replace) FX chain [...]"
++Notes/help window (in "Action help" mode): renamed the button "Wiki ALR" into "Online help..."
++Windows OS: do not systematically send deleted files to the recycle bin (hard delete for temp files)
++OS X: S&M logos like on Windows OS
+
+Fixed toggle states for all actions "SWS/S&M: Toggle arming of [...] envelope for selected tracks" (toggle states were stuck to "off")
+Issue 400: Fixed marker set paste in Reaper v4.x
+
+!v2.1.0 #19 (November 14, 2011)
+Issue 375: Fixed "SWS: Nudge master output 1 volume -1db" action
+
+!v2.1.0 #18 (November 14, 2011)
+<strong>Resources window: two new slot types, Media files and Themes!</strong>
+
+Resources window: new "Media files" slot type
+Manage slots for all media file types supported by REAPER (WAV, MIDI, etc..).
++Reminder: you can switch the Resources window to "Media files" in the top left dropdown box
++External drag-drop (e.g. drag a bunch of files from an external tool -> drop them into the Resources window)
++Internal drag-drop (e.g. re-order slots, drag a bunch of slots from the Resources window -> drop them into the arrange) - Windows OS only
+Context menu:
++Various "auto-fill slots" features, rename & delete file(s), insert/add/clear/etc.. slot, show path in explorer/finder, etc..
++Bulk-add multiple selected media file slots to current track, to new tracks or to selected items as takes
++Bulk-play or loop multiple media file slots
+In the list view the double-click can be customized to:
++Toggle play or loop in selected tracks
++Add media file to current track, to new track or to selected items as takes
+Added slot actions for media files:
++SWS/S&M: Open Resources window (Media files)
++SWS/S&M: Add media file to current track, slot n  - where 'n' is in [1; 4], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file| (up to 99 slots)
++SWS/S&M: Add media file to new track, slot n  - where 'n' is in [1; 4], customizable
++SWS/S&M: Add media file to selected items as takes, slot n - where 'n' is in [1; 4], customizable
++SWS/S&M: Play media file in selected tracks, slot n - where 'n' is in [1; 8], customizable
++SWS/S&M: Play media file in selected tracks, prompt for slot
++SWS/S&M: Play media file in selected tracks (toggle), slot n - where 'n' is in [1; 8], customizable
++SWS/S&M: Play media file in selected tracks (toggle), prompt for slot
++SWS/S&M: Play/loop media file in selected tracks (toggle), slot n - where 'n' is in [1; 8], customizable
++SWS/S&M: Play/loop media file in selected tracks (toggle), prompt for slot
++SWS/S&M: Play/loop media file in selected tracks, slot n - where 'n' is in [1; 8], customizable
++SWS/S&M: Play/loop media file in selected tracks, prompt for slot
++SWS/S&M: Stop playing media files
++SWS/S&M: Stop playing media files in selected tracks
+
+New "Themes" slot type in the Resources window (on Windows OS only):
+Manage slots for themes, i.e. slots for ReaperthemeZip files (unpacked themes are not supported).
++Reminder: you can switch the Resources window to "Themes" in the top left dropdown box
++External drag-drop (e.g. drag a bunch of .ReaperthemeZip files -> drop them into the Resources window)
++Internal drag-drop (e.g. re-order slots, drag a slot from the Resources window -> drop it into the arrange)
++Context menu: load theme, various "auto-fill slots" features, insert/add/clear/etc..
+Added slot actions for themes:
++SWS/S&M: Open Resources window (Themes)
++SWS/S&M: Load theme, slot n - where 'n' is in [1; 4], customizable in the S&M.ini file (up to 99 slots)
++SWS/S&M: Load theme, prompt for slot
++SWS/S&M: Clear theme slot...
+
+Show Bank Select and Bank/Program Select lanes in FNG CC lane actions
+Fixed FNG crashes (issue 410 and issue 390)
+
+Issue 375: Added actions to control the master track hardware output:
++SWS: Nudge master output 1 volume +1/-1db
++SWS: Set master output 1 volume to 0db
+
+Fixed issue 409: bad theming colors when REAPER version was < v4.11
+Many Xenakios actions now have consistent undo names (vs action names), removed a log file
+S&M.ini file: better presentation of configurable slot actions
+
+!v2.1.0 #17 (November 2, 2011)
+Added media file slot actions (details in issue 386):
++SWS/S&M: Play media file in selected tracks, slot n - where 'n' is in [1; 8], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file| (up to 99 slots). Supports any media file (.mid, .wav, etc..).
++SWS/S&M: Clear media file slot...
+
+Cycle action editor:
++Added "Consolidated undo points" tick box. On OS X (with basic cycle action editor), this option can be changed in the S&M.ini file, e.g. [Cyclactions]Undos=0
++Action learn: now, SWS actions can be learned whatever are the displayed columns in the action list
++Macro learn: a clear error message is displayed when the column "Custom ID" is not displayed in the action list
+
+Notes/Help window: region names can be edited too (they are edited/displayed according to edit/play cursor position)
+
+Resources window: the context menu item "Select/load project templates (new tab)" now also opens multiple selected projects in separate tabs (issue 369)
+
+All S&M themable windows use the following configurable colors of the Theme Editor (on Windows & REAPER v4.11):
++Window background
++Window text
++Window edit background
++Window list background
++Window list text
++I/O Window 3D highlight and shadows colors ("Main Window 3D" colors are poorly defined in the v4 default theme..)
+
+Optimizations:
++Many actions run faster
++"Auto-refresh toolbars" option (Main menu > Extensions > SWS options): optimizations for large projects
+
+House cleaning:
++Removed buggy/deprecated "Xenakios/SWS: Save current contents of actions list to file" (issue 311)
+
+!v2.1.0 #16 (October 14, 2011)
+S&M themable windows: fixed 3D highlight/shadow colors
+
+Resource window: Project Loader/Selecter overhauled
++Added context menu items "Set project loader/selecter from selection" and "Clear project loader/selecter configuration"
++Slots that are part of the configuration are now surrounded as such (in the 1st column)
++Added actions:
+ - SWS/S&M: Project loader/selecter: next (cycle)
+ - SWS/S&M: Project loader/selecter: previous (cycle)
++The current open project slot is automatically selected
++Reminder: the Project Loader/Selecter allows you opening some projects (or selecting project tabs) with following actions.
+ It is useful for live performance. Details and demo http://forum.cockos.com/showpost.php?p=831103&postcount=655|here|.
+
+Fixed autogrouping broken in 2.1.0 #15
+
+!v2.1.0 #15 (October 13, 2011)
+Added actions:
++SWS/AW: Toggle auto group newly recorded items
++SWS/S&M: Set selected tracks to first unused group (default flags)
++SWS/S&M: Set selected tracks to group n (default flags) - where 'n' is in [1; 8], http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file| (up to 32 groups)
++SWS/S&M: Remove track grouping for selected tracks
+
+Cue Buss Generator & Live Configs: track templates improvements (same as issue 376)
+Resources window: saved FX chains and track templates are now indented
+Notes/Help window: better resizing, improved "big font" display (less flickering)
+Faster REAPER startup, especially with large projects (for real this time!)
+
+House cleaning:
++Removed following actions (the action "Create cue buss track from track selection (use last settings)" is enough):
+ - SWS/S&M: Create cue buss track from track selection (pre-fader/post-FX)
+ - SWS/S&M: Create cue buss track from track selection (post-fader)
+ - SWS/S&M: Create cue buss track from track selection (pre-FX)
++Some actions were slightly renamed ("ME" -> "MIDI Editor")
+
+!v2.1.0 #14 (October 9, 2011)
+"Auto-refresh toolbars" option (Main menu > Extensions > SWS options): added toolbar enabled actions and advanced parameter
++SWS/AW: Set selected tracks timebase to time
++SWS/AW: Set selected tracks timebase to beats (position only)
++SWS/AW: Set selected tracks timebase to beats (position/length/rate)
++Added advanced parameter "ToolbarsAutoRefreshFreq" in the S&M.ini file: the default value should be fine but you can tweak it so that toolbars are refreshed without noticeable lag
++ToolbarsAutoRefreshFreq is in ms (min: 100, max: 5000). Make sure you exited REAPER before editing the INI file.
+
+SWS list views:
++Fixed SWS list views not obeying to sort requests (sometimes)
++Faster sort when clicking on headers
+
+Issue 394: SWS Wait... actions don't work on OS X, removed from OS X release.
+
+Added actions:
++SWS: Set selected items length...
++SWS/AW: Set selected tracks pan mode to stereo balance
++SWS/AW: Set selected tracks pan mode to 3.x balance
++SWS/AW: Set selected tracks pan mode to stereo pan
++SWS/AW: Set selected tracks pan mode to dual pan
+
+OS X: Now building with Xcode 3.2, please report any regression issues.
+
+!v2.1.0 #13 (September 23, 2011)
+Issue 385: Fixed slow REAPER startup introduced in v2.1.0 #11
+Issue 377: Frozen tracks support
+
+!v2.1.0 #12 (September 21, 2011)
+Issue 380: Fixed possible hang when exiting REAPER on Windows 7
+Issue 372:
++"SWS: Name selected track(s) like first sel item" is now "Name sel track(s) like first sel item on track"
++Added "SWS: Name sel track(s) like first sel item in project"
++Added undo point
++Fixed naming with in-project MIDI items
+
+!v2.1.0 #11 (September 15, 2011)
+Resources window / track templates: auto-save now fully mimics the way track templates are saved natively (details in issue 376)
+Resources window / FX Chains: auto-save now fully mimics the way FX Chains are saved natively (Issue 376)
+
+Optimization: faster SWS init / REAPER startup
+
+REAPER v4.03pre's track freeze: some actions won't have any effect on frozen tracks
+(temporary until this new native feature is not officially released and properly managed in SWS extensions)
+
+!v2.1.0 #10 (September 13, 2011)
+Live configs:
++Smoother switching between configs: now respects the native "track mute fade" preference (more to come..)
++Auto track selection: make sure that only configured tracks are selected while performing "Activate" and "Deactivate" actions (and restore selection just after)
++Live configs window: now displays user preset names (rather than ids)
++Fixed ignored FX presets switches (when "Auto track selection" was not ticked)
+
+Resources window:
++Context menu (issue 373): added menu items "Auto-save", "Auto-fill from project path" and "Auto-fill..."
++OS X (issue 373): multiple selection of slots
++Text filter: added "Name" criteria, filtering by path now ignores trailing filenames
+
+Issue 371: Added action "SWS: Normalize items to overall peak RMS", adjusts all selected items by the same amount (eg adjusting volume of a split/comped line)
+
+!v2.1.0 #9 (September 7, 2011)
+Issue 367: OS X: Fixed issues after opening docked windows
+
+!v2.1.0 #8 (September 4, 2011)
+Fixed crashing on undo reported in the main reaper forum thread
+Fixed possible SWS list views refresh issues introduced in v2.1.0 #5
+Cycle action editor: fixed drag & drop of commands (right list view) broken since v2.1.0 #5
+
+!v2.1.0 #7 (September 2, 2011)
+Issue 366: Fixed crash with Show Used CC lanes
+Issue 348: Fixed note on left hand edge of take sometimes being missed when applying groove
+Faster parsing and construction of midi takes
+Fix crash with groove quantize when no notes are selected
+Cycle action editor: fixed action renaming bug introduced in v2.1.0 #5
+Cycle action editor: fixed corrupted "Right click here..." cycle action introduced in v2.1.0 #5
+
+Marker list now supports save/restore and changing of colors ("Set color..." in the context menu), including en masse with ctrl-click - requires Reaper v4.03
+
+Resources window: "Auto-fill" (context menu) now adds slots rather than inserting them (i.e. do not change existing slot numbers)
+Resources window/FX Chains: support for track channels when FX Chains are saved in the Resources view (Issue 363)
+Resources window/Projects: added "Add recent projects" in the context menu (it adds all recent projects as listed in Main menu>File>Recent projects)
+Resources window/Projects: added project loader/selecter actions (useful for live performance):
++SWS/S&M: Project loader/selecter: configuration - This one allows you defining start/end slots (empty slot gaps are ignored)
++SWS/S&M: Project loader/selecter: next (cycle)
++SWS/S&M: Project loader/selecter: previous (cycle)
+
+Cycle actions:
++Undoing a cycle action now also restores its previous state (Issue 361)
++Cycle action buttons are now refreshed on undo
+
+Added action:
++SWS/S&M: Open project path in explorer/finder
+
+!v2.1.0 #6 (August 28, 2011)
+Issue 358: Fixed possible crash on project load
+Issue 360: Fixed SWS list crash introduced in v2.1.0 #5
+Issue 362: Fixed possible cycle action corruption and other sort issues
+
+!v2.1.0 #5 (August 22, 2011)
+Issue 353: Much improved SWS window list performance (eg Markerlist with many, many markers)
+Issue 354: Fixed crash when importing non-RPP project files.
+Removed broken "SWS/AW: Toggle TCP"
+
+!v2.1.0 #4 (August 21, 2011)
+Issue 352: fixed cycle actions that contain Custom actions
+
+Cycle action editor:
++Better drag & drop support for the right list view (drag & drop of commands)
++Cycle actions now support SWS/FNG actions
+
+!v2.1.0 #3 (August 21, 2011)
+Issue 77/Issue 147: Snapshots now store native envelopes:
++"Vol" option now stores pre and post FX envelopes
++"Pan" option now stores pre and post pan and width envelopes
++"Mute" option now stores mute envelopes
+
+Bug fix for new SWS install defaulting to deprecated FX snapshot storage (thanks, cylens!)
+
+!v2.1.0 #2 (August 18, 2011)
+Issue 340 / Issue 60: Added actions for item/sample analysis, especially drum sample pack creating:
++SWS: Normalize items to RMS (entire item)
++SWS: Normalize items to peak RMS (Like watching for the highest a RMS meter goes over time)
++SWS: Organize items by peak
++SWS: Organize items by RMS (entire item)
++SWS: Organize items by peak RMS
++SWS: Set RMS analysis/normalize options (Sets target db for normalize and window size for peak RMS calculation)
++Also similar are existing actions "SWS: Analyze and display item peak and RMS" and "SWS: Move cursor to item peak amplitude"
+
+Issue 77 / Issue 147: Added pan law to pan snapshots
+
+!v2.1.0 #1 (August 9, 2011)
+Offical SWS v2.1 release to coincide with Reaper v4!  Please note this version of SWS will work with both Reaper v3 and v4, but v3 support will be dropped in the future.  Please support Cockos and purchase a v4 license if you do not already own one.
+
+!v2.0.0 #35 (August 8, 2011)
+Issue 332: OS X: Fixed cycle action editor -- now replaced with a basic "create cycle action" modal dialog box. The dialog box can be opened from the actions list (there are 3 "create cycle action" actions) but not from the main "Extensions" menu like on Windows.
+Issue 335: OS X: Fixed crash when starting Reaper with Notes/Help window previously open
+
+Added actions:
++SWS/AW: Paste (pastes intelligently obeying "trim behind" mode to include empty space)
++SWS/AW: Insert click track (inserts a new track named "Click" with a click source)
++SWS/AW: Toggle click track mute (intelligently mutes the click track if it exists, or toggles the built in metronome if there is no click track)
+
+!v2.0.0 #34 (August 3, 2011)
+Fixed cycle actions window context menu on OS X
+
+!v2.0.0 #33 (August 2, 2011)
+Fixed "stuck" cycle actions window on OS X
+
+!v2.0.0 #31 (July 31, 2011)
+Added configurable slot actions (hidden by default, http://forum.cockos.com/showthread.php?p=984786#post984786|customizable in the S&M.ini file|):
++SWS/S&M: Apply input FX chain to selected tracks, slot n
++SWS/S&M: Paste input FX chain to selected tracks, slot n
+
+Issue 324: Snapshot support for v4 pan styles/settings
+Added action "SWS: Toggle selecting one grouped item selects group"
+Fixed x64 installer issue
+Renamed actions "Set displayed CC lanes, slot n" into "Restore displayed CC lanes, slot n"
+Removed useless action "SWS/S&M: Notes/Help - Disables auto updates"
+
+!v2.0.0 #30 (July 7, 2011)
+Issue 309: Add action "SWS: Open last project"
+Issue 310: Fixed Autorender not working in Reaper v4.0 beta
+Issue 315: Add action "SWS: Toggle between current and saved track selection"
+Issue 319: Fixed double-click renaming of fields on OS X
+Issue 323: Fixed duplicated "Recall snapshot" actions
+Issue 326: Renamed "set/unset/toggle master send" actions to "master outputs", added toggles to 12
+
+S&M Resources window:
+<strong>The number of slot actions can now be customized in the S&M.ini file, in the new section [NbOfActions].</strong>
+*Quit REAPER* before customizing the number of slots/actions (none: 0, max: 99).
+An example (with the current list of configurable actions and their default numbers) is http://reaper.mj-s.com/NbOfActions.txt|here|.
+This also "unhides" (i.e. 0 slot by default) 2 new actions:
++SWS/S&M: Apply FX chain to selected items, all takes, slot n
++SWS/S&M: Paste FX chain to selected items, all takes, slot n
+
+Beware! following actions are now configurable but their custom ids have changed:
++SWS/S&M: Trigger next preset for FX n of selected tracks
++SWS/S&M: Trigger previous preset for FX n of selected tracks
+ => if used in toolbars, macros, etc.. an update is needed (sorry about that!)
+
+!v2.0.0 #29 (June 30, 2011)
+<strong>Added "Cycle action editor"</strong> (Main menu > Extensions > Cycle Action editor):
++<strong>A step-by-step example showing how to create a Cycle Action is available http://forum.cockos.com/showthread.php?t=84978|here|</strong> (thanks Mercado_Negro!)
++Unlimited number of cycle actions
++Unlimited number of commands per cycle action
++Import/export features
++Learn selected commands of the action list (Windows OS only)
+
+Other cycle action updates:
++Performance improvements
++Consolidated undo points
+
+S&M Notes/help:
++When the view is locked, the text is now displayed with a dynamic sized font (i.e. display Ã  la "Big clock")
++Added marker names (in the top left dropdown box). They are edited/displayed according to edit/play cursor position (can be used for lyrics, etc..)
++Demo http://reaper.mj-s.com/S&M_big_notes.gif|here|
+
+Issue 308: Fixed "Select/load project template" actions
+Issue 317: Fixed Shorcircuit hang when set online with open GUI (needs "BuggyPlugsSupport=1" in the S&M.ini file, full story http://code.google.com/p/sws-extension/issues/detail?id=317|here|)
+Tweaks: little Unicode fixes, better message boxes on OS X..
+
+Added actions:
++SWS/S&M: Open Resources window (project templates)
++SWS/S&M: Clear project template slot...
+
+!v2.0.0 #28 (June 13, 2011)
+Fixed duplicated "take pan envelopes" actions
+Fixed subtle "recursive cycle action" cases (e.g. a cycle action that calls a macro that calls a cycle action)
+
+Added actions:
++SWS/S&M: Copy FX chain (depending on focus)
++SWS/S&M: Paste FX chain (depending on focus)
++SWS/S&M: Paste (replace) FX chain (depending on focus)
++SWS/S&M: Cut FX chain (depending on focus)
+
+S&M Find: added "Zoom/Scroll" option (when searching for items)
+
+<strong>S&M Resources: now also supports project templates</strong> (i.e. new option in top left dropdown box)
+Added options/popup menu items common for FX chains, track template & project templates:
++Display current auto-save path
++Set auto-save directory to default resource path
++Set auto-save directory to project path (/FXChains, TrackTemplate or ProjectTemplates)
+Added project template slot actions:
++SWS/S&M: Select/load project template, slot n  - where 'n' is in [1; 10]
++SWS/S&M: Select/load project template, prompt for slot
++SWS/S&M: Select/load project template (new tab), slot n  - where 'n' is in [1; 10]
++SWS/S&M: Select/load project template (new tab), prompt for slot
+
+House cleaning: simplified a bunch of actions names (i.e. "Load/apply", "Load/paste", etc.. => "Apply", "Paste", etc..)
+
+!v2.0.0 #27 (June 4, 2011)
+Issue 301: Fixed "Crossfade adjacent selected items" crash
+Issue 302: Fixed "Move right by 1 sample (on grid)" action
+Issue 298: Find "all" now zooms to found items (reminder: find "next/prev" scrolls to the found item)
+
+Added actions:
++SWS/S&M: Toggle all take FX online/offline for selected items
++SWS/S&M: Set all take FX offline for selected items
++SWS/S&M: Set all take FX online for selected items
++SWS/S&M: Toggle all take FX bypass for selected items
++SWS/S&M: Bypass all take FX for selected items
++SWS/S&M: Unbypass all take FX for selected items
++SWS/S&M: Set active take pan envelopes to 100% right
++SWS/S&M: Set active take pan envelopes to 100% left
++SWS/S&M: Set active take pan envelopes to center
++SWS/S&M: Scroll to selected item (no undo)
+
+S&M Resources window:
++Fixed grayed "Add slot" and "Insert slot" popup menu items (since v2.0.0 #26)
++Track templates: auto save now also works with the master track (saving a "master track template" is not possible natively)
++Track templates: applying track templates to the master track is now possible
++Track templates: tweaks (new popup menu items, wordings..)
+
+Padre's Envelope Processor and LFO generator now respect the "Per-take pitch envelope range" preference (was hard coded to 3 semitones before)
+
+!v2.0.0 #26 (May 28, 2011)
+Merged tiny extension plugin (2 new actions that can help WALTERing themes
++SWS/S&M: Show theme helper (all tracks) - Windows OS only
++SWS/S&M: Show theme helper (selected track) - Windows OS only
+
+Theming updates for all S&M windows (Find, Resources, Notes/help and Live Configs):
++Dynamic positioning of themed dropdowns, buttons, etc.. (i.e. no more truncated texts, no more unaligned components)
++Windows OS: more use of themes' background colors (instead of "white backgrounds")
++Fonts are now updated when switching themes
+
+Added actions:
++SWS/S&M: Set selected tracks MIDI input to all channels
++SWS/S&M: Set selected tracks MIDI input to channel n - where 'n' is in [1; 16]
++Issue 291: SWS/S&M: Map selected tracks MIDI input to source channel
++Issue 291: SWS/S&M: Map selected tracks MIDI input to channel n - where 'n' is in [1; 16]
+
+S&M Resource window updates:
++New option (in popup menu) to filter the list view by comments or paths
++Switch to "fast listview" mode only if there are more than 500 slots
+
+S&M Find updates:
++Issue 298: move view to found item (more to come..)
++Use text buttons rather than icons (looked bad with some themes)
++Red "Not found!" message
+
+House cleaning:
++S&M Live Configs: dropped OS X support for user FX presets (=> Windows OS only)
++Removed "SWS/S&M: Close all routing windows"
++Removed "SWS/S&M: Close all envelope windows"
+
+Issue 300: Fixed "Open REAPER project in item BWAV info" crash
+
+!v2.0.0 #25 (May 22, 2011)
+Issue 273: New actions for moving the edit cursor:
++SWS: Move cursor left/right 1 sample (on grid)
++SWS: Move cursor left/right 1ms/5ms
++SWS: Move cursor left/right by default fade length
+
+Issue 283: New action "SWS: Select unmuted tracks"
+Issue 286: New actions "SWS: Set master mono" and "SWS: Set master stereo"
+Issue 297: Fixed bug with project file size increasing with each save after using groove tool. Load and resave affected projects to automatically fix.
+
+!v2.0.0 #24 (May 18, 2011)
+Zoom updates:
++Option to seek play when moving the edit cursor on zoom in
++Mouse cursor doesn't move in Y when drag zooming, more Abelton Live like (Windows OS only)
+
+S&M Resource window updates:
++Fixed drag-drop of slots within the list view (comments were lost)
++Fixed text editing when some columns are hidden/moved
+
+!v2.0.0 #23 (May 17, 2011)
+Fixed ruler not moving edit cursor
+
+!v2.0.0 #22 (May 17, 2011)
+SWS Zoom updates:
++Merged in Boreg's drag zoom plugin, see the http://forum.cockos.com/showthread.php?t=42722|related thread|. Open SWS Zoom preferences (Extensions menu) to enable (OS X, too!)
++Issue 212: Added options "Move edit cursor when zooming in" and "Set time selection when zooming in"
+
+Snapshot improvements:
++Issue 107: Add option to snapshots window for "Show snapshots for selected tracks only"
+ This filters the snapshots to include only snaps that include selected tracks
++Issue 179: Separate "selected tracks only" options for save/recall
++Issue 294: Fixed "Save over current snapshot" and others inappropriately clearing the active snapshot
+
+Fixed the following actions/dialog boxes (crash with v4 empty take lanes):
++Xenakios/SWS: Rename selected takes (deprecated)...
++Xenakios/SWS: Take mixer
++Xenakios/SWS: Toggle selected takes normalized/unity gain
++Xenakios/SWS: Trim/untrim item left edge to edit cursor
++Xenakios/SWS: Implode items to takes and pan symmetrically
++Xenakios/SWS: Pan takes of item symmetrically
++Xenakios/SWS: Set item playrate based on item pitch (and reset pitch)
++Xenakios/SWS: Set item pitch based on item playrate
++Xenakios/SWS: Switch item contents to next cue
++Xenakios/SWS: Switch item contents to next cue (preserve item length)
++Xenakios/SWS: Switch item contents to previous cue
++Xenakios/SWS: Switch item contents to previous cue (preserve item length)
++Xenakios/SWS: Switch item contents to first cue
++Xenakios/SWS: Switch item contents to random cue
++Xenakios/SWS: Switch item contents to random cue (preserve item length)
+
+House cleaning:
++Dropped OS X support for all "SWS/S&M: Trigger preset" actions (=> Windows OS only)
++Removed "Xenakios/SWS: Select last track of folder" ("not implemented" message, issue 284)
++Removed duplicate "Xenakios/SWS: Toggle selected tracks visible in mixer"
+
+!v2.0.0 #21 (May 11, 2011)
+Fixed browsing for folder in Windows when path contains unicode characters
+Fixed opening of groove presets with unicode characters in paths on Windows
+Toolbar auto-refresh option disabled by default
+House cleaning: removed "SWS/S&M: Let REAPER breathe" (see why http://forum.cockos.com/showpost.php?p=737539&postcount=378|here|.)
+
+Cycle action updates:
++MIDI Editor cycle actions can also run custom macro or ReaScripts
++Cycle actions can also run SWS actions
++More customizable cycle actions (and toolbar buttons):
+ - Optional dynamic action renaming (e.g. different tooltips for each step)
+ - Optional toggle state (buttons can light up or not)
+
+!v2.0.0 #20 (May 5, 2011)
+Added cycle actions (user configurable):
++SWS/S&M: Create cycle action
++SWS/S&M: Create cycle ME action (event list)
++SWS/S&M: Create cycle ME action (piano roll)
+
+Added actions:
++SWS/AW: Render tracks to stereo stem tracks, obeying time selection
++SWS/AW: Render tracks to mono stem tracks, obeying time selection
++SWS/AW: Cascade selected track inputs
++SWS/AW: Split selected items at edit cursor w/crossfade on left
+
+Bug fixes:
++Fixed bug in "autogroup" actions
+
+!v2.0.0 #19 (April 29, 2011)
+Added toolbar actions with "auto-refreshed" button states (if the new option "Main menu > Extensions > SWS Options > Enable toolbars auto refresh" is ticked):
++SWS/S&M: Toolbar right item selection toggle
++SWS/S&M: Toolbar left item selection toggle
++SWS/S&M: Toolbar top item selection toggle - Windows OS only!
++SWS/S&M: Toolbar bottom item selection toggle - Windows OS only!
+ These actions are to prevent user errors with selected items that are offscreen.
+ The idea is to put those actions into a toolbar: they will light up when some selected items are not visible in the arrange (offscreen).
+ Clicking those buttons will deselect offscreen items (and re-selects them on toggle).
+ See details, howto and toolbar auto-refresh anim http://forum.cockos.com/showpost.php?p=728774&postcount=315|here|.
++AW's grid actions button states now reflect the current grid setting (when changed elsewhere in REAPER)
+ See grid toolbar auto-refresh anim http://stash.reaper.fm/8523/awGridToolbar.gif|here| and details about Adam's grid actions http://forum.cockos.com/showthread.php?p=706294|here|.
++SWS/S&M: Toolbar track envelopes in touch/latch/write mode toggle
+ This action sets track envelopes that are in one of the write modes into read mode and re-sets those previous write modes on toggle. Related toolbar buttons will light up if any envelope is in one of the write modes.
++SWS/S&M: Toggle toolbars auto refresh enable
+
+Added FX preset actions (v4 only, see implementation remarks http://forum.cockos.com/showpost.php?p=728774&postcount=315|here|). They works with any type of FX and any presets (user or factory presets):
++SWS/S&M: Trigger next preset for selected FX of selected tracks
++SWS/S&M: Trigger previous preset for selected FX of selected tracks
++SWS/S&M: Trigger next preset for FX n of selected tracks - where 'n' is in [1; 4]
++SWS/S&M: Trigger previous preset for FX n of selected tracks - where 'n' is in [1; 4]
++SWS/S&M: Trigger preset for selected FX of selected tracks (MIDI CC absolute only)
++SWS/S&M: Trigger preset for FX n of selected tracks (MIDI CC absolute only) - where 'n' is in [1; 4]
+ Remarks: these 2 last MIDI actions are present in the "S&M Extension" section (see top right dropdown in the action dialog box).
+ They are a bit different from the native "Link to PG change" feature: they work with any type of FX (e.g. JS).
+ Bonus: since v4, "Program Change" MIDI events can be learned.
++S&M Live Configs window: the "User preset" column is back !
+
+Added other actions:
++SWS/S&M: Pan active takes of selected items to 100% right
++SWS/S&M: Pan active takes of selected items to 100% left
++SWS/S&M: Pan active takes of selected items to center
+ Note: "pan takes" not "pan cakes".
++SWS/S&M: Dump action list (w/o SWS extension) - Windows OS only!
++SWS/S&M: Dump action list (w/ SWS extension) - Windows OS only!
+ Note: dumped files are formatted (readable in Excel for example). See how to use these 2 actions http://wiki.cockos.com/wiki/index.php/S%26M_Dump_action_list|here|.
+
+Find window:
++SWS/S&M: Find next
++SWS/S&M: Find previous
++Preserve the searched string (when closing, undocking, etc.)
++Added shortcuts when the window is focused (F3 = find next, shift-F3 = find previous)
+
+Fixes, tweaks, house cleaning:
++Fixed issue 287 (Unexpected behavior of "SWS/S&M: focus next floating fx for selected tracks (cycle)")
++Many S&M track FX (and FX chain) actions run faster ("fix" for http://forum.cockos.com/showpost.php?p=724194&postcount=13|this report|)
++All S&M track envelope arming actions now support v4 panning (width/dual pan)
++Updated "SWS/S&M: Dump ALR Wiki summary [snip]" actions (FNG extension merge)
++Removed "SWS/S&M: Toggle show all routing windows" (too much limitations)
++Removed "SWS/S&M: Toggle show all envelope windows" (too much limitations)
++Removed "SWS/S&M: Save selected item as item/take template..." (private)
+
+!v2.0.0 #18 (March 28, 2011)
+Added actions:
++Issue 256: "SWS: Toggle auto add envelopes when tweaking in write mode"
++Issue 280: "SWS: Toggle grid lines over/under items"
++"SWS: Horizontal scroll to put play cursor at 10%"
+
+Readded Xenakios' "Command parameters" to the Extensions menu
+Fix crash when parsing a MIDI take with a large extended MIDI event.
+
+!v2.0.0 #17 (March 16, 2011)
+Added actions (issue 165, Windows OS only):
++SWS/S&M: Focus main window (close others)
++SWS/S&M: Focus next window (cycle, hide/unhide others)
++SWS/S&M: Focus previous window (cycle, hide/unhide others)
+Remark: for these actions to work, keyboard shortcuts must use modifiers in order to pass-through to the main window (ex: Ctrl+minus = focus previous, Ctrl+plus = focus next)
+
+House cleaning, removed "duplicated" actions (remaining focus actions now also focus the main window on cycle):
++SWS/S&M: Focus previous floating FX for selected tracks (+ main window on cycle)
++SWS/S&M: Focus next floating FX for selected tracks (+ main window on cycle)
++SWS/S&M: Focus previous floating FX (+ main window on cycle)
++SWS/S&M: Focus next floating FX (+ main window on cycle)
+
+New actions from Adam Wathan:
++SWS/AW: Enable 'link time selection and edit cursor'
++SWS/AW: Disable 'link time selection and edit cursor'
++SWS/AW: Toggle 'link time selection and edit cursor'
++SWS/AW: Enable clear loop points on click in ruler
++SWS/AW: Disable clear loop points on click in ruler
++SWS/AW: Toggle clear loop points on click in ruler
++SWS/AW: Set project timebase to time
++SWS/AW: Set project timebase to beats (position only)
++SWS/AW: Set project timebase to beats (position, length, rate)
+
+S&M Notes/help window: optimizations, fixed issue 204 (actions were not refreshed when the view was docked)
+S&M GUI tweaks
+Bug fixes for "Fill Gaps" and "AW Fade" actions
+
+!v2.0.0 #16 (March 9, 2011)
+Added actions:
++SWS: Ignore next marker action
++SWS: Move cursor and time sel left to grid
++SWS: Move cursor and time sel right to grid
+
+"Load project template X" actions are now automatically added for any number of project templates that exist in the ProjectTemplates directory.
+
+!v2.0.0 #15 (March 4, 2011)
+These actions now support v4 empty take lanes as well as alternate peak (.reapeaks) cache path:
++SWS/S&M: Delete selected items' takes and source files (prompt, no undo)
++SWS/S&M: Delete selected items' takes and source files (no undo)
++SWS/S&M: Delete active take and source file in selected items (prompt, no undo)
++SWS/S&M: Delete active take and source file in selected items (no undo)
+
+Added actions (issue 268):
++SWS/S&M: Reassign MIDI learned channels of all FX for selected tracks (prompt)
++SWS/S&M: Reassign MIDI learned channel of selected FX for selected tracks (prompt)
++SWS/S&M: Reassign MIDI learned channels of all FX to input channel for selected tracks
+
+Fixes:
++Some v4 empty take lanes management in S&M actions
++"Load/apply and Load/paste fx chain to selected tracks" actions that were adding input-fx-chains instead of standard track-fx-chains
+
+Shift-click in marker list now makes a time selection
+
+!v2.0.0 #14 (March 1, 2011)
+Performance improvements (REAPER startup, S&M actions related to notes, FX, FX chains and track grouping)
+S&M FX chains actions now properly manage FX comments
+
+v4 input FX chains support
++Added input FX chain features in the S&M Resources window (see below)
++Added actions:
+ - SWS/S&M: Clear input FX chain for selected tracks
+ - SWS/S&M: Copy input FX chain from selected track
+ - SWS/S&M: Cut input FX chain from selected tracks
+ - SWS/S&M: Paste (replace) input FX chain to selected tracks
+ - SWS/S&M: Paste input FX chain to selected tracks
+Remark:
++With S&M FX chain actions, you can copy a FX chain from a track, an item and paste it as an *input* FX chain and vice et versa (shared FX chain clipboard)
++v4 only! (those actions are visible in v3 but are no-op)
+
+S&M Resources window updates:
++Auto save button (top right) now *adds* new slots. Note: before, a new slot was inserted before the selected one but this could mess slot actions (because all following slot ids were changed..)
++Auto save button now proposes to define the auto save directory when needed
++Tweaks (better undo wordings, few user prefs were not saved, popup menu clean-up, etc.)
+In "FX chain" mode (i.e. "FX chain" selected in the top left dropdown box):
++Added double click option to apply (or paste) FX chain slots as *input* FX chains (visible but nop in v3, see http://reaper.mj-s.com/S&M_ResourcesView_InputFx.jpg|screenshot|)
++Auto save FX chain (top right button) can now be configured to save track FX chains, *input* FX chains as well as active takes' FX chains, see http://reaper.mj-s.com/S&M_ResourcesView_popup.jpg|new popup menu|
+
+Added actions (issue 258):
++SWS/S&M: Move selected FX up in chain for selected tracks
++SWS/S&M: Move selected FX down in chain for selected tracks
++SWS/S&M: Select last FX for selected tracks
+
+!v2.0.0 #13 (February 24, 2011)
+Installers updated to include grooves (installed in Reaper resource path\Grooves on Win, manual install for OS X)
+Fixed sws-autocoloricon.ini reading on OS X
+S&M Find now supports v4 empty take lanes
+Fixed issue 262: pre-FX and post-fader S&M cue buss actions now obey send & HW output default prefs (i.e. prefrences > project > track/send defaults). Note: pre-fader busses still mimic the volume of selected tracks.
+Restored deprecated Xen's "Load track template n" (where n>10) actions
+
+!v2.0.0 #12 (February 18, 2011)
+Autorender: Fixed another silent render bug for relative media items not in the project root directory
+
+!v2.0.0 #11 (February 16, 2011)
+Issue 245: Added "SWS: Goto/select next marker/region" and "SWS: Goto/select previous marker/region"
+Autorender: Fixed bug where projects with relative paths to media files rendered silent tracks
+Removed "SWS: Toggle auto fades for new items", use native "Toggle enable/disable default fadein/fadeout" instead
+
+!v2.0.0 #10 (February 7, 2011)
+Support for v4 empty take lanes:
++S&M build lanes actions now turn "take mosaics" into lanes using v4 empty takes (rather than v3 empty takes)
+ These actions still useful to create take lanes Ã  la v4 from older project saved with "mosaics", for example.
++The action "S&M Remove empty take/item among selected items" now also removes v4 empty takes
+ Remark: this action was limited to v3 empty takes before, i.e. takes with empty source
++The action "S&M Clear active take/items" now clears takes using v4 empty takes (rather than v3 empty takes). If all takes of an item are empty, the item is removed.
+ Remark: a v4 empty take can be removed thanks to "S&M Cut active take" (removing an empty take is not yet possible natively)
+
+Main "Extensions" menu:
++Added AW's "Fill gaps..."
++Fixed "Envelope Processor..." menu item
++(Temporary?) removed "Item/Take" sub-menu (Xenakios actions need to be updated for v4)
+
+Autorender:
++Added option to only render tracks with a specified prefix (and optionally remove that prefix from rendered files)
++Added global preferences menu
++Added option to not prepend track numbers to rendered files
++Added limited support to append duplicate numbers to rendered files that would otherwise overwrite each other (This Song(2).mp3)
++Added auto-calculation of track pad length (for projects with large numbers of regions to be rendered)
+
+Fixed crash when running some of the S&M Resources window's slot actions (applying, importing, pasting, etc. track templates or FX chains from unexisting slots)
+Fixed corner case refresh bug in S&M Resources window
+Issue 250: Added action "SWS: Toggle auto fades for new items"
+Added action "SWS: Toolbar mute toggle"
+Fixed directory scan for grooves on OS X
+
+!v2.0.0 #9 (February 4, 2011)
+Autorender:
++Added global preferences dialog with default render directory option, option to allow stem rendering
++Fixed crash with new portable installations
+
+Added actions:
++"SWS: Toolbar solo toggle" (Note, this replaces "SWS: Are any tracks soloed? [no-op, for toolbar]", please re-add to toolbar)
++"SWS: Toolbar arm toggle"
++"SWS: Set all sel tracks inputs to match first sel track"
+
+Duplicate recording input check now ignores "input monitoring only" record mode.
+Fixed possible S&M.ini file corruption (thanks Mercado Negro!)
+
+House cleaning (more to come):
++Main menu: Moved all SWS, S&M and Shane extension menu items in the main "Extensions" menu
++Main "Extensions" menu filled in alphabetical order (and not structured by developper anymore)
+
+!v2.0.0 #8 (February 1, 2011)
+Autorender updates:
++No need to enter data into the project notes field, now use "Autorender: Edit project metadata"
++Unicode character support (Windows only? Testing needed)
+
+Support for v4 empty take lanes (more to come):
++Fixed all S&M actions relate to takes
++Fixed take envelope processing in Padre's Envelope LFO Generator and Envelope Processor
++Example: with items starting with a v4 empty take, some actions were broken or had no effect..
+
+Added pitch take envelope support for Padre's Envelope LFO Generator and Envelope Processor (v4 only)
+
+Added actions:
++SWS/S&M: Copy active take
++SWS/S&M: Cut active take
++SWS/S&M: Paste take
++SWS/S&M: Paste take (after active take)
+
+House cleaning (more to come):
++Main "Extensions" menu: added Padre's Envelope LFO Generator and Envelope Processor
++Main "Extensions" menu: removed Xenakios' "Misc/Experimental" sub-menu (actions remain available in the action list)
++Media item context menu: removed Xenakios' "Item/Take selection" and "Item/Take manipulation" sub-menus (actions remain available in the action list and in the main "Extensions" menu)
++TCP context menu: removed Xenakios' "Track/Mixer/Envelopes" sub-menu (actions remain available in the action list and in the main "Extensions" menu)
++Tagged action "Xenakios/SWS: Project media..." as deprecated
+
+Issue 50:  SWS: Create regions from sel item(s) named with take
+Issue 126: Warn about recording same inputs on multiple tracks: http://www.standingwaterstudios.com/shup/RecInputCheck.png Also added actions "SWS: Enable/Disable checking for duplicate inputs when recording."
+Issue 244: Added "SWS: Set selected take(s) to custom color X" actions
+Issue 246: Added toolbar-status only action "SWS: Are any tracks soloed? [no-op, for toolbar]"
+Fixed using Windows generated reaconsole_customcommands.txt files on OS X.
+
+!v2.0.0 #7 (January 29, 2011)
+NEW: Preliminary version of "Autorender."  Thanks, Shane!  For more information, run Autorender: show instructions from the File->Autorender menu (or actions).
+
+Added actions:
++SWS/S&M: Show take pitch envelope - v4 only (visible but no-op in v3)
++SWS/S&M: Hide take pitch envelope - v4 only (visible but no-op in v3)
++SWS/S&M: Copy selected track grouping
++SWS/S&M: Cut selected tracks grouping
++SWS/S&M: Paste grouping to selected tracks
+
+Notes/help window fixes:
++Pass keystrokes to the main window when locked (i.e. lock button)
++Properly init S&M project notes with REAPER ones when possible
+
+!v2.0.0 #6 (January 27, 2011)
+Fixed corruption of last item in auto color list
+Fixed keyboard focus issues
+Improved groove tool keyboard handling
+(#5b) Improved "SWS: Set all takes to next/prev mono/stereo channel mode" actions
+
+!v2.0.0 #5 (January 26, 2011)
+FNG Groove Tool Updates:
++Fixed applying strength to velocity groove quantize
++Added separate velocity strength control to Groove Tool (set to zero to disable either)
++Fixed refresh of groove list in Groove Tool when changing folders
++Remove zero length notes when modifying MIDI take state (bad things happen otherwise)
++Code cleanup and performance improvements for MIDI take state reading and writing
++Added "FNG: Groove Tool..." to the Extensions menu
++Removed menu bar and moved applicable items to the context menu
++Removed "passthrough" action/keyboard section workaround
+
+S&M updates:
++Resources window:
+ - Performance improvements: REAPER start-up & shutdown, show/hide, auto fill, all editions features, filtering, etc.
+ - Track templates: added "Paste items to sel. tracks" and "Replace items of sel. tracks" as customizable double-click behaviours
+ - Track templates: added toggle popup menu item "Save track templates with items" (so that track templates can be auto-saved w/ or w/o items)
++Notes/help window:
+ - Project notes: now displays the related RPP filename
+ - Project notes: initialize S&M project notes with REAPER's ones when possible (i.e. when S&M ones don't exist but REAPER's ones exist)
+ Reminder: due to an API limitation, for the moment the "project notes" displayed in the Notes/help window are different from REAPER's one
++Other:
+ - Performance improvements for all cue buss & routing actions
+ - Fixed corner case Cue buss crash
+ - GUI tweaks
+
+Fixed bug that "silently" deleted items in SWS lists while renaming (Thanks, Bevosss)
+4 new actions: "SWS: Set all takes to next/prev mono/stereo channel mode"
+
+!v2.0.0 #4 (January 23, 2011)
+Groove Tool fixes:
++Fixed pass through to main window
++Fixed muted midi events bug introduced in v2.0.0 #3
++Modified Undo handling for items
+
+Fixed auto color needing to be forced in some situations
+Fixed some screenset loading issues
+
+!v2.0.0 #3 (January 22, 2011)
+<strong>Fingers/FNG extension update/merge!</strong>
++Issue 238: Groove quantize now supports velocity
++Issue 234: Added support for unquantize for MIDI for any FNG action modifying MIDI data
++Update dialog to use SWS-style dockable windows
++Note: grooves are not part of the installer, yet. Download FingersExtras.zip from the beta download area.
+
+Auto color/icon fixes from really broken build #2.
+Auto color/icon information is stored in a new file sws-autocoloricon.ini for easy sharing (old settings copied for you)
+Issue 225: Fixed selected text in Notes/help window when switching between docker tabs
+Fix for toggle actions to focus SWS views when docked
+
+!v2.0.0 #2 (January 21, 2011)
+Fix to close our windows on initial screenset load (thanks Bevosss)
+Auto color/icon updates:
++Icons are removed if a track changes name to something not recognized
++Auto-icon won't overwrite custom icons
++Added "Ignore" field to the color, so you can auto-icon without changing color of that track too
++Proper priority order icon setting
++Performance enhancements
+
+!v2.0.0 #1 (January 19, 2011)
+<strong>BETA: CAUTION !</strong>
+Due to a change in the way S&M.ini file is managed, you may face some issues when switching between SWS official <-> SWS beta.
+Well, a clean upgrade is automatically managed when SWS official -> SWS beta, but you'll probably loose your FX Chains setup when switching back to SWS beta -> SWS official.
+So a backup of the "official" S&M.ini might be a good idea (or sticking with the beta as the new S&M.ini format won't change).
+
+<strong>Short changelog:</strong>
+
++PiP support
++Many S&M updates (including new http://reaper.mj-s.com/resourceview.jpg|"Resources" window|: FX chains + Track templates + goodies). See details below.
++Updated SWS Autocolor view: now also features auto track icon. Demo http://reaper.mj-s.com/autoicon.gif|here|.
++Preliminary V4 updates (S&M, Padre, Xenakios)
++House cleaning, fixes
+
+<strong>Changelog details:</strong>
+
+Added S&M http://reaper.mj-s.com/resourceview.jpg|Resources window|
+The "FX chains" view turned into a "Resources" window: FX chains + Track templates + goodies
+The same features that exist for FX chains are now available for track templates too. A cool thing now is that we can patch existing tracks with track templates (and not only  "add track template as new track"). Well, some other sort of snapshots..
+Also, saving track templates and FX chains is eased thanks to the "auto-save" feature, see below. A new feature "Auto-fill" also allows creating slots automatically.
+Bonus: check out Tallisman's awesome FX Chain library, http://forum.cockos.com/showthread.php?t=35128|here|!
++Auto-save feature:
+ An "Auto-save" button has been added: it automatically saves the selected tracks' FX chains (or track templates) and insert the related files/slots in the resource list.
+ It's a one "click feature", i.e. no file browser is displayed: filenames are automatically generated from track names and saved in REAPER's default FX chains (or track templates) resource path.
+ This "auto save" directory can be customized (new popup menu items "Set auto save directory") and filenames can now be renamed ("Name" column is editable).
++Auto-fill feature:
+ If not already present, all FX chain (or track template) files found in the related resource path and its sub-folders are automatically inserted at the selected slot.
++Applying track templates preserves items:
+ - if there's no item present in an applied track template file, the current ones are preserved
+ - if some items are present in an applied track template file, those ones are used instead
+ - if several tracks are present in a track template file, only the first one is used (when *applying*, when importing, all tracks present in the file are added)
++New actions:
+ - SWS/S&M: Open Resources window (FX chains)... - just renamed (replaces "Open FX chains view...")
+ - SWS/S&M: Open Resources window (track templates)...
+ - SWS/S&M: Load/apply track template to selected tracks, slot n - where n is in [1;10]
+ - SWS/S&M: Load/apply track template to selected tracks, prompt for slot
+ - SWS/S&M: Load/import tracks from track template, slot n - where n is in [1;10]
+ - SWS/S&M: Load/import tracks from track template, prompt for slot
+ - SWS/S&M: Clear track template slot...
+ Added actions that paste FX chains slots (exiting ones only "apply", i.e. replace FX Chains):
+ - SWS/S&M: Load/paste FX chain to selected tracks, slot n - where n is in [1;8]
+ - SWS/S&M: Load/paste FX chain to selected tracks, prompt for slot
+ - SWS/S&M: Load/paste FX chain to selected items, slot n - where n is in [1;8]
+ - SWS/S&M: Load/paste FX chain to selected items, prompt for slot
+ - SWS/S&M: Load/paste FX chain to selected items, all takes, prompt for slot
++New popup menu items:
+ - For FX chains and track templates: added "Auto fill (from resource path)"
+ - Load/apply track template to selected tracks
+ - Load/import tracks from track template
+ - Set FX chain auto save directory...
+ - Set track template auto save directory...
+ - Auto save FX chains and insert slots (from track selection)
+ - Auto save track templates and insert slots (from track selection)
+ -> those 2 last menu items do the same things than the auto-save button, files are saved and inserted at the selected slot
+ - Delete slots & files
+ -> on Win, files are sent to the recycle bin
+ - Show path in Explorer/Finder...
++Column "Name" is now editable (file renaming from the view)
++Drag-drop improvements:
+ - Internal drag-drop of slots (i.e. now moves slots rather than copying them)
+ - More 'natural' + fixed shortcomings: d'n'd of empty slots, selection after d'n'd, d'n'd when the list is empty, etc..
++On Win, "Display track template/FX chain" (in the popup menu) now launches notepad
++Paths pointing to unexisting files aren't emptyied anymore
++Tagged "Xenakios/SWS: Load track template n" actions as deprecated
+
+Updated SWS Autocolor view: now also features auto track icon (the view has been renamed into "SWS Auto Color/Icon"), demo http://reaper.mj-s.com/autoicon.gif|here|.
++Added a column "Icon" in the view (right-click in this column or double-click it to set an icon filename) and a tick box "Enable auto icon".
++Also added action "SWS/S&M Toggle auto icon enable".
+Rmk: your current color configurations will be preserved when upgrading..
+
+S&M Notes/help view updates:
++Action help: now, when selecting custom macros, the related (veeeery long!) custom id is displayed in the text field (i.e. custom notes about macros are no more saved but that eases the copy/paste of custom ids)
++Action help: added http://reaper.mj-s.com/alrButton.jpg|"ALR" button|, i.e. online help to the http://wiki.cockos.com/wiki/index.php/Action_List_Reference|Action List Reference| wiki
++Added actions in order to make things clear:
+ - SWS/S&M: Open Notes/Help window (project notes)...
+ - SWS/S&M: Open Notes/Help window (item notes)...
+ - SWS/S&M: Open Notes/Help window (track notes )...
+ - SWS/S&M: Open Notes/Help window (action help)...
+Remark: here's an http://reaper.mj-s.com/OnlineHelp.gif|anim| showing how to use notes, action help & online help
+
+S&M Live Configs updates:
++Added "Auto track selection" option/tick box
++Fixed activate/deactivate actions not obeying the config's "Enable" parameter
++Added actions (in the main section) "SWS/S&M: Toggle enable live config n" - where n is in [1;8]
++Added advanced parameter "CC_DELAY" in S&M.ini (in REAPER's resource directory) - to be tweaked manually!
+ If this parameter is set to 0, MIDI CC events will trigger their related "Apply live config" action *immediately* but, in this case, when moving a fader on a large scale for example, all configs in between will also be applied. With a delay (e.g. 250ms, the default value) only the last stable CC value will be taken into account.
++Undo points for all controls
+
+S&M Cue buss:
++"Open Cue Buss window" is now a toggle action (+ reports a toggle state)
++When creating a cue buss, auto scroll to created the track (TCP)
+
+S&M house cleaning:
++Cleaned the main "Extensions" menu a bit + added following menu items:
+ - S&M Cue Buss...
+ - S&M Find...
+ - S&M Live Configs...
++Removed the following split actions:
+ Contrary to their related native versions, the following ones were splitting selected items *and only them*, see http://forum.cockos.com/showthread.php?t=51547|this related thread|.
+ Due to REAPER v3.67's new native pref "If no items are selected, some split/trim/delete actions affect all items at the edit cursor",
+ those actions are less useful (well, they would still split only selected items even if that native pref is ticked).
+ Also removed because of the spam in the action list (many split actions).
+ - SWS/S&M: Split selected items at play cursor
+ - SWS/S&M: Split selected items at time selection
+ - SWS/S&M: Split selected items at edit cursor (no change selection)
+ - SWS/S&M: Split selected items at time selection (select left)
+ - SWS/S&M: Split selected items at time selection (select right)
+ - SWS/S&M: Split selected items at edit or play cursor
+ - SWS/S&M: Split selected items at edit or play cursor
++Removed the following take actions:
+ Due to native actions "Rotate take lanes forward/backward" added in REAPER v3.67 (move active take up/down actions still there, of course).
+ - SWS/S&M: Takes - Move all up (cycling) in selected items"
+ - SWS/S&M: Takes - Move all down (cycling) in selected items"
+
+Other S&M updates/fixes:
++Added action: SWS/S&M: Left mouse click at cursor position (use w/o modifier)
++Themable GUIs: hover, pressed,.. states for buttons, actions are now performed on mouse up events, un-stretched PNGs, default focus tweaks, tick boxes look better, use theme 3D colors for dropdows (if defined), etc..
++Fixed Notes/help and Resources views toggle states
++Fixed Adam's Fills Gaps actions
++Fixed disabled some popup items not being grayed
++Fixed UI refresh issues for "Find" and "Notes/help" views
+
+Issue 225: Fixed selected text in Notes/help view when switching between docker tabs
+
+!SWS v1.x.x
+Go http://sws.mj-s.com/download/whatsnew_v1.txt|here| for older changes
+

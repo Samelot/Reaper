@@ -1,0 +1,65 @@
+slider1:-120<-120,0,0.1>Threshold (dB)
+slider2:50<1,4000,1>Silence length for fade-out (ms)
+slider3:1<1,100,1>Fade-in response (ms)
+slider4:100<1,1000,1>Fade-out response (ms)
+slider5:0<0,100,1>RMS window (ms)
+slider6:0<0,1,1{off,on}>Delta
+slider7:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+silentcnt=0;
+seekv=1;
+seekto=1;
+
+@slider
+thresh=10 ^ (slider1/20);
+sillen=slider2*srate/1000;
+fadeout = 1/pow(10,1/(srate*slider4/1000));
+fadein = 1/pow(10,1/(srate*slider3/1000));
+rmscoef=exp(-1000/(slider5 * srate));
+gain=10 ^ (slider7/20);
+
+@sample
+in0=spl0;
+in1=spl1;
+
+slider5>0 ? (
+ave=in0*in0+in1*in1;
+runave = ave + rmscoef * (runave - ave);
+det = sqrt(runave);
+a=det > thresh;
+):(
+a=abs(in0) > thresh || abs(in1) > thresh;
+);
+
+a ? 
+(
+silentcnt=0; 
+seekto=1;
+) : (
+(silentcnt+=1) > sillen ?  seekto=0;
+);
+
+seekto > 0.5 ? 
+( // fading in
+seekv=seekv*fadein + (1-fadein);
+):
+( // fading out
+seekv=seekv*fadeout;
+);
+
+s0 = spl0;
+s1 = spl1;
+
+spl0=(spl0*seekv)*gain;
+spl1=(spl1*seekv)*gain;
+
+slider6 == 1 ? (
+spl0=(s0-spl0)*gain;
+spl1=(s1-spl1)*gain;
+);

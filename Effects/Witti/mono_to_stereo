@@ -1,0 +1,42 @@
+/*
+This plugin allows to generate a fake stereo signal from a mono source.
+The stereo signal is fully mono compatible.
+
+How it works:
+The mono signal is delayed (~25ms) and added to the left channel.
+The mono signal is delayed (~25ms), inverted and added to the right channel.
+*/
+
+desc: Read info...
+
+slider1:0<-60,12,0.1>Dry (dB)
+slider2:0<-60,12,0.1>Wet (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+buflL = floor(25 / 1000 * srate);
+buflR = floor(25 / 1000 * srate) + buflL+1;
+vol = 10^(-18/20);
+
+@slider
+dry = slider1 <= -60.0 ? 0.0 : 10^(slider1/20);
+wet = slider2 <= -60.0 ? 0.0 : 10^(slider2/20);
+
+@sample
+inL = spl0 * dry;
+inR = spl1 * dry;
+
+bufLpos[0] = spl0 * wet;
+bufLpos = bufLpos + 1;
+bufLpos >= buflL ? bufLpos = 0;
+
+bufRpos[0] = spl1 * wet;
+bufRpos = bufRpos + 1;
+bufRpos >= buflR ? bufRpos = buflL+1;
+
+spl0 = inL + bufLpos[0] * vol; 
+spl1 = inR + bufRpos[0] * -1 * vol;

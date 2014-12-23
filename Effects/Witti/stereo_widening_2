@@ -1,0 +1,23 @@
+desc: Volume adjusted version of stereo_widening
+
+slider1:1<0,10,0.01>width
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@slider
+tmp = 1/max(1 + slider1,2);
+coef_M = 1 * tmp;
+coef_S = slider1 * tmp;
+
+@sample
+s0=spl0;
+s1=spl1;
+
+m = (s0 + s1)*coef_M;
+s = (s1 - s0 )*coef_S;
+
+spl0 = m - s;
+spl1 = m + s;

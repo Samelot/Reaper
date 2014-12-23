@@ -1,0 +1,104 @@
+//4th order Linkwitz-Riley filters
+//
+//The filter is unstable for fast automation changes in the lower frequency range.
+//Parameter interpolation and/or oversampling should fix this.
+//
+//The sum of the Linkwitz-Riley (Butterworth squared) HP and LP outputs, will result an all-pass filter
+//at Fc and flat magnitude response - close to ideal for crossovers.
+
+desc: LO=1+2  HI=3+4
+
+slider1:50<0,100,0.01>Frequency (Scale)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out A
+out_pin:R out A
+out_pin:L out B
+out_pin:R out B
+
+@slider
+// frequency slider scaling
+tmpx = 16+slider1*1.20103;
+tmpy = floor(exp(tmpx*log(1.059))*8.17742);
+
+fc=tmpy;
+
+wc=2*$pi*fc;
+wc2=wc*wc;
+wc3=wc2*wc;
+wc4=wc2*wc2;
+k=wc/tan($pi*fc/srate);
+k2=k*k;
+k3=k2*k;
+k4=k2*k2;
+sqrt2=sqrt(2);
+sq_tmp1=sqrt2*wc3*k;
+sq_tmp2=sqrt2*wc*k3;
+a_tmp=4*wc2*k2+2*sq_tmp1+k4+2*sq_tmp2+wc4;
+
+b1=(4*(wc4+sq_tmp1-k4-sq_tmp2))/a_tmp;
+b2=(6*wc4-8*wc2*k2+6*k4)/a_tmp;
+b3=(4*(wc4-sq_tmp1+sq_tmp2-k4))/a_tmp;
+b4=(k4-2*sq_tmp1+wc4-2*sq_tmp2+4*wc2*k2)/a_tmp;
+
+// low-pass
+a0=wc4/a_tmp;
+a1=4*wc4/a_tmp;
+a2=6*wc4/a_tmp;
+a3=a1;
+a4=a0;
+
+// high-pass
+a0=k4/a_tmp;
+a1=-4*k4/a_tmp;
+a2=6*k4/a_tmp;
+a3=a1;
+a4=a0;
+
+@sample
+tempxA=spl0;
+tempxB=spl1;
+
+tempyA=a0*tempxA+a1*xm1A+a2*xm2A+a3*xm3A+a4*xm4A-b1*ym1A-b2*ym2A-b3*ym3A-b4*ym4A;
+xm4A=xm3A;
+xm3A=xm2A;
+xm2A=xm1A;
+xm1A=tempxA;
+ym4A=ym3A;
+ym3A=ym2A;
+ym2A=ym1A;
+ym1A=tempyA;
+
+tempyB=a0*tempxB+a1*xm1B+a2*xm2B+a3*xm3B+a4*xm4B-b1*ym1B-b2*ym2B-b3*ym3B-b4*ym4B;
+xm4B=xm3B;
+xm3B=xm2B;
+xm2B=xm1B;
+xm1B=tempxB;
+ym4B=ym3B;
+ym3B=ym2B;
+ym2B=ym1B;
+ym1B=tempyB;
+
+spl0=spl0-tempyA;
+spl1=spl1-tempyB;
+spl2=tempyA;
+spl3=tempyB;
+
+@gfx 0 26
+//us the gfx section to draw 'tmpy' values
+gfx_x=10;gfx_y=10;
+//dummy lineto code for the GFX thread refresh
+gfx_lineto(gfx_x, gfx_y,0);
+//set gfx colors to green
+gfx_r=gfx_b=0;
+gfx_g=gfx_a=1;
+//draw text 'tmpy = xxxxx hz'
+gfx_drawchar($'F');
+gfx_drawchar($' ');
+gfx_drawchar($'=');
+gfx_drawchar($' ');
+gfx_drawnumber(tmpy,0);
+gfx_drawchar($' ');
+gfx_drawchar($'H');
+gfx_drawchar($'z');

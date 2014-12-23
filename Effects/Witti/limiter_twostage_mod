@@ -1,0 +1,124 @@
+desc: Partially transient-preserving limiter
+
+slider1:0<-30,0,0.1>Soft threshold (dB)
+slider2:5<0,20,0.1>Extra transient threshold (dB)
+slider3:200<5,500,1>Release time (ms)
+slider4:1<0,1,1{no,yes}>Make-up gain
+slider5:1<0,1,1{no,yes}>Hard-limit to 0dB
+slider6:0<0,1,1{no,yes}>Sidechain
+slider7:0<-24,24,0.1>Output (dB)
+slider8:0<0,1,1{lin,exp}>Release curve
+
+in_pin:L in
+in_pin:R in
+in_pin:L sidechain
+in_pin:R sidechain
+out_pin:L out
+out_pin:R out
+
+@init
+lookahead = floor(srate/1000*5);
+dBFac = 20/log(10);
+hardval = 10^(0/20); // Hard limit value (if used)
+curfac = 1; // Current limiting factor
+cfpeak = 1; // Limiting factor for max peak in current window
+// Peak finder/release control
+w = 0;
+base = 1;
+ 
+@slider
+limitVal = 10^(slider1/20);
+maxLimitVal = 10^(slider1/20 + slider2/20); // must be relative to soft threshold
+release = srate/1000*slider3;
+peak = limitVal;
+renorm = slider4;
+renFac = 10^-(slider1/20 + 1.6/20);
+hard = slider5;
+sidechain = slider6;
+output = 10^(slider7/20);
+
+@sample
+// Stereo linking (no optimization for 100% stereo linking)
+sspl = sidechain ? max(abs(spl2), abs(spl3)) : max(abs(spl0), abs(spl1));
+ 
+// Determine limit factor
+sspl > peak ? (
+// Start a new attack using the current limiting factor as base value
+peak = sspl;
+base = min(1, curfac);
+
+sspl > maxLimitVal ? (
+// Above the hard limit, even... crank up without attack
+base = min(curfac, maxLimitVal/peak);
+curfac = base;
+);
+
+cfpeak = limitVal/peak;
+att = 1;
+w = lookahead;
+
+) : att ? (
+// Attack phase
+w -= 1;
+relcurve = w/lookahead; // (decreasing)
+
+//curfac = (log(1+relcurve)*base + log(2-relcurve)*cfpeak); // log (not working !!!)
+curfac = relcurve*base + (1-relcurve)*cfpeak; // lin
+
+w == 0 ? att = 0;
+) : w == 0 ? (
+// Begin release phase
+(peak > limitVal) ? (
+base = curfac;
+w = release;
+);
+
+) : (
+// Continue release phase
+w -= 1;
+relcurve = w/release; // (decreasing)
+
+//slider8 == 0 ? (
+//curfac = (log(1+relcurve)*base + log(2-relcurve)); // log (not working ???)
+//);
+slider8 == 0 ? (
+curfac = relcurve*base + (1-relcurve); // lin
+);
+slider8 == 1 ? (
+curfac = base/(1+exp(5-10*relcurve)) + 1/(1+exp(10*relcurve-5)); // exp
+);
+
+peak = limitVal/curfac;
+// Prevent accidents
+curfac >= 1 ? w = 0;
+);
+ 
+// Output adjusted sample
+spl0 = spl0 * curfac * (renorm ? renFac : 1);
+spl1 = spl1 * curfac * (renorm ? renFac : 1);
+hard ? (
+spl0 = min(max(spl0, -hardval), hardval);
+spl1 = min(max(spl1, -hardval), hardval)
+);
+ 
+spl0*=output;
+spl1*=output;
+
+@gfx 0 31
+gfx_r = gfx_g = gfx_b = gfx_x = gfx_y = 0;
+gfx_a = 1;
+gfx_rectto(gfx_w-1, gfx_h-1);
+gfx_r = 0; gfx_g = 1; gfx_b = 0;
+gfx_x = 10; gfx_y = 10;
+gfx_drawchar($'C');
+gfx_drawchar($'u');
+gfx_drawchar($'t');
+gfx_drawchar($'(');
+gfx_drawchar($'d');
+gfx_drawchar($'B');
+gfx_drawchar($')');
+gfx_drawchar($':');
+gfx_x += 4;
+gfx_drawnumber(log(curfac)*dbFac, 2);
+gfx_x = gfx_x + (gfx_w - gfx_x) * curfac;
+gfx_lineto(gfx_x, gfx_y+20, 0);

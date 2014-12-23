@@ -1,0 +1,59 @@
+//Cascaded resonant lowpass/hipass combi-filter.
+//The output of the lowpass is fed into the highpass filter.
+
+desc: Read info...
+
+slider1:1<0,1,0.01>low-pass
+slider2:0<0,1,0.01>high-pass
+slider3:0<0,1,0.01>res low-pass
+slider4:0<0,1,0.01>res high-pass
+slider6:0<-24,24,0.1>output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+n1A=0;
+n2A=0;
+n3A=0;
+n4A=0;
+n1B=0;
+n2B=0;
+n3B=0;
+n4B=0;
+
+fb_lp=0;
+fb_hp=0;
+
+@slider
+cut_lp=max(min(slider1,1),0.01);
+cut_hp=max(min(slider2,0.99),0);
+res_lp=slider3*0.8;
+res_hp=slider4*0.9;
+
+gain=10^(slider6/20);
+
+@sample
+inA=spl0;
+inB=spl1;
+
+fb_lp=res_lp+res_lp/(1-cut_lp);
+fb_hp=res_hp+res_hp/(1-cut_hp);
+
+n1A=n1A+cut_lp*(inA-n1A+fb_lp*(n1A-n2A));
+n2A=n2A+cut_lp*(n1A-n2A);
+n3A=n3A+cut_hp*(n2A-n3A+fb_hp*(n3A-n4A));
+n4A=n4A+cut_hp*(n3A-n4A);
+
+n1B=n1B+cut_lp*(inB-n1B+fb_lp*(n1B-n2B));
+n2B=n2B+cut_lp*(n1B-n2B);
+n3B=n3B+cut_hp*(n2B-n3B+fb_hp*(n3B-n4B));
+n4B=n4B+cut_hp*(n3B-n4B);
+
+spl0=n2A-n4A;
+spl1=n2B-n4B;
+
+spl0*=gain;
+spl1*=gain;

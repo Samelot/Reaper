@@ -1,0 +1,62 @@
+slider1:7347<20,7347,1>Frequency (Hz)
+slider2:0<0,1,0.001>Resonance
+slider4:0<0,2,1{lpf,bpf,hpf}>Filter Type
+slider5:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@slider
+freq=slider1;
+
+slider4==0?(
+tmp2=max(min(slider1,7350),20);
+tmp=max(min(slider2,0.5),0);
+);
+slider4==1?(
+tmp2=max(min(slider1,6575),20);
+tmp=max(min(slider2,0.9),0);
+);
+slider4==2?(
+tmp2=max(min(slider1,7350),20);
+tmp=max(min(slider2,0.5),0);
+);
+
+q=tmp;
+freq=tmp2;
+f = 2.0*sin($pi*freq/srate);
+fb = q + q/(1.0 - f);
+
+gain=10^(slider5/20);
+
+@sample
+inA=spl0;
+inB=spl0;
+
+hpA = inA - buf0A;
+bpA = buf0A - buf1A;
+buf0A = buf0A + f * (hpA + fb * bpA);
+buf1A = buf1A + f * (buf0A - buf1A);
+
+hpB = inB - buf0B;
+bpB = buf0B - buf1B;
+buf0B = buf0B + f * (hpB + fb * bpB);
+buf1B = buf1B + f * (buf0B - buf1B);
+
+//lpf
+slider4==0?(
+spl0=buf1A*gain;
+spl1=buf1B*gain;
+);
+//bp
+slider4==1?(
+spl0=bpA*gain;
+spl1=bpB*gain;
+);
+//hp
+slider4==2?(
+spl0=hpA*gain;
+spl1=hpB*gain;
+);

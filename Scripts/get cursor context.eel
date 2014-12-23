@@ -1,0 +1,1 @@
+ShowConsoleMsg(sprintf(#, "%i", GetCursorContext()));

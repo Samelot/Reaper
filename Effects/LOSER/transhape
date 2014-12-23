@@ -1,0 +1,37 @@
+// (C) 2007, Michael Gruhn.
+
+// NO WARRANTY IS GRANTED. THIS PLUG-IN IS PROVIDED ON AN "AS IS" BASIS, WITHOUT
+// WARRANTY OF ANY KIND. NO LIABILITY IS GRANTED, INCLUDING, BUT NOT LIMITED TO,
+// ANY DIRECT OR INDIRECT,  SPECIAL,  INCIDENTAL OR CONSEQUENTIAL DAMAGE ARISING
+// OUT OF  THE  USE  OR INABILITY  TO  USE  THIS PLUG-IN,  COMPUTER FAILTURE  OF
+// MALFUNCTION INCLUDED.  THE USE OF THE SOURCE CODE,  EITHER  PARTIALLY  OR  IN
+// TOTAL, IS ONLY GRANTED,  IF USED IN THE SENSE OF THE AUTHOR'S INTENTION,  AND
+// USED WITH ACKNOWLEDGEMENT OF THE AUTHOR. FURTHERMORE IS THIS PLUG-IN A  THIRD
+// PARTY CONTRIBUTION,  EVEN IF INCLUDED IN REAPER(TM),  COCKOS INCORPORATED  OR
+// ITS AFFILIATES HAVE NOTHING TO DO WITH IT.  LAST BUT NOT LEAST, BY USING THIS
+// PLUG-IN YOU RELINQUISH YOUR CLAIM TO SUE IT'S AUTHOR, AS WELL AS THE CLAIM TO
+// ENTRUST SOMEBODY ELSE WITH DOING SO.
+
+desc:Transhape (for Drums)
+
+slider1:0<-100,100,1>Attack (%)
+slider2:0<-100,100,1>Sustain (%)
+
+@init
+b1Env1 = -exp(-10 / srate );
+a0Env1 = 1.0 + b1Env1;
+b1Env2 = -exp(-62 / srate );
+a0Env2 = 1.0 + b1Env2;
+
+@slider
+attack=slider1/100;
+sustain=slider2/100;
+
+@sample
+maxSpls = max(abs(spl0),abs(spl1));
+env1 = (tmpEnv1 = a0Env1*maxSpls - b1Env1*tmpEnv1);
+env2 = (tmpEnv2 = a0Env2*maxSpls - b1Env2*tmpEnv2);
+gain = env2 - env1;
+(gain > 0) ? gain = exp( log(1+(env2/env1))*attack ) : gain = exp( log(1+(env1/env2))*sustain ) ;
+spl0 *= gain;
+spl1 *= gain;

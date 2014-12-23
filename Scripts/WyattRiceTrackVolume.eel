@@ -1,0 +1,23 @@
+//Round and adjust selected tracks volume in 1dB steps
+//Can be used to adjust down also.
+//On line starting with incr = +1 can be changed to -1 to decrease.
+//Steps can changed to 0.5 etc.
+TrackCount = CountSelectedTracks(0);
+TrackIndex = 0;
+Undo_BeginBlock();
+while (TrackIndex < TrackCount) (
+	tr = GetSelectedTrack(0, TrackIndex);
+	GetTrackUIVolPan(tr, vol, pan);
+	// If vol is at -inf, set to -150dB
+	vol < 0.00000002818383 ? (
+		SetMediaTrackInfo_Value(tr, "D_VOL", 0.00000003162278);
+	):
+	incr = +1;
+	vol = GetMediaTrackInfo_Value(tr, "D_VOL");
+	v = (20.0 * log10(vol)) + incr;
+	v = floor((v + 0.05) * 10) * 0.1;
+	SetMediaTrackInfo_Value(tr, "D_VOL", 10.0 ^ (v / 20.0));
+	TrackIndex +=1;
+	#undo_msg = "Adjust Track Volume";
+	Undo_EndBlock(#undo_msg, -1);
+);

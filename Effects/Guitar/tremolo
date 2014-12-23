@@ -1,0 +1,19 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+
+desc: Tremolo
+slider1:4<0,100,1>frequency (Hz)
+slider2:-6<-60,0,1>amount (dB)
+slider3:0<0,1>stereo seperation (0..1)
+
+@slider
+  adv=$pi*2*slider1/srate;
+  sep=slider3*$pi;
+  amount=2 ^ (slider2/6);
+  sc=0.5*amount; amount=1-amount;
+
+@sample
+
+spl0=spl0*((cos(pos) + 1) * sc + amount);
+spl1=spl1*((cos(pos+sep) + 1) * sc + amount);
+pos+=adv;

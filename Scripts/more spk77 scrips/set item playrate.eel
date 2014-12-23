@@ -1,0 +1,42 @@
+// Set item rate, 'preserve pitch', preserve length...
+
+// by Elan Hickler
+// www.Soundemote.com
+// www.elanhickler.com
+
+#userinputs = "0.5,0,0"; // defaults
+query = GetUserInputs("Set item rate", 3, "rate,preserve pitch? (1=yes 0=no),preserve length? (1=yes 0=no)", #userinputs);
+query == 1 ? (	
+	Undo_BeginBlock();
+	
+	match("%f,%i,%i",#userinputs,newRate,preservePitch,preserveLength);	
+	
+	items = CountSelectedMediaItems(0);
+	i=0;
+	loop(items,
+		item = GetSelectedMediaItem(0,i);
+		take = GetActiveTake(item);
+		length = GetMediaItemInfo_Value(item, "D_LENGTH");
+		rate = GetMediaItemTakeInfo_Value(take, "D_PLAYRATE");
+		
+		// set rate
+		SetMediaItemTakeInfo_Value(take, "D_PLAYRATE", newRate);
+		
+		// set preserve pitch
+		preservePitch != 0 ? #ppitch = ", clear 'preserve pitch'";
+		SetMediaItemTakeInfo_Value(take, "B_PPITCH", preservePitch);
+		
+		// set preserve length
+		preserveLength != 0 ? #plength = " and preserve length";
+		preserveLength == 0 ? (			
+			newLength = rate / newRate * length;
+			SetMediaItemLength(item, newLength, 0);
+		);
+		i+=1;
+	);
+	
+	UpdateArrange();
+	
+	sprintf(#undo,"Set item rate to %{newRate}g%{#plength}s%{#ppitch}s");
+	Undo_EndBlock(#undo, -1);
+);

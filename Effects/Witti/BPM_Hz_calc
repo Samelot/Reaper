@@ -1,0 +1,22 @@
+slider1:120<0,300,1>BPM
+slider2:2<0,5,0.016667>Hz
+slider3:0<0,1,1{BPM to Hz,Hz to BPM}>Mode
+
+in_pin:none
+out_pin:none
+
+@slider
+bpm=slider1;
+hz=slider2;
+mode=slider3;
+
+@block
+mode ? (
+bpm=hz*60;
+slider1=bpm;
+sliderchange(slider1);
+):(
+hz=bpm/60;
+slider2=hz;
+sliderchange(slider2);
+);

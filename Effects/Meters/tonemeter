@@ -1,0 +1,51 @@
+desc: tone meter (left channel only) -- doesnt really work
+
+slider1:750<1,2000,10>block size (ms)
+slider2:250<1,2000,10>update interval (ms)
+slider3:0,octaves from a440
+slider4:0<0,11,1{A,A#,B,C,C#,D,D#,E,F,F#,G,G#}>note
+slider5:0,cents
+slider6:0,freq (Hz)
+
+@slider 
+  bsize=(slider1*srate*0.001)|0;
+  bpos=0; 
+  zccnt0=0;
+  ls0=0;
+  updlen=slider2*srate*0.001;
+  isc=srate/bsize;
+
+@block 
+  updcnt+=samplesblock; 
+  updcnt>updlen ? 
+  (
+     updcnt=0;
+     oofs=log(slider6/440)/log(2);
+     slider3=oofs|0;
+     slider4=(oofs*12+0.5)%12;
+     slider5=((oofs*12+0.5)*100)%100 - 50;
+     sliderchange(4+8+16+32);
+  );
+
+@sample
+
+// count zero crossings
+ts0=spl0>0;
+
+ts0 && ls0 ? zccnt0+=1;
+
+ls0=!ts0;
+
+lcnt0=lzccnt0+zccnt0-bpos[0];
+bpos[0]=zccnt0;
+
+slider6=lcnt0*isc;
+
+// advance buffer
+bpos+=1;
+bpos >= bsize ? (
+    bpos=0;
+    lzccnt0=zccnt0;
+    zccnt0=0;
+);
+

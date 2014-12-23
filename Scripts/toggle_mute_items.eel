@@ -1,0 +1,24 @@
+// Toggle item mute
+function toggle_mute() local(item, muted_state)
+(
+  HasExtState("mute", "mutedstate") ? (
+    GetExtState(#mutedstate, "mute", "mutedstate");
+    match("%d", #mutedstate, muted_state);
+  ) : (
+    muted_state = 0;
+  );
+
+  i = 0;
+  loop(CountSelectedMediaItems(0),
+    (item = GetSelectedMediaItem(0, i)) ? (
+      SetMediaItemInfo_Value(item, "B_MUTE", muted_state);
+    );
+    i += 1;
+  );
+  muted_state = !muted_state;
+  #mutedstate = sprintf(#, "%d", muted_state);
+  SetExtState("mute", "mutedstate", #mutedstate, 0);
+  UpdateArrange();
+);
+
+toggle_mute();

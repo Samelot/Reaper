@@ -1,0 +1,9 @@
+function select_parent_track_of_selected_item()
+(
+  (sel_item = GetSelectedMediaItem(0, 0)) ? (
+    parent_track = GetMediaItem_Track(sel_item);
+    SetTrackSelected(parent_track, 1);
+  );
+);
+
+select_parent_track_of_selected_item();

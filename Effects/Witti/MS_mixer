@@ -1,0 +1,30 @@
+slider1:1<0,10,0.01>(cut/boost) side signal
+slider2:0<0,1,0.01>(cut) mid signal
+slider3:0<-24,24,0.1>(dB) output
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@slider
+widthside=slider1;
+widthmid=slider2;
+output=10^(slider3/20);
+
+@sample
+L=spl0;
+R=spl1;
+
+M = (L+R)/2; // obtain mid-signal from left and right
+S = (L-R)/2; // obtain side-signal from left and right
+
+// amplify mid and side signal seperately:
+M *= 2*(1-widthmid);
+S *= 2*widthside;
+
+outL = (M+S)/2; // obtain left signal from mid and side
+outR = (M-S)/2; // obtain right signal from mid and side
+
+spl0=outL*output;
+spl1=outR*output;

@@ -1,0 +1,45 @@
+desc:Basic M/S Decoder
+// ok so if you do // then it's a comment. the desc: line is the description
+
+// you can have one or more slider lines, these are controls the user can fudge with
+
+slider1:0<-120,24,1>Center Level (dB)
+slider2:0<0,1,1>output swap
+slider3:0<-1,1,0.01>Center position
+
+// the first number is the default value, the numbers in the <> are min val,
+// max val, and step.
+
+@init
+// this is stuff that happens once (or if the samplerate changes, etc)
+
+@slider
+// this happens when a slider changes
+
+// so we'll set our multiplier to be used later
+// so realistically this happens once or when the user changes shit.
+// we store our volume multiplier in 'vol', for use per-sample. 
+// in theory the sample code below could have this directly...
+vol = 2^(slider1/6); // convert from dB to a multiplier
+
+@block
+// this happens per-block, not really that important for this app
+
+@sample
+// this happens per-sample. spl0 is the left channel, spl1 is the right,
+// and if your track has more than 2 channels, spl2, spl3, etc..
+
+
+
+// decoder section below
+
+tmp=spl0*vol;
+spl0 = tmp + spl1;
+spl1 = tmp - spl1;
+slider2>0.5 ? (tmp=spl1; spl1=spl0; spl0=tmp; );
+
+// pan section here
+slider3 > 0  ? spl0 *= 1.0-slider3;
+slider3 < 0 ? spl1 *= 1.0+slider3;
+spl0 = spl0 * min(1.0-slider3,1);
+spl1 = spl1 * min(1.0+slider3,1);

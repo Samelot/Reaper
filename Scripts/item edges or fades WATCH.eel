@@ -1,0 +1,25 @@
+
+// Main_OnCommand(40289,0); 
+// Main_OnCommand(40421,0); 
+
+Main_OnCommand(40182,0); 
+
+item = GetSelectedMediaItem(0, 0); // store first selected item
+curTake = GetMediaItemInfo_Value(item, "I_CURTAKE");
+
+GetExtState(#foo,"test","value");
+// ShowConsoleMsg(#foo);
+
+curTake == 0 ? (
+	curTake = SetMediaItemInfo_Value(item, "I_CURTAKE", 1);	
+
+	SetExtState("test","value","edge",1);
+
+) : curTake == 1 ? (
+	curTake = SetMediaItemInfo_Value(item, "I_CURTAKE", 0);
+
+	SetExtState("test","value","fade",1);
+		
+);
+
+UpdateArrange()

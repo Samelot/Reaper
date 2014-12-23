@@ -1,0 +1,155 @@
+slider1:0<-60,0,0.1>comp1-------------Threshold (dB)
+slider2:2<1,20,0.1>Ratio
+slider3:3<1,50,1>Attack (ms)
+slider4:100<1,500,1>Release (ms)
+slider5:0<-60,24,0.1>Output (dB)
+
+slider11:0<-60,0,0.1>comp2-------------Threshold (dB)
+slider12:2<1,20,0.1>Ratio
+slider13:3<0,50,1>Attack (ms)
+slider14:100<0,500,1>Release (ms)
+slider15:0<-60,24,0.1>Output (dB)
+
+slider17:50<10,100,1>|---------------------Env Decay (ms)
+slider18:0<-24,24,0.1>Main Output (dB)
+slider19:0<-0,2,1{mid/side compression,left/right compression}>Mode
+slider20:0<-0,2,1{mid+side  -or-  left+right,mid          -or-  left,side         -or-  right}>Listen
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+outputA = 1;
+outputB = 1;
+transfer_AA = 0;
+transfer_AB = 0;
+transfer_BA = 1;
+transfer_BB = 1;
+gainA = 1;
+gainB = 1;
+envA=0;
+envB=0;
+
+log2dB = 8.6858896380650365530225783783321;
+db2log = 0.11512925464970228420089957273422;
+gr_meterA=1;
+gr_meterB=1;
+gr_meter_decay = exp(1/(1*srate));
+
+@slider
+thresholdA=10^(slider1/20);
+thresholdB=10^(slider11/20);
+
+transfer_AA = (1/slider2)-1;
+transfer_AB = (1/slider12)-1;
+transfer_BA = outputA * pow(thresholdA,-transfer_AA);
+transfer_BB = outputB * pow(thresholdB,-transfer_AB);
+
+attackA = exp(-1/(slider3/1000*srate));
+attackB = exp(-1/(slider13/1000*srate));
+releaseA = exp(-1/(slider4/1000*srate));
+releaseB = exp(-1/(slider14/1000*srate));
+envelope_decay = exp(-1/(slider17/1000*srate));
+
+volA=slider5 <= -60.0 ? 0.0 : 10 ^ (slider5 / 20);
+volB=slider15 <= -60.0 ? 0.0 : 10 ^ (slider15 / 20);
+volC=10^(slider18/20);
+
+@sample
+slider19 == 0 ? 
+(
+inL=(spl0+spl1)*0.5;
+inR=(spl0-spl1)*0.5;
+);
+slider19 == 1 ? 
+(
+inL=spl0;
+inR=spl1;
+);
+
+detA = max(abs(inL),abs(inL));
+//detA += 0.000000000001;
+envA = detA >= envA ? detA : detA+envelope_decay*(envA-detA);
+transfer_gainA = envA > thresholdA ? pow(envA,transfer_AA)*transfer_BA:outputA;
+gainA = transfer_gainA < gainA ? transfer_gainA+attackA *(gainA-transfer_gainA) : transfer_gainA+releaseA*(gainA-transfer_gainA);
+
+detB = max(abs(inR),abs(inR));
+//detB += 0.000000000001;
+envB = detB >= envB ? detB : detB+envelope_decay*(envB-detB);
+transfer_gainB = envB > thresholdB ? pow(envB,transfer_AB)*transfer_BB:outputB;
+gainB = transfer_gainB < gainB ? transfer_gainB+attackB *(gainB-transfer_gainB) : transfer_gainB+releaseB*(gainB-transfer_gainB);
+
+slider20 == 0 ? 
+out0 = inL * gainA * volA;
+out1 = inR * gainB * volB;
+(
+slider19 == 0 ?
+(
+spl0=(out0+out1)*volC;
+spl1=(out0-out1)*volC;
+);
+slider19 == 1 ?
+(
+spl0=out0*volC;
+spl1=out1*volC;
+);
+);
+slider20 == 1 ? 
+(
+out0 = inL * gainA * volA;
+spl0=out0*volC;
+spl1=spl0;
+);
+slider20 == 2 ? 
+(
+out1 = inR * gainB * volB;
+spl0=out1*volC;
+spl1=spl0;
+);
+
+grA = log(gainA)*log2dB;
+grvA = exp(grA * db2log);
+grvA < gr_meterA ? gr_meterA=grvA : ( gr_meterA*=gr_meter_decay; gr_meterA>1?gr_meterA=1; );
+
+grB = log(gainB)*log2dB;
+grvB = exp(grB * db2log);
+grvB < gr_meterB ? gr_meterB=grvB : ( gr_meterB*=gr_meter_decay; gr_meterB>1?gr_meterB=1; );
+
+@gfx 0 36
+gr_meterA *= exp(1/30); gr_meterA>1?gr_meterA=1;
+gr_meterB *= exp(1/30); gr_meterB>1?gr_meterB=1;
+gfx_r=1; gfx_g=gfx_b=0; gfx_a=0.8;
+
+meter_bot=20;
+meter_h=min(gfx_h,32);
+xscale=gfx_w*20/meter_bot;
+
+gfx_y=1;
+gfx_x=gfx_w + log10(gr_meterA)*xscale;
+gfx_rectto(gfx_w,meter_h-16);
+
+gfx_y=17;
+gfx_x=gfx_w + log10(gr_meterB)*xscale;
+gfx_rectto(gfx_w,meter_h);
+
+gfx_r=gfx_g=gfx_b=1.0; gfx_a=0.6;
+
+s2=sqrt(2)/2;
+g = s2;
+while(
+gfx_x=gfx_w + log10(g)*xscale;
+gfx_x >= 0 ? 
+(
+gfx_y=0;
+gfx_lineto(gfx_x,meter_h,0);
+gfx_y=meter_h-gfx_texth;
+gfx_x+=2;
+gfx_drawnumber(log10(g)*20,0);
+gfx_drawchar($'d');
+gfx_drawchar($'B');
+);
+g*=s2;
+gfx_x >=0;
+);

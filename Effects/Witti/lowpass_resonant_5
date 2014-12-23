@@ -1,0 +1,35 @@
+slider1:7347<20,7347,1>Frequency (Hz)
+slider2:0<0,1,0.001>Resonance
+slider3:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+posA = 0;
+speedA = 0;
+posB = 0;
+speedB = 0;
+
+@slider
+c = 2-2*cos(2*$pi*slider1 / srate);
+r=max(min(slider2,0.9),0);
+
+gain=10^(slider3/20);
+
+@sample
+inA=spl0;
+inB=spl1;
+
+speedA = speedA + (inA - posA) * c;
+posA = posA + speedA;
+speedA = speedA * r;
+
+speedB = speedB + (inB - posB) * c;
+posB = posB + speedB;
+speedB = speedB * r;
+
+spl0 = posA*gain;
+spl1 = posB*gain;

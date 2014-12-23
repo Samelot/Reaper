@@ -1,0 +1,101 @@
+slider1:880<20,22000,1>LO X-Over (Hz)
+slider2:5000<20,22000,1>HI X-Over (Hz)
+slider3:0<-12,12,0.1>Gain LO
+slider4:0<-12,12,0.1>Gain MID
+slider5:0<-12,12,0.1>Gain HI
+slider6:0<-12,12,0.1>Gain Output
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+lg = 1.0;
+mg = 1.0;
+hg = 1.0;
+
+@slider
+lf = 2 * sin($pi * (slider1 / srate));
+hf = 2 * sin($pi * (slider2 / srate));
+lg=10^(slider3/20);
+mg=10^(slider4/20);
+hg=10^(slider5/20);
+out=10^(slider6/20);
+
+@sample
+//---------------------------------------------------------
+// Filter #1 (lowpass)
+in=spl0;
+f1p0 += (lf * (in - f1p0));
+f1p1 += (lf * (f1p0 - f1p1));
+f1p2 += (lf * (f1p1 - f1p2));
+f1p3 += (lf * (f1p2 - f1p3));
+
+l = f1p3;
+
+// Filter #2 (highpass)
+
+f2p0 += (hf * (in - f2p0));
+f2p1 += (hf * (f2p0 - f2p1));
+f2p2 += (hf * (f2p1 - f2p2));
+f2p3 += (hf * (f2p2 - f2p3));
+
+h = sdm3 - f2p3;
+
+// Calculate midrange (signal - (low + high))
+
+m = sdm3 - (h + l);
+
+// Scale, Combine and store
+
+l *= lg;
+m *= mg;
+h *= hg;
+
+// Shuffle history buffer
+
+sdm3 = sdm2;
+sdm2 = sdm1;
+sdm1 = in;
+
+//---------------------------------------------------------
+// Filter #1 (lowpass)
+in2=spl1;
+f1p0A += (lf * (in2 - f1p0A));
+f1p1A += (lf * (f1p0A - f1p1A));
+f1p2A += (lf * (f1p1A - f1p2A));
+f1p3A += (lf * (f1p2A - f1p3A));
+
+l2 = f1p3A;
+
+// Filter #2 (highpass)
+
+f2p0A += (hf * (in2 - f2p0A));
+f2p1A += (hf * (f2p0A - f2p1A));
+f2p2A += (hf * (f2p1A - f2p2A));
+f2p3A += (hf * (f2p2A - f2p3A));
+
+h2 = sdm3A - f2p3A;
+
+// Calculate midrange (signal - (low + high))
+
+m2 = sdm3A - (h2 + l2);
+
+// Scale, Combine and store
+
+l2 *= lg;
+m2 *= mg;
+h2 *= hg;
+
+// Shuffle history buffer
+
+sdm3A = sdm2A;
+sdm2A = sdm1A;
+sdm1A = in2;
+
+//---------------------------------------------------------
+// Return result
+
+spl0=(l + m + h)*out;
+spl1=(l2 + m2 + h2)*out;

@@ -1,0 +1,26 @@
+function midi_item_to_editor()
+(
+	action_select_item_under_mouse = 40528;
+
+	// midi editor actions
+	action_hide_unused = 40454;
+	action_zoom_content = 40466;
+	
+	editor_status = MIDIEditor_GetActive();
+	// ShowConsoleMsg(sprintf(#, "%i", editor_status));
+
+	editor_status == 0 ? (
+			// ShowConsoleMsg("midi editor offline");			
+			Main_OnCommand(action_select_item_under_mouse, 0);
+	
+		) : (
+			// ShowConsoleMsg("midi editor online");						
+			Main_OnCommand(action_select_item_under_mouse, 0);
+			MIDIEditor_OnCommand(MIDIEditor_GetActive(), 40454);
+			MIDIEditor_OnCommand(MIDIEditor_GetActive(), 40466);
+
+
+		);
+);
+
+midi_item_to_editor();

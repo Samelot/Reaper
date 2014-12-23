@@ -1,0 +1,58 @@
+slider1:17375<20,17375,1>Frequency (Hz)
+slider2:0<0,2,0.001>Resonance
+slider3:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+y1A=y2A=y3A=y4A=oldxA=oldy1A=oldy2A=oldy3A=0;
+y1B=y2B=y3B=y4B=oldxB=oldy1B=oldy2B=oldy3B=0;
+
+@slider
+cutoff=slider1;
+res=slider2;
+f = (2*cutoff) / srate;
+k=2*sin(f*$pi/2)-1;
+p = (k+1)*0.5;
+scale = (1-p)*1.386249;
+r = res*scale;
+
+gain=10^(slider3/20);
+
+@sample
+inputA=spl0;
+inputB=spl1;
+
+xA = inputA - r*y4A;
+
+y1A= xA*p +  oldxA*p - k*y1A;
+y2A=y1A*p + oldy1A*p - k*y2A;
+y3A=y2A*p + oldy2A*p - k*y3A;
+y4A=y3A*p + oldy3A*p - k*y4A;
+
+y4A = y4A - (y4A^3)/6;
+
+oldxA= xA;
+oldy1A = y1A;
+oldy2A = y2A;
+oldy3A = y3A;
+
+xB = inputB - r*y4B;
+
+y1B= xB*p +  oldxB*p - k*y1B;
+y2B=y1B*p + oldy1B*p - k*y2B;
+y3B=y2B*p + oldy2B*p - k*y3B;
+y4B=y3B*p + oldy3B*p - k*y4B;
+
+y4B = y4B - (y4B^3)/6;
+
+oldxB= xB;
+oldy1B = y1B;
+oldy2B = y2B;
+oldy3B = y3B;
+
+spl0=y4A*gain;
+spl1=y4B*gain;

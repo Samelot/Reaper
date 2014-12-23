@@ -1,0 +1,11 @@
+function check_with_last_track() 
+(
+curr_sel_track = GetSelectedTrack(0, 0);
+	curr_sel_track != last_sel_track ? (
+		ShowConsoleMsg("if the selected track has not changed, then why is this message showing up?");
+		last_sel_track = curr_sel_track;
+	);
+
+);
+
+check_with_last_track();

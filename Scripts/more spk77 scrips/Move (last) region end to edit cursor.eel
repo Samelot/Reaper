@@ -1,0 +1,20 @@
+function move_region_end_to_cursor()
+(
+  i = 0;
+  break = 0;
+  while(break == 0) (
+    EnumProjectMarkers(i, is_region, pos, rgn_end, #name, markrgn_index_number) > 0 ? (
+      is_region ? (
+        pos < GetCursorPosition() || rgn_end < GetCursorPosition() ? (
+          last_markrgn_index_number = markrgn_index_number;
+          last_pos = pos;
+          #last_name = #name;
+        ) : break = 1;
+      );
+    );
+  i += 1;
+  );
+  SetProjectMarker(last_markrgn_index_number, 1, last_pos, GetCursorPosition(), #last_name);
+);
+
+move_region_end_to_cursor();

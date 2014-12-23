@@ -1,0 +1,12 @@
+function do_actions_from_main_and_midi_sections()
+(
+	main_section_action1 = 40633;
+	main_section_action2 = 40153;
+	midi_editor_section_action = 40003; // 40003 == select all notes
+	
+	Main_OnCommand(main_section_action1, 0);
+	Main_OnCommand(main_section_action2, 0);
+	MIDIEditor_OnCommand(MIDIEditor_GetActive(), midi_editor_section_action);
+);
+
+do_actions_from_main_and_midi_sections();

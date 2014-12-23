@@ -1,0 +1,30 @@
+desc: needs improvements
+
+slider1:0<0,48,0.1>Input (dB)
+slider2:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@slider
+input = 10 ^ (slider1 / 20);
+invput = 10 ^ (-slider1 / 20);
+output = 10 ^ (slider2 / 20);
+
+@sample
+in0 = spl0 * input;
+in1 = spl1 * input;
+
+x0 = in0 * 0.686306;
+a0 = 1 + exp(sqrt(abs(x0)) * -0.75);
+
+x1 = in1 * 0.686306;
+a1 = 1 + exp(sqrt(abs(x1)) * -0.75);
+
+spl0= ((exp(x0) - exp(-x0 * a0)) / (exp(x0) + exp(-x0)))*invput;
+spl1= ((exp(x1) - exp(-x1 * a1)) / (exp(x1) + exp(-x1)))*invput;
+
+spl0*=output;
+spl1*=output;

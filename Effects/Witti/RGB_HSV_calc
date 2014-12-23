@@ -1,0 +1,97 @@
+slider1:0<0,360,1>H
+slider2:1<0,1,0.01>S
+slider3:1<0,1,0.01>V
+slider4:0<0,1,1{HSV to RGB,RGB to HSV}>mode
+slider5:0<0,255,1>R
+slider6:0<0,255,1>G
+slider7:0<0,255,1>B
+
+in_pin:none
+out_pin:none
+
+@slider
+h=slider1;
+s=slider2;
+v=slider3;
+
+@block
+slider4 == 0 ? (
+c = v * s;
+hdash=h/60;
+x = c * (1 - abs((hdash % 2) - 1));
+m = v - c;
+
+(hdash < 1.0)?(
+r=c+m;
+g=x+m;
+b=m;
+):
+(hdash < 2.0)?(
+r=x+m;
+g=c+m;
+b=m;
+):
+(hdash < 3.0)?(
+r=m;
+g=c+m;
+b=x+m;
+):
+(hdash < 4.0)?(
+r=m;
+g=x+m;
+b=c+m;
+):
+(hdash < 5.0)?(
+r=x+m;
+g=m;
+b=c+m;
+):
+(hdash < 6.0)?(
+r=c+m;
+g=m;
+b=x+m;
+):(
+r=m;
+g=m;
+b=m;
+);
+
+slider5=floor(r*255);
+sliderchange(5);
+slider6=floor(g*255);
+sliderchange(6);
+slider7=floor(b*255);
+sliderchange(7);
+);
+
+slider4 == 1 ? (
+r=slider5/255;
+g=slider6/255;
+b=slider7/255;
+
+minRGB = min(r, min(g,b));
+maxRGB = max(r, max(g,b));
+
+(minRGB == maxRGB) ? (
+VA = minRGB;
+);
+
+d = (r==minRGB) ? g-b : ((b==minRGB) ? r-g : b-r);
+h = (r==minRGB) ? 3 : ((b==minRGB) ? 1 : 5);
+HA = 60*(h - d/(maxRGB - minRGB));
+SA = (maxRGB - minRGB)/maxRGB;
+VA = maxRGB;
+
+slider1=floor(HA);
+sliderchange(1);
+slider2=floor(SA);
+sliderchange(2);
+slider3=floor(VA);
+sliderchange(3);
+);
+
+@gfx
+gfx_a = 1;
+gfx_r=r;gfx_g=g;gfx_b=b;
+gfx_x=0;gfx_y=0;
+gfx_rectto(gfx_w,gfx_h);

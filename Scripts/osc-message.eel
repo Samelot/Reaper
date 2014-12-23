@@ -1,0 +1,2 @@
+fxp = 1.0;
+OscLocalMessageToHost("/track/3/volume", fxp);

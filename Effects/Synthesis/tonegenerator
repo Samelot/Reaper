@@ -1,0 +1,34 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+desc: tone generator
+slider1:-12<-120,6,1>wet mix (dB)
+slider2:-6<-120,6,1>dry mix (dB)
+slider3:440<0.1,24000,1>base frequency (Hz)
+slider4:0<0,23,1{A,A#,B,C,C#,D,D#,E,F,F#,G,G#,A (octave up),A# (octave up),B (octave up),C (octave up),C# (octave up),D (octave up),D# (octave up),E (octave up),F (octave up),F# (octave up),G (octave up),G# (octave up)}>note
+slider5:0<-4,4,1>octave shift
+slider6:0<-100,100,1>cent adjust
+slider7:0<0,2,1{sine,triangle,saw}>shape
+
+@slider
+  vol=2 ^ (slider1/6); 
+  dry=2 ^ (slider2/6); 
+  adj = 2.0*$pi*slider3*(2^(slider5+slider4/12+slider6/1200))/srate;
+
+@sample
+
+(slider7 < 0.67) ? (
+  tone = cos(pos);
+) : 
+(slider7 < 1.33) ? (
+  tone = 2.0*pos/$pi-1.0;
+  (tone > 1.0) ? tone = 2.0-tone;
+) : (
+  tone = 1.0-pos/$pi;
+);
+
+tone *= vol;
+spl0 = tone+spl0*dry;
+spl1 = tone+spl1*dry;
+
+pos=pos+adj;
+(pos >= 2.0*$pi) ? pos -= 2.0*$pi;

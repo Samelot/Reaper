@@ -1,0 +1,200 @@
+// 16 channel ganged Volume/Pan.
+
+desc: 0=all_off // 9=all_on
+
+slider1:0<-100,100,1>pan
+slider2:0<-6,6,0.5>pan law
+slider3:0<-60,24,0.1>volume
+
+slider6:1<0,1,1{ 1 + 2   -----------  mute, 1 + 2}>Trigger 1
+slider7:1<0,1,1{ 3 + 4   -----------  mute, 3 + 4}>Trigger 2
+slider8:1<0,1,1{ 5 + 6   -----------  mute, 5 + 6}>Trigger 3
+slider9:1<0,1,1{ 7 + 8   -----------  mute, 7 + 8}>Trigger 4
+slider10:1<0,1,1{ 9 +10  -----------  mute, 9 +10}>Trigger 5
+slider11:1<0,1,1{11+12  -----------  mute,11+12}>Trigger 6
+slider12:1<0,1,1{13+14  -----------  mute,13+14}>Trigger 7
+slider13:1<0,1,1{15+16  -----------  mute,15+16}>Trigger 8
+
+slider15:0<0,1,1{original,all to 1+2}>mode
+
+in_pin:L in A
+in_pin:R in A
+in_pin:L in B
+in_pin:R in B
+in_pin:L in C
+in_pin:R in C
+in_pin:L in D
+in_pin:R in D
+in_pin:L in E
+in_pin:R in E
+in_pin:L in F
+in_pin:R in F
+in_pin:L in G
+in_pin:R in G
+in_pin:L in H
+in_pin:R in H
+out_pin:L out A
+out_pin:R out A
+out_pin:L out B
+out_pin:R out B
+out_pin:L out C
+out_pin:R out C
+out_pin:L out D
+out_pin:R out D
+out_pin:L out E
+out_pin:R out E
+out_pin:L out F
+out_pin:R out F
+out_pin:L out G
+out_pin:R out G
+out_pin:L out H
+out_pin:R out H
+
+@init
+
+src_vol = tgt_vol = slider3 <= -60.0 ? 0.0 : 10^(slider3/20);
+src_pan = tgt_pan = 0.01*slider1;
+
+@slider
+
+tgt_vol = slider3 <= -60.0 ? 0.0 : 10^(slider3/20);
+tgt_pan = 0.01*slider1;
+panlaw = 10^(slider2/20);
+pancomp = (panlaw > 1.0 ? 1.0/panlaw : panlaw);
+
+@block
+
+d_vol = (tgt_vol-src_vol)/samplesblock;
+d_pan = (tgt_pan-src_pan)/samplesblock;
+tvol = src_vol;
+tpan = src_pan;
+src_vol = tgt_vol;
+src_pan = tgt_pan;
+
+trigger & 1 ? (
+slider6 = 0;
+sliderchange(6);
+slider7 = 0;
+sliderchange(7);
+slider8 = 0;
+sliderchange(8);
+slider9 = 0;
+sliderchange(9);
+slider10 = 0;
+sliderchange(10);
+slider11 = 0;
+sliderchange(11);
+slider12 = 0;
+sliderchange(12);
+slider13 = 0;
+sliderchange(13);
+);
+
+trigger & (2^1) ? (
+slider6 = (slider6-1)*-1;
+sliderchange(6);
+);
+
+trigger & (2^2) ? (
+slider7 = (slider7-1)*-1;
+sliderchange(7);
+);
+
+trigger & (2^3) ? (
+slider8 = (slider8-1)*-1;
+sliderchange(8);
+);
+
+trigger & (2^4) ? (
+slider9 = (slider9-1)*-1;
+sliderchange(9);
+);
+
+trigger & (2^5) ? (
+slider10 = (slider10-1)*-1;
+sliderchange(10);
+);
+
+trigger & (2^6) ? (
+slider11 = (slider11-1)*-1;
+sliderchange(11);
+);
+
+trigger & (2^7) ? (
+slider12 = (slider12-1)*-1;
+sliderchange(12);
+);
+
+trigger & (2^8) ? (
+slider13 = (slider13-1)*-1;
+sliderchange(13);
+);
+
+trigger & (2^9) ? (
+slider6 = 1;
+sliderchange(6);
+slider7 = 1;
+sliderchange(7);
+slider8 = 1;
+sliderchange(8);
+slider9 = 1;
+sliderchange(9);
+slider10 = 1;
+sliderchange(10);
+slider11 = 1;
+sliderchange(11);
+slider12 = 1;
+sliderchange(12);
+slider13 = 1;
+sliderchange(13);
+);
+
+@sample
+
+tvol += d_vol;
+tpan += d_pan;
+
+adj = tvol;
+
+panlaw != 1.0 ? (
+panlaw > 1.0 ? adj *= panlaw;
+panatt = abs(tpan);
+adj *= pancomp+(1.0-pancomp)*(2.0/(2.0-panatt)-1.0);  
+);
+
+adj0 = adj1 = adj;
+tpan < 0.0 ? adj1 *= 1.0+tpan;
+tpan > 0.0 ? adj0 *= 1.0-tpan;
+
+slider15==0 ? (
+spl0 *= adj0*slider6;
+spl1 *= adj1*slider6;
+
+spl2 *= adj0*slider7;
+spl3 *= adj1*slider7;
+
+spl4 *= adj0*slider8;
+spl5 *= adj1*slider8;
+
+spl6 *= adj0*slider9;
+spl7 *= adj1*slider9;
+
+spl8 *= adj0*slider10;
+spl9 *= adj1*slider10;
+
+spl10 *= adj0*slider11;
+spl11 *= adj1*slider11;
+
+spl12 *= adj0*slider12;
+spl13 *= adj1*slider12;
+
+spl14 *= adj0*slider13;
+spl15 *= adj1*slider13;
+);
+
+slider15==1 ? (
+spl0=(spl0*slider6+spl2*slider7+spl4*slider8+spl6*slider9+spl8*slider10+spl10*slider11+spl12*slider12+spl14*slider13)*adj0;
+spl1=(spl1*slider6+spl3*slider7+spl5*slider8+spl7*slider9+spl9*slider10+spl11*slider11+spl13*slider12+spl15*slider13)*adj1;
+
+spl2=spl3=spl4=spl5=spl6=spl7=spl8=spl9=spl10=spl11=spl12=spl13=spl14=spl15=0;
+);

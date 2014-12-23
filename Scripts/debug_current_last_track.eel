@@ -1,0 +1,21 @@
+function enlarge_selected_track() local(curr_sel_track) 
+(
+curr_sel_track = GetSelectedTrack(0, 0);
+	curr_sel_track != last_sel_track ? (
+		ShowConsoleMsg("dd");
+		// Main_OnCommand(40889, 0);
+		// last_height = GetMediaTrackInfo_Value(last_sel_track, "I_HEIGHTOVERRIDE");
+		// curr_height = GetMediaTrackInfo_Value(curr_sel_track, "I_HEIGHTOVERRIDE");
+		// (last_height != 0) ? (
+		// 	SetMediaTrackInfo_Value(curr_sel_track, "I_HEIGHTOVERRIDE", last_height);
+		// );
+		// SetMediaTrackInfo_Value(last_sel_track, "I_HEIGHTOVERRIDE", prev_height);
+		// prev_height = curr_height;
+		last_sel_track = curr_sel_track;
+		UpdateArrange()
+		// Main_OnCommand(41148, 0);
+	);
+// defer("enlarge_selected_track()";)
+);
+
+enlarge_selected_track();

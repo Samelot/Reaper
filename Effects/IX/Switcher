@@ -1,0 +1,28 @@
+/*******************************************************************************
+*  Copyright 2007 - 2011, Philip S. Considine                                  *
+*  This program is free software: you can redistribute it and/or modify        *
+*  it under the terms of the GNU General Public License as published by        *
+*  the Free Software Foundation, either version 3 of the License, or           *
+*  (at your option) any later version.                                         *
+*                                                                              *
+*  This program is distributed in the hope that it will be useful,             *
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of              *
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the                *
+*  GNU General Public License (http://www.gnu.org/licenses/)for more details.  *
+*******************************************************************************/
+
+desc:8 channel input switcher
+
+slider1:0<0,31,1{1+2,3+4,5+6,7+8,9+10,11+12,13+14,15+16,17+18,19+20,21+22,23+24,25+26,27+28,29+30,31+32,33+34,35+36,37+38,39+40,41+42,43+44,45+46,47+48,49+50,51+52,53+54,55+56,57+58,59+60,61+62,63+64}>Input channelsOutput Source
+
+@slider
+source = slider1;
+
+ch12 = source == 0 ? 1 : 0;
+ch34 = source == 1 ? 1 : 0;
+ch56 = source == 2 ? 1 : 0;
+ch78 = source == 3 ? 1 : 0;
+
+@sample
+spl0 = spl0 * ch12 + spl2 * ch34 + spl4 * ch56 + spl6 * ch78;
+spl1 = spl1 * ch12 + spl3 * ch34 + spl5 * ch56 + spl7 * ch78;

@@ -1,0 +1,163 @@
+desc: compscope_src -> compressor -> compscope
+
+// Transport must be stopped.
+// "Preferences -> Audio -> Run FX when stopped" must be enabled.
+// Master should be muted!
+
+slider1:0<0,0,1{Important!}>Mute the master.
+slider2:0<0,0,1{Got it?}>Transport must be stopped.
+slider3:0<0,0,1{Understand?}>Prefs->Run FX when stopped.
+slider4:0<0,1,1{Done,Start}>Start analysis now?
+
+@init
+
+N_INIT = 0.2*srate;
+N_QUIET = 0.5*srate;
+N_FAST = 0.004*srate;
+N_MED = 0.5*srate;
+N_SLOW = 2.0*srate;
+
+HZ1 = 250.0;
+HZ2 = 750.0;
+HZ3 = 2500.0;
+
+buf = 0;
+idx = 0;
+
+loop(N_INIT,
+  buf[idx] = (idx % 2) ? -1.0 : 1.0;
+  idx += 1;
+);
+
+loop(N_QUIET,
+  buf[idx] = 0.0;
+  idx += 1;
+);
+
+i = 0;
+loop(N_FAST,
+  x = i/N_FAST;
+  buf[idx] = 4.0*x-2.0;
+  i += 1;
+  idx += 1;
+);
+
+loop(N_QUIET,
+  buf[idx] = 0.0;
+  idx += 1;
+);
+
+i = 0;
+dsin = 2.0*$pi*HZ1/srate;
+loop(N_MED,
+  tone = cos(i*dsin);
+  x = i/N_MED;
+  amp = (x < 0.5) ? 4.0*x : 4.0*(1.0-x);
+  buf[idx] = tone*amp;
+  i += 1;
+  idx += 1;
+);
+
+loop(N_QUIET,
+  buf[idx] = 0.0;
+  idx += 1;
+);
+
+i = 0;
+dsin = 2.0*$pi*HZ2/srate;
+loop(N_MED,
+  tone = cos(i*dsin);
+  x = i/N_MED;
+  amp = (x < 0.5) ? 4.0*x : 4.0*(1.0-x);
+  buf[idx] = tone*amp;
+  i += 1;
+  idx += 1;
+);
+
+loop(N_QUIET,
+  buf[idx] = 0.0;
+  idx += 1;
+);
+
+i = 0;
+dsin = 2.0*$pi*HZ3/srate;
+loop(N_MED,
+  tone = cos(i*dsin);
+  x = i/N_MED;
+  amp = (x < 0.5) ? 4.0*x : 4.0*(1.0-x);
+  buf[idx] = tone*amp;
+  i += 1;
+  idx += 1;
+);
+
+
+loop(N_QUIET,
+  buf[idx] = 0.0;
+  idx += 1;
+);
+
+i = 0;
+dsin = 2.0*$pi*HZ1/srate;
+loop(N_SLOW,
+  tone = cos(i*dsin);
+  x = i/N_SLOW;
+  amp = (x < 0.5) ? 4.0*x : 4.0*(1.0-x);
+  buf[idx] = tone*amp;
+  i += 1;
+  idx += 1;
+);
+
+loop(N_QUIET,
+  buf[idx] = 0.0;
+  idx += 1;
+);
+
+i = 0;
+dsin = 2.0*$pi*HZ2/srate;
+loop(N_SLOW,
+  tone = cos(i*dsin);
+  x = i/N_SLOW;
+  amp = (x < 0.5) ? 4.0*x : 4.0*(1.0-x);
+  buf[idx] = tone*amp;
+  i += 1;
+  idx += 1;
+);
+
+loop(N_QUIET,
+  buf[idx] = 0.0;
+  idx += 1;
+);
+
+i = 0;
+dsin = 2.0*$pi*HZ3/srate;
+loop(N_SLOW,
+  tone = cos(i*dsin);
+  x = i/N_SLOW;
+  amp = (x < 0.5) ? 4.0*x : 4.0*(1.0-x);
+  buf[idx] = tone*amp;
+  i += 1;
+  idx += 1;
+);
+
+nbuf = idx;
+pos = -1;
+
+@slider
+
+slider4 ? pos = 0;
+
+@sample
+
+(pos >= 0) ? (
+ 
+  (pos >= nbuf || play_state != 0) ? (
+    pos = -1;
+    slider4 = 0;
+    sliderchange(slider4);
+  ) : (        
+    spl0 = spl1 = buf[pos];
+    pos += 1;
+  );
+);
+
+

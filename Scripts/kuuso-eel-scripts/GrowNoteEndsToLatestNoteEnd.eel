@@ -1,0 +1,33 @@
+// based on EEL script by spk77
+
+function grow_note_ends_to_latest_note_end()
+(
+	(take = MIDIEditor_GetTake(MIDIEditor_GetActive())) ? (
+		note_idxs = 100;
+		MIDI_CountEvts(take, note_count, 0, 0);
+		
+		num_selected = 0;
+		cur_note = 0;
+		latest_end = 0;
+		while(cur_note < note_count) (
+			MIDI_GetNote(take, cur_note, sel, muted, start_pos, end_pos, chan, pitch, velOut);
+			sel ? (
+				note_idxs[num_selected] = cur_note;
+				num_selected += 1;
+				latest_end = max(end_pos, latest_end);
+			);			 
+			cur_note += 1;
+		);
+	
+	i = 0;
+	loop(num_selected,
+		cur_note = note_idxs[i];
+		MIDI_GetNote(take, cur_note, sel, muted, start_pos, end_pos, chan, pitch, velOut);
+		MIDI_SetNote(take, cur_note, sel, muted, start_pos, latest_end, chan, pitch, velOut); 
+		i += 1;
+	);
+   Undo_OnStateChange("Grow note ends to latest note end.");
+  );
+);
+
+grow_note_ends_to_latest_note_end();

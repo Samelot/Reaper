@@ -1,0 +1,20 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+desc:channel mixer
+slider1:-6<-120,6,1>L->L mix (dB)
+slider2:-6<-120,6,1>R->R mix (dB)
+slider3:-6<-120,6,1>L->R mix (dB)
+slider4:-6<-120,6,1>R->L mix (dB)
+
+@init
+@slider
+ll=2^(slider1/6);
+rr=2^(slider2/6);
+lr=2^(slider3/6);
+rl=2^(slider4/6);
+
+@sample
+l=spl0;
+r=spl1;
+spl0=l*ll+r*rl;
+spl1=l*lr+r*rr;

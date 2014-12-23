@@ -1,0 +1,116 @@
+slider1:1<0,1,1{Hz,BPM}>Mode
+slider2:2<0,4,0.05>Hz
+slider3:120<0,240,1>BPM
+slider4:1<0,1,1{OFF,ON}>Tempo sync
+slider5:0<0,6,1{1,1/2,1/4,1/8,1/16,1/32,1/64}>Tempo sync div
+slider6:0<0,2,1{sine,triangle,saw}>Shape
+slider7:1<0,31,1{----------,3+4,5+6,7+8,9+10,11+12,13+14,15+16,17+18,19+20,21+22,23+24,25+26,27+28,29+30,31+32,33+34,35+36,37+38,39+40,41+42,43+44,45+46,47+48,49+50,51+52,53+54,55+56,57+58,59+60,61+62,63+64}>Out channel
+
+@slider
+channel = slider7*2;
+out = channel;
+out2 = out+1;
+
+@block
+slider1==1?(
+
+slider4==1?(
+
+slider5==0?(
+tmp=tempo;
+);
+slider5==1?(
+tmp=tempo*1/2;
+);
+slider5==2?(
+tmp=tempo*1/4;
+);
+slider5==3?(
+tmp=tempo*1/8;
+);
+slider5==4?(
+tmp=tempo*1/16;
+);
+slider5==5?(
+tmp=tempo*1/32;
+);
+slider5==6?(
+tmp=tempo*1/64;
+);
+
+adj = 2.0*$pi*(tmp/60)/srate; //BPM
+slider3=tmp;
+sliderchange(slider3);
+slider2=tmp/60;
+sliderchange(slider2);
+
+):(
+
+adj = 2.0*$pi*(slider3/60)/srate; //BPM
+slider2=slider3/60;
+sliderchange(slider2);
+);
+
+):(
+
+slider4==1?(
+
+slider5==0?(
+tmp2=tempo/60;
+);
+slider5==1?(
+tmp2=(tempo/60)*1/2;
+);
+slider5==2?(
+tmp2=(tempo/60)*1/4;
+);
+slider5==3?(
+tmp2=(tempo/60)*1/8;
+);
+slider5==4?(
+tmp2=(tempo/60)*1/16;
+);
+slider5==5?(
+tmp2=(tempo/60)*1/32;
+);
+slider5==6?(
+tmp2=(tempo/60)*1/64;
+);
+
+adj = 2.0*$pi*tmp2/srate; //HZ
+slider2=tmp2;
+sliderchange(slider2);
+slider3=tmp2*60;
+sliderchange(slider3);
+
+):(
+
+adj = 2.0*$pi*slider2/srate; //HZ
+slider3=slider2*60;
+sliderchange(slider3);
+);
+
+);
+
+@sample
+(slider6 == 0) ? (
+tone = cos(pos);
+);
+(slider6 == 1) ? (
+tone = 2.0*pos/$pi-1.0;
+(tone > 1.0) ? tone = 2.0-tone;
+);
+(slider6 == 2) ? (
+tone = 1.0-pos/$pi;
+);
+
+slider7 > 0 ? (
+spl(out) = tone;
+spl(out2) = tone;
+);
+
+spl0=spl0;
+spl1=spl1;
+
+pos=pos+adj;
+(pos >= 2.0*$pi) ? pos -= 2.0*$pi;

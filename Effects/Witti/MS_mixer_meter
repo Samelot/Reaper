@@ -1,0 +1,147 @@
+slider1:0<-40,40,0.1>Mid (dB)
+slider2:0<-40,40,0.1>Side (dB)
+slider3:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+RMS_MS = 350.0;
+RED_DR = 60;
+MAX_DB = 0;
+MIN_DB = -60.0;
+
+decay = exp(-1.0/(RMS_MS*srate*0.001));
+
+DB_LO = -60.0;
+
+peak0 = peak1 = peak2 = peak3 = 0.0;
+peakdb0 = peakdb1 = peakdb2 = peakdb3 = DB_LO;
+
+src_vol0 = tgt_vol0 = 10 ^ (slider1 / 20);
+src_vol1 = tgt_vol1 = 10 ^ (slider2 / 20);
+src_vol2 = tgt_vol2 = 10 ^ (slider3 / 20);
+
+@slider
+tgt_vol0=slider1 <= -60.0 ? 0.0 : 10 ^ (slider1 / 20);
+tgt_vol1=slider2 <= -60.0 ? 0.0 : 10 ^ (slider2 / 20);
+tgt_vol2=slider3 <= -60.0 ? 0.0 : 10 ^ (slider3 / 20);
+
+@block
+peak0 <= 0.0 ? peakdb0 = DB_LO : peakdb0 = 8.6562*log(peak0);
+peak2 <= 0.0 ? peakdb2 = DB_LO : peakdb2 = 8.6562*log(peak2);
+peak1 <= 0.0 ? peakdb1 = DB_LO : peakdb1 = 8.6562*log(peak1);
+peak3 <= 0.0 ? peakdb3 = DB_LO : peakdb3 = 8.6562*log(peak3);
+dyn = 0.5*(peakdb0+peakdb1-peakdb2-peakdb3);
+
+d_vol0 = (tgt_vol0-src_vol0)/samplesblock;
+tvol0 = src_vol0;
+src_vol0 = tgt_vol0;
+
+d_vol1 = (tgt_vol1-src_vol1)/samplesblock;
+tvol1 = src_vol1;
+src_vol1 = tgt_vol1;
+
+d_vol2 = (tgt_vol2-src_vol2)/samplesblock;
+tvol2 = src_vol2;
+src_vol2 = tgt_vol2;
+
+@sample
+tvol0 += d_vol0;
+adj0 = tvol0;
+
+tvol1 += d_vol1;
+adj1 = tvol1;
+
+tvol2 += d_vol2;
+adj2 = tvol2;
+
+spl0orig=spl0;
+spl1orig=spl1;
+tmp0 = ((spl0orig+spl1orig) * 0.5)*adj0;
+tmp1 = ((spl0orig-spl1orig) * 0.5)*adj1;
+
+new = abs(tmp0)*adj0;
+new > peak0 ? peak0 = new : peak0 = peak0*decay;
+new = abs(tmp1)*adj1;
+new > peak2 ? peak2 = new : peak2 = peak2*decay;
+
+new = abs(tmp0)*adj0;
+new > peak1 ? peak1 = new : peak1 = peak1*decay;
+new = abs(tmp1)*adj1;
+new > peak3 ? peak3 = new : peak3 = peak3*decay;
+
+spl0 = (tmp0 + tmp1)*adj2;
+spl1 = (tmp0 - tmp1)*adj2;
+
+@gfx 0 300
+T = (gfx_h-pxperdb*60.0)|0;
+B = (gfx_h-pxperdb*0)|0;
+pxperdb = (gfx_h+22.5)/66.0;
+
+redpx = RED_DR*pxperdb;
+
+xw = -gfx_W*3/64;
+xs = -gfx_W/16;
+
+gfx_a = 1.0;
+
+i = 0;
+loop(2,
+i == 0 ? (
+tpeak0 = peakdb0;
+tpeak1 = peakdb2;
+):(
+tpeak0 = peakdb1;
+tpeak1 = peakdb3;
+);
+
+peaky0 = B-pxperdb*(tpeak0-MIN_DB);
+peaky0 < T ? peaky0 = T : peaky0 > B ? peakY0 = B;
+peaky1 = B-pxperdb*(tpeak1-MIN_DB);
+peaky1 < T ? peaky1 = T : peaky1 > B ? peaky1 = B;
+
+d = (peaky1-peaky0-redpx);
+d < 0.0 ? d = 0.0 : d > 1.0 ? d = 1.0;
+gfx_r = 1.0-d;
+gfx_g = d;
+gfx_b = 0.0;
+
+gfx_x = gfx_w/2+xw/4;
+gfx_y = peaky1;
+gfx_rectto(gfx_x+xw, peaky0);
+
+(peaky1-peaky0)<=0?(
+gfx_r = 0.8;
+gfx_g = 0.8;
+gfx_b = 0.1;
+):(
+gfx_r = 0.2;
+gfx_g = 0.8;
+gfx_b = 0.3;
+);
+
+gfx_x = gfx_x+xs;
+gfx_rectto(gfx_x+xw, B);
+gfx_x = gfx_x+xs;
+gfx_rectto(gfx_x+xw, peaky1);
+
+xw = -xw;
+xs = -xs;
+i = i+1;
+);
+
+i = 0;
+db = 60;
+while 
+(
+i%2 ? gfx_r=gfx_g=gfx_b=0.0 : gfx_r=gfx_g=gfx_b=0.375;
+gfx_x = 4;
+gfx_y = gfx_h-pxperdb*db-0.5;
+gfx_lineto(gfx_w-4, gfx_y, 0);  
+db = db-3;
+i = i+1;
+db > 0.0;
+);

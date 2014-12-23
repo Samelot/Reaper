@@ -1,0 +1,73 @@
+// Toggle item mute
+function toggle_mute() local(item, muted_state)
+(
+
+
+
+
+	action_select_child = 53784;  
+	action_select_parent = 53787;
+	action_unselect_tracks = 40297;
+
+	action_cursor_start = 41173;
+	action_save_cursor = 54096;
+	action_restore_cursor = 54101;
+
+	action_cut = 40699; 
+	action_paste = 53588;
+
+	HasExtState("mute", "mutedstate") ? (
+		GetExtState(#mutedstate, "mute", "mutedstate");
+		match("%d", #mutedstate, muted_state);
+	) : (
+		muted_state = 0;
+	);
+
+	i = 0;
+	  loop(CountSelectedMediaItems(0),
+	    (item = GetSelectedMediaItem(0, i)) ? (
+	      	SetMediaItemInfo_Value(item, "B_MUTE", muted_state);
+	    	(sel_item = GetSelectedMediaItem(0, 0)) ? (
+
+	    		parent_track = GetMediaItem_Track(sel_item);
+	    		Main_OnCommand(action_unselect_tracks, 0);
+	    		SetTrackSelected(parent_track, 1);
+	  		);
+	    );
+	    i += 1;
+	  );
+
+	folder_state = GetMediaTrackInfo_Value(GetSelectedTrack(0, 0), "I_FOLDERDEPTH");
+
+	// folder_state == 1 ? (
+	// 			ShowConsoleMsg(sprintf(#, "%d", muted_state));
+	// 		Main_OnCommand(action_save_cursor, 0);
+	// 		Main_OnCommand(action_cut, 0);
+	// 	  	Main_OnCommand(action_select_child, 0);
+	// 	  	Main_OnCommand(action_paste, 0);		
+	// 		Main_OnCommand(action_restore_cursor, 0);		  	
+	// 	) : (
+	// 		Main_OnCommand(action_save_cursor, 0);
+	// 		Main_OnCommand(action_cut, 0);
+	// 	  	Main_OnCommand(action_select_parent, 0);
+	// 	  	Main_OnCommand(action_paste, 0);	
+	// 	  	Main_OnCommand(action_restore_cursor, 0);
+	// 	);
+
+		// muted_state == 1 ? (
+		// 	folder_state == 1 ? (
+		// 		ShowConsoleMsg("muted and in")
+		// 	)
+		// 	ShowConsoleMsg("ddd");
+		// ) : (
+		// 	ShowConsoleMsg("aaa");
+		// );
+
+	muted_state = !muted_state;
+	#mutedstate = sprintf(#, "%d", muted_state);
+	SetExtState("mute", "mutedstate", #mutedstate, 0);
+	UpdateArrange();
+ 
+);
+
+toggle_mute();

@@ -1,0 +1,28 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+
+desc: VU meter
+slider1:0,L volume (dB)
+slider2:0,R volume (dB)
+slider3:200, sample time (ms)
+
+@init
+  sc=6/log(2);
+
+@slider
+  sampletime=slider3*srate/1000;
+
+@block
+ bscnt>sampletime ? 
+ (
+      slider1=log(peakvoll)*sc;
+      slider2=log(peakvolr)*sc; 
+      sliderchange(3); 
+      bscnt=peakvoll=peakvolr=0;
+ );
+ bscnt += samplesblock;
+
+@sample
+
+peakvoll=max(peakvoll,abs(spl0));
+peakvolr=max(peakvolr,abs(spl1));

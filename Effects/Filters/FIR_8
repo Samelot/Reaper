@@ -1,0 +1,24 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+
+desc: 8 tap FIR filter
+
+slider1:1<-1,1>coeff 1
+slider2:0<-1,1>coeff 2
+slider3:0<-1,1>coeff 3
+slider4:0<-1,1>coeff 4
+slider5:0<-1,1>coeff 5
+slider6:0<-1,1>coeff 6
+slider7:0<-1,1>coeff 7
+slider8:0<-1,1>coeff 8
+
+@init
+s1=0; s2=0; s3=0; s4=0; s5=0; s6=0; s7=0; s8=0;
+r1=0; r2=0; r3=0; r4=0; r5=0; r6=0; r7=0; r8=0;
+
+@sample
+s8=s7; s7=s6; s6=s5; s5=s4; s4=s3; s3=s2; s2=s1; s1=spl0;
+r8=r7; r7=r6; r6=r5; r5=r4; r4=r3; r3=r2; r2=r1; r1=spl1;
+
+spl0 = s1*slider1 + s2*slider2 + s3*slider3 + s4*slider4 + s5*slider5 + s6*slider6 + s7*slider7 + s8*slider8;
+spl1 = r1*slider1 + r2*slider2 + r3*slider3 + r4*slider4 + r5*slider5 + r6*slider6 + r7*slider7 + r8*slider8;

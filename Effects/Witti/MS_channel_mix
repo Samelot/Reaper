@@ -1,0 +1,145 @@
+slider1:0<-60,6,0.1>L->L mix (dB)
+slider2:0<-60,6,0.1>R->R mix (dB)
+slider3:-60<-60,6,0.1>L->R mix (dB)
+slider4:-60<-60,6,0.1>R->L mix (dB)
+slider6:1<-1,1,2>(invert,normal) L polarity
+slider7:1<-1,1,2>(invert,normal) R polarity
+slider8:1<-1,1,2>(invert,normal) L->R polarity
+slider9:1<-1,1,2>(invert,normal) R->L polarity
+slider11:1<0,2,1{Dots,Lines,Rays}>Display
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+gfx_clear=-1;
+off = 500000;
+rot=-45*0.017453292;
+DOTS = 0;
+LINES = 1;
+RAYS = 2;
+MAXDRAWSPLS = 10000;
+PHASEUPDATERATE = srate/8;
+n = 0;
+phC = 0;
+ph = 0;
+
+@slider
+ll=slider1 <= -60.0 ? 0.0 : 10 ^ (slider1 / 20);
+ll=ll*slider6;
+rr=slider2 <= -60.0 ? 0.0 : 10 ^ (slider2 / 20);
+rr=rr*slider7;
+lr=slider3 <= -60.0 ? 0.0 : 10 ^ (slider3 / 20);
+lr=lr*slider8;
+rl=slider4 <= -60.0 ? 0.0 : 10 ^ (slider4 / 20);
+rl=rl*slider9;
+
+@sample
+l=spl0;
+r=spl1;
+spl0=l*ll+r*rl;
+spl1=l*lr+r*rr;
+
+s0 = sign(spl0);
+s1 = sign(spl1);
+
+angle = atan( spl0 / spl1 );
+(s0 == 1 && s1 == -1) || (s0 == -1 && s1 == -1) ? angle += 3.141592654;
+s0 == -1 && s1 == 1 ? angle += 6.283185307;
+spl1 == 0 ? spl0 > 0 ? angle = 1.570796327 : angle = 4.71238898;
+spl0 == 0 ? spl1 > 0 ? angle = 0 : angle = 3.141592654;
+radius = sqrt( sqr(spl0)+sqr(spl1) ) ;
+angle -= rot;
+vert = 0[b] = cos(angle)*radius;
+horiz = off[b] = sin(angle)*radius;
+b<MAXDRAWSPLS ? b += 1;
+
+s0 != s1 ? phC-=1:phC+=1;
+(n+=1) > PHASEUPDATERATE ? (
+ph = (1-(phC/n))/2;
+phC = n = 0;
+);
+
+@gfx 0 453
+size = min(gfx_w,gfx_h-20);
+sizeH = size/2;
+sizeDSqr05 = sizeH * 0.70710681;
+sizeQ = sizeH/2;
+size3Q = 3*sizeQ;
+
+(mouse_cap) ? (
+gfx_r=gfx_g=gfx_b=0; gfx_a=1;
+gfx_x=gfx_y=0;
+gfx_rectto(gfx_w,gfx_h);
+);
+
+gfx_r=gfx_g=gfx_b=0; gfx_a=0.025;
+gfx_x=gfx_y=0;
+gfx_rectto(gfx_w,gfx_h);
+
+x = y = sizeH;
+
+i = min(b,MAXDRAWSPLS);
+while (
+slider11 == DOTS ? (
+gfx_a=1;
+gfx_x=sizeH+0[i]*sizeDSqr05;
+gfx_y=sizeH-off[i]*sizeDSqr05;
+gfx_setpixel(0.5,1,0);
+):(
+slider11 == LINES ? (
+gfx_x=x; gfx_y=y;
+x=sizeH+0[i]*sizeDSqr05;
+y=sizeH-off[i]*sizeDSqr05;
+):(
+gfx_x=sizeH+0[i]*sizeDSqr05;
+gfx_y=sizeH-off[i]*sizeDSqr05;
+);
+gfx_r=0.5; gfx_g=1; gfx_b=0; gfx_a=0.6;
+gfx_lineto(x,y,0);
+);
+(i-=1)>0;
+);
+b=0;
+
+gfx_r=gfx_g=gfx_b=0.8; gfx_a=1;
+
+gfx_x=sizeQ; gfx_y=sizeQ;
+gfx_lineto(size3Q,size3Q,0);
+
+gfx_x=sizeQ; gfx_y=size3Q;
+gfx_lineto(size3Q,sizeQ,0);
+
+gfx_x = gfx_y = sizeQ;
+gfx_drawchar($'L');
+gfx_x = size3Q; gfx_y = sizeQ;
+gfx_drawchar($'R');
+gfx_x = sizeH; gfx_y = 0;
+gfx_drawchar($'M');
+gfx_x = 0; gfx_y = sizeH;
+gfx_drawchar($'+');
+gfx_drawchar($'S');
+gfx_x = size-20; gfx_y = sizeH;
+gfx_drawchar($'-');
+gfx_drawchar($'S');
+
+gfx_r=gfx_g=gfx_b=0; gfx_a=1;
+gfx_x=0; gfx_y=size;
+gfx_rectto(size+1,size+20);
+gfx_r=1; gfx_g=0; gfx_b=0; gfx_a=1;
+gfx_x=1+ph*(size-1); gfx_y=size+1;
+gfx_lineto(gfx_x,size+19,0);
+
+gfx_r=gfx_g=gfx_b=0.8; gfx_a=1;
+gfx_x = 0; gfx_y = size+10;
+gfx_drawnumber(0,0);
+gfx_x = sizeH-8; gfx_y = size+10;
+gfx_drawnumber(90,0);
+gfx_x = size-25; gfx_y = size+10;
+gfx_drawnumber(180,0);
+
+gfx_r=0.5; gfx_g=1; gfx_b=0; gfx_a=1;
+gfx_x = 0; gfx_y = size;
+gfx_drawnumber(ph*180,0);

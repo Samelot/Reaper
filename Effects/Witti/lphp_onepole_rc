@@ -1,0 +1,29 @@
+desc: Single Pole Recursive Lowpass/Highpass Filter
+
+slider1:200<20,22000,1>Frequency (Hz)
+slider2:0<0,1,1{lowpass,highpass}>Mode
+slider3:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+y0 = y1 = 0;
+
+@slider
+C = exp(-2*$pi*slider1/srate);
+gain=10^(slider3/20);
+
+@sample
+slider2==1?(
+spl0 -= y0 = spl0 + C*(y0 - spl0);
+spl1 -= y1 = spl1 + C*(y1 - spl1);
+):(
+spl0 = y0 = spl0 + C*(y0 - spl0);
+spl1 = y1 = spl1 + C*(y1 - spl1);
+);
+
+spl0*=gain;
+spl1*=gain;

@@ -1,0 +1,12 @@
+desc:midi eater
+
+@init
+
+@slider
+
+@block
+while (
+  midirecv(ts,msg1,msg23);
+);
+
+@sample

@@ -1,0 +1,4 @@
+Change log:
+
++ added automatic resizing
++ fixed the channel selection for the drum tab

@@ -1,0 +1,41 @@
+slider1:0<0,255,1>R
+slider2:0<0,255,1>G
+slider3:0<0,255,1>B
+slider4:0<0,1,1{RGB to GFX,GFX to RGB}>Mode
+slider5:0<0,1,0.001>R (gfx)
+slider6:0<0,1,0.001>G (gfx)
+slider7:0<0,1,0.001>B (gfx)
+
+in_pin:none
+out_pin:none
+
+@block
+slider4 == 0 ? (
+r=slider1/255;
+slider5 = r;
+sliderchange(slider5);
+g=slider2/255;
+slider6 = g;
+sliderchange(slider6);
+b=slider3/255;
+slider7 = b;
+sliderchange(slider7);
+);
+
+slider4 == 1 ? (
+r=255*slider5;
+slider1 = ceil(r);
+sliderchange(slider1);
+g=255*slider6;
+slider2 = ceil(g);
+sliderchange(slider2);
+b=255*slider7;
+slider3 = ceil(b);
+sliderchange(slider3);
+);
+
+@gfx
+gfx_a = 1;
+gfx_r=slider5;gfx_g=slider6;gfx_b=slider7;
+gfx_x=0;gfx_y=0;
+gfx_rectto(gfx_w,gfx_h);

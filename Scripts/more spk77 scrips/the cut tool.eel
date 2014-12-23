@@ -1,0 +1,41 @@
+function sel_prev_item_crossfade_to_time_sel()
+(
+    Main_OnCommand(NamedCommandLookup("_SWS_SELPREVITEM2"), 0);
+    Main_OnCommand(40916, 0); // crossfade to time selection
+);
+
+function split_items()
+(
+    Main_OnCommand(NamedCommandLookup("_SWS_AWSPLITXFADELEFT"), 0);
+);
+
+function dax_split()
+(
+    PreventUIRefresh(1);
+    Undo_BeginBlock2(0);
+
+    GetSet_LoopTimeRange2(0, 0, 0, ts_start, ts_end, 0);
+    time_sel = ts_start !== ts_end;
+
+    Main_OnCommand(40513, 0); // move edit cursor to mouse cursor
+
+    CountSelectedMediaItems(0) === 0 ?
+    (
+        Main_OnCommand(40528, 0); // select item under cursor
+        split_items();
+
+        time_sel ?
+            sel_prev_item_crossfade_to_time_sel();
+            
+        Main_OnCommand(40289, 0); // deselect items
+    ) : // else
+    (
+        split_items();
+        time_sel ?
+            sel_prev_item_crossfade_to_time_sel();
+    );
+    PreventUIRefresh(-1);
+    Undo_EndBlock2(0, "Split item(s)", -1);
+);
+
+dax_split();

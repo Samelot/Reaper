@@ -1,0 +1,150 @@
+desc: FFT delayer
+slider1:0<0,20,1>delay band 1 (frames)
+slider2:-120<-120,1,1>feedback band 1 (db)
+slider3:0<0,20,1>delay band 2 (frames)
+slider4:-120<-120,1,1>feedback band 2 (db)
+slider5:0<0,20,1>delay band 3 (frames)
+slider6:-120<-120,1,1>feedback band 3 (db)
+slider7:0<0,20,1>delay band 4 (frames)
+slider8:-120<-120,1,1>feedback band 4 (db)
+slider9:0<0,20,1>delay band 5 (frames)
+slider10:-120<-120,1,1>feedback band 5 (db)
+slider11:0<0,20,1>delay band 6 (frames)
+slider12:-120<-120,1,1>feedback band 6 (db)
+slider13:0<0,20,1>delay band 7 (frames)
+slider14:-120<-120,1,1>feedback band 7 (db)
+slider15:0<0,20,1>delay band 8 (frames)
+slider16:-120<-120,1,1>feedback band 8 (db)
+
+@init 
+
+  maxdelay=21;
+  window=    120000;
+  hist=      240000;
+  dlens=     358000;
+  btops=    359000;
+  dfb = 359500;
+  delaylines=360000;
+
+  fftsize=2048;
+  invfsize=1/fftsize;
+  hfftsize=fftsize*0.5;
+  tmp=0;
+  tsc=3.14159/hfftsize;
+  loop(hfftsize,
+    window[tmp]=0.42-0.50*cos(tmp*tsc)+0.08*cos(2*tmp*tsc);
+    tmp+=1;
+  );
+  bpos=0; 
+  curblock=0;
+  lastblock=65536;
+  delaypos=0;
+  pdc_top_ch=2;
+  pdc_bot_ch=0;
+  pdc_delay=fftsize;
+  btops[0]=2;
+  btops[1]=4;
+  btops[2]=8;
+  btops[3]=16;
+  btops[4]=64;
+  btops[5]=128;
+  btops[6]=512;
+  btops[7]=1024;
+
+@slider
+  dlens[0]=slider1;
+  dfb[0]=2^(slider2/6);
+  dlens[1]=slider3;
+  dfb[1]=2^(slider4/6);
+  dlens[2]=slider5;
+  dfb[2]=2^(slider6/6);
+  dlens[3]=slider7;
+  dfb[3]=2^(slider8/6);
+  dlens[4]=slider9;
+  dfb[4]=2^(slider10/6);
+  dlens[5]=slider11;
+  dfb[5]=2^(slider12/6);
+  dlens[6]=slider13;
+  dfb[6]=2^(slider14/6);
+  dlens[7]=slider15;
+  dfb[7]=2^(slider16/6);
+  tmp=0;
+  loop(8,
+     dlens[tmp]|=0;
+     dlens[tmp] < 1 ? dlens[tmp]=0 : (dlens[tmp] > maxdelay-1 ? dlens[tmp]=maxdelay-1);
+     tmp+=1;
+  );
+
+@sample
+
+bpos >= fftsize ? (
+
+  t=curblock;
+  curblock=lastblock;
+  lastblock=t;
+
+  fft(curblock,fftsize);
+  fft_permute(curblock,fftsize);
+
+  dbo = (delaylines+delaypos*fftsize*2);
+  tmp=0;
+  loop(fftsize*2,
+     dbo[tmp]=curblock[tmp]; tmp+=1;
+     );
+
+  i=0;
+  idx=0;
+  loop(8,
+    btop=btops[idx]*2;
+    fb=dfb[idx];
+    delamt=dlens[idx]; idx+=1;
+    delamt > 0 ? (
+       a = delaypos - delamt;
+       a < 0 ? a += maxdelay;
+       a|=0;
+       delbuf = delaylines+a*fftsize*2;
+       while(
+        i2=fftsize*2-i-2;
+
+        curblock[i] += (a=delbuf[i]); 
+        curblock[i+1] += (b=delbuf[i+1]); 
+        curblock[i2] += (c=delbuf[i2]); 
+        curblock[i2+1] += (d=delbuf[i2+1]); 
+
+        fb > 0.0000001 ? (
+          dbo[i]+=a*fb;
+          dbo[i+1]+=b*fb;
+          dbo[i2]+=c*fb;
+          dbo[i+1]+=d*fb;
+        );
+
+        (i+=2) < btop;          
+       );
+    ) : (
+       i=btop;
+    );
+  );
+  fft_ipermute(curblock,fftsize);
+  ifft(curblock,fftsize);
+  (delaypos += 1) >= maxdelay ? delaypos=0;
+  bpos=0;
+);
+
+// make sample
+w=window[bpos*0.5];
+iw=1-w;
+
+os0=spl0*invfsize;
+os1=spl1*invfsize;
+
+spl0=(curblock[bpos]*w + lastblock[fftsize+bpos]*iw);
+spl1=(curblock[bpos+1]*w + lastblock[fftsize+bpos+1]*iw);
+
+lastblock[bpos]=hist[bpos];
+lastblock[bpos+1]=hist[bpos+1];
+lastblock[fftsize+bpos]=os0;
+lastblock[fftsize+bpos+1]=os1;
+
+hist[bpos]=os0;
+hist[bpos+1]=os1;
+bpos+=2;

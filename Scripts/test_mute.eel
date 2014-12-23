@@ -1,0 +1,12 @@
+function TEST()
+(
+	CountSelectedMediaItems() > 0 ? (
+		x = GetSelectedMediaItem(0, 0);
+		SetMediaItemInfo_Value(x, "B_MUTE", val = 1 - val);
+		UpdateArrange();
+
+		defer("TEST();");
+	);
+);
+
+TEST();

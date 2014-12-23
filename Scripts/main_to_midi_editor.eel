@@ -1,0 +1,10 @@
+function do_actions_from_main_and_midi_sections()
+(
+	main_section_action = 40153; // 40153 == open selected item in MIDI editor
+	midi_editor_section_action = 40003; // 40003 == select all notes
+	
+	Main_OnCommand(main_section_action, 0);
+	MIDIEditor_OnCommand(MIDIEditor_GetActive(), midi_editor_section_action);
+);
+
+do_actions_from_main_and_midi_sections();

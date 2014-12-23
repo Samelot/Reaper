@@ -1,0 +1,16 @@
+function msg_s(m)
+(
+  ShowConsoleMsg(m);
+);
+
+function main()
+(
+  current_sel_item = GetSelectedMediaItem(0, 0); // get first selected item
+  current_sel_item != last_sel_item ? (
+    msg_s("Item selection changed\n");
+    last_sel_item = current_sel_item;
+  );
+  defer("main();");
+);
+
+main();

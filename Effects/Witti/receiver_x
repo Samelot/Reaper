@@ -1,0 +1,74 @@
+slider1:0<0,31,1{1+2,3+4,5+6,7+8,9+10,11+12,13+14,15+16,17+18,19+20,21+22,23+24,25+26,27+28,29+30,31+32,33+34,35+36,37+38,39+40,41+42,43+44,45+46,47+48,49+50,51+52,53+54,55+56,57+58,59+60,61+62,63+64}>Input Receive A
+slider3:1<0,31,1{1+2,3+4,5+6,7+8,9+10,11+12,13+14,15+16,17+18,19+20,21+22,23+24,25+26,27+28,29+30,31+32,33+34,35+36,37+38,39+40,41+42,43+44,45+46,47+48,49+50,51+52,53+54,55+56,57+58,59+60,61+62,63+64}>Input Receive B
+slider5:2<0,31,1{1+2,3+4,5+6,7+8,9+10,11+12,13+14,15+16,17+18,19+20,21+22,23+24,25+26,27+28,29+30,31+32,33+34,35+36,37+38,39+40,41+42,43+44,45+46,47+48,49+50,51+52,53+54,55+56,57+58,59+60,61+62,63+64}>Input Receive C
+slider7:3<0,31,1{1+2,3+4,5+6,7+8,9+10,11+12,13+14,15+16,17+18,19+20,21+22,23+24,25+26,27+28,29+30,31+32,33+34,35+36,37+38,39+40,41+42,43+44,45+46,47+48,49+50,51+52,53+54,55+56,57+58,59+60,61+62,63+64}>Input Receive D
+slider2:0<-60,0,0.1>Volume Receive A
+slider4:0<-60,0,0.1>Volume Receive B
+slider6:0<-60,0,0.1>Volume Receive C
+slider8:0<-60,0,0.1>Volume Receive D
+slider9:0<-24,24,0.1>Receives Main Volume
+
+@init
+src_vol2 = tgt_vol2 = slider2 <= -60.0 ? 0.0 : 10 ^ (slider2 / 20);
+src_vol4 = tgt_vol4 = slider4 <= -60.0 ? 0.0 : 10 ^ (slider4 / 20);
+src_vol6 = tgt_vol6 = slider6 <= -60.0 ? 0.0 : 10 ^ (slider6 / 20);
+src_vol8 = tgt_vol8 = slider8 <= -60.0 ? 0.0 : 10 ^ (slider8 / 20);
+src_vol9 = tgt_vol9 = 10 ^ (slider9 / 20);
+
+@slider
+
+channelA = slider1*2;
+inA1 = channelA;
+inA2 = inA1+1;
+
+channelB = slider3*2;
+inB1 = channelB;
+inB2 = inB1+1;
+
+channelC = slider5*2;
+inC1 = channelC;
+inC2 = inC1+1;
+
+channelD = slider7*2;
+inD1 = channelD;
+inD2 = inD1+1;
+
+tgt_vol2 = slider2 <= -60.0 ? 0.0 : 10 ^ (slider2 / 20);
+tgt_vol4 = slider4 <= -60.0 ? 0.0 : 10 ^ (slider4 / 20);
+tgt_vol6 = slider6 <= -60.0 ? 0.0 : 10 ^ (slider6 / 20);
+tgt_vol8 = slider8 <= -60.0 ? 0.0 : 10 ^ (slider8 / 20);
+tgt_vol9 = 10 ^ (slider9 / 20);
+
+@block
+
+d_vol2 = (tgt_vol2-src_vol2)/samplesblock;
+d_vol4 = (tgt_vol4-src_vol4)/samplesblock;
+d_vol6 = (tgt_vol6-src_vol6)/samplesblock;
+d_vol8 = (tgt_vol8-src_vol8)/samplesblock;
+d_vol9 = (tgt_vol9-src_vol9)/samplesblock;
+tvol2 = src_vol2;
+tvol4 = src_vol4;
+tvol6 = src_vol6;
+tvol8 = src_vol8;
+tvol9 = src_vol9;
+src_vol2 = tgt_vol2;
+src_vol4 = tgt_vol4;
+src_vol6 = tgt_vol6;
+src_vol8 = tgt_vol8;
+src_vol9 = tgt_vol9;
+
+@sample
+
+tvol2 += d_vol2;
+tvol4 += d_vol4;
+tvol6 += d_vol6;
+tvol8 += d_vol8;
+tvol9 += d_vol9;
+adj2 = tvol2;
+adj4 = tvol4;
+adj6 = tvol6;
+adj8 = tvol8;
+adj9 = tvol9;
+
+spl0= (spl(inA1)*adj2+spl(inB1)*adj4+spl(inC1)*adj6+spl(inD1)*adj8)*adj9;
+spl1= (spl(inA2)*adj2+spl(inB2)*adj4+spl(inC2)*adj6+spl(inD2)*adj8)*adj9;

@@ -1,0 +1,118 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+// this algorithm is based on the one used by gtkguituner, the schmitt-triggering.
+
+desc: schmitt-triggering tuner
+
+slider1:0.5<0.001,0.990>trigger factor
+slider2:1024<128,16384>numsamples
+slider4:0,octaves from a110
+slider5:0<0,12,1{-,A,A#,B,C,C#,D,D#,E,F,F#,G,G#}>note
+slider6:0<0,10,1{-,[*----|-----],[-*---|-----],[--*--|-----],[---*-|-----],[----*|-----],[-----*-----],[-----|*----],[-----|-*---],[-----|--*--],[-----|---*-],[-----|----*]}>tune
+slider7:0,freq (Hz)
+
+@init
+
+  volthresh=2^(-60/6);
+
+@slider 
+  state=0;
+  splpos=0;
+  trigfact=slider1;
+  numsamples=slider2;
+  ufreq = (srate/numsamples)/3;
+  freqcnt=0;
+
+
+@sample
+
+
+state ? 
+(
+  // track minimum and maximum values for sample
+  a1=max(a1,spl0);
+  a2=min(a2,spl0);
+
+  splpos[0]=spl0;
+  maxvol = max(maxvol,spl0);
+  splpos += 1;
+  splpos >= numsamples ? 
+  (
+    splpos=0;
+    state=0;
+    a2 *= trigfact;
+    a1 *= trigfact;
+
+    lst=0;
+    startp=1;
+    loop(numsamples-1, 
+        lst == 0 && startp[0] > a1 ? lst=1;
+        lst == 1 && startp[0] >= a2 && startp[1] < a2 ? lst=2;
+        lst != 2 ? startp+=1;       
+    );
+    smtrig=0;
+    endp=startp+1;
+    tc=0;
+    i=startp;
+    loop(numsamples-startp,
+       smtrig ? 
+       ( 
+          i[0] >= a2 && i[1] < a2 ? (
+            endp=i;
+            tc+=1;
+            smtrig=0;
+          )
+       )
+       :
+       (
+          smtrig = i[0] >= a1;
+       );
+       i+=1;
+
+    );
+    endp == startp ? endp += 1;
+
+    s = srate * tc / (endp-startp);
+    s > 4 ? slider7=s;
+
+    (freqcnt += 1) >= ufreq ? (
+      freqcnt=0;
+
+      oofs=log(slider7/110)/log(2);
+      slider4=oofs|0;
+      slider5=(oofs*12)%12;
+
+      slider6=((oofs*12)*100)%100;
+      slider6 >= 50 ? ( slider5 += 1; slider6 -= 100; );
+
+      oofs < 0 ? ( slider5 = 12-slider5; slider4-=1;);
+
+      slider5 >= 12 ? (slider5-=12; slider4+=1; );
+
+      maxvol >= volthresh ? (
+      abs(slider6)>=25 ? slider6=sign(slider6)*50 : slider6*=2;
+      slider6 += 50; slider6/=10; // 0-10 for funny lookin meter
+      slider6=max(min(slider6+1,10),0);
+      slider5+=1;
+      ) : slider5=slider6=0;
+      
+    );
+
+    sliderchange(8+16+32+64);
+    maxvol =0;
+    
+  );
+)
+:
+(
+  0[0] <= 0 && spl0 > 0 ?
+  (
+    state=1;
+    1[0]=spl0;
+    splpos=2;
+    a1=spl0;
+    a2=0[0];
+  );
+);
+
+

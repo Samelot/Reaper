@@ -1,0 +1,25 @@
+//convert int to string (this is for debugging etc.)
+function msg_d(m)
+(
+  ShowConsoleMsg(sprintf(#, "%d", m));
+  ShowConsoleMsg("\n");
+);
+
+// dialog with 2 inputs
+function dialog()
+(
+  #dialog_ret_vals = "5,10"; //default values for Input1 and Input2
+  GetUserInputs("GetUserInputs test", 2, "Input1:,Input2:", #dialog_ret_vals);
+);
+
+function main()
+(
+  dialog() ? (
+    // convert #dialog_ret_vals (comma separated values) to int and store to "input1_val" and "input2_val"
+    match("%d,%d", #dialog_ret_vals, input1_val, input2_val);
+    msg_d(input1_val);
+    msg_d(input2_val);
+  );
+);
+
+main()

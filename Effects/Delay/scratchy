@@ -1,0 +1,44 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+desc: scratchy
+slider1:300<0,4000,20>buffer size (ms)
+slider2:1<0,1>cursor position
+
+@init
+delaypos=0;
+
+@slider
+odelay=delaylen;
+delaylen=min(slider1 * srate / 1000,500000);
+odelay != delaylen ? freembuf(delaylen*2);
+
+seekfrom=seekpos;
+seekto=slider2*delaylen;
+seekcnt=0;
+
+@sample
+
+seekpos != seekto ? (
+   seekcnt+=2/(srate);
+   t = ((sin(seekcnt*$pi - $pi/2)+1)^2)*0.5;
+   seekpos=t*(seekto-seekfrom)+seekfrom;
+   seekcnt >= 1 ? seekpos=seekto;
+
+);
+
+dpint = delaypos-seekpos;
+dpint < 0 ? dpint += delaylen;
+dpint = (dpint|0)*2;
+
+os1=dpint[0];
+os2=dpint[1];
+
+dpint = delaypos*2;
+
+dpint[0]=spl0;
+dpint[1]=spl1;
+
+(delaypos+=1) >= delaylen ? delaypos=0;
+
+spl0=spl0*0 + os1*1;
+spl1=spl1*0 + os2*1;

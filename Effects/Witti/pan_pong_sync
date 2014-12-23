@@ -1,0 +1,92 @@
+slider1:0<0,20,0.1>(0=Sync) Frequency (Hz)
+slider2:100<0,100,1>Width (%)
+slider3:0<0,1,1{Stereo,Mono 1,Mono 2}>Mode
+slider4:0<-24,24,0.1>Output (dB)
+slider8:3<0,7,1{4,2,1,1/2,1/4,1/8,1/16,1/32}>Sync
+slider9:0<0,2,1{default,dotted,triplet}>Mode
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@slider
+Hz = slider1;
+width = slider2*0.01;
+vol = 10^(slider4/20);
+
+@block
+slider8==0?(
+grid=4;
+);
+slider8==1?(
+grid=2;
+);
+slider8==2?(
+grid=1;
+);
+slider8==3?(
+grid=1/2;
+);
+slider8==4?(
+grid=1/4;
+);
+slider8==5?(
+grid=1/8;
+);
+slider8==6?(
+grid=1/16;
+);
+slider8==7?(
+grid=1/32;
+);
+
+slider1 >0 ? (
+tmp=1/(slider1/1000);
+x=(2*$pi*Hz)/srate;
+):(
+slider9==0?(
+tmp=1/((grid*240)/tempo);
+x=(2*$pi*tmp)/srate;
+);
+slider9==1?(
+tmp=1/((grid*(3/2))*240/tempo);
+x=(2*$pi*tmp)/srate;
+);
+slider9==2?(
+tmp=1/((grid*(2/3))*240/tempo);
+x=(2*$pi*tmp)/srate;
+);
+);
+
+@sample
+pan = min( max( (sin(t)) * width, -1 ) , 1 );
+
+slider3 == 0 ? (
+spl0 *= (pan > 0 ? 1-pan:1);
+spl1 *= (pan < 0 ? 1+pan:1);
+t=t+x;
+);
+
+slider3 == 1 ? (
+in=(spl0+spl1)*0.5;
+in *= (pan > 0 ? 1-pan:1);
+in *= (pan < 0 ? 1+pan:1);
+t=t+x;
+
+spl0=in;
+spl1=in;
+);
+
+slider3 == 2 ? (
+spl0 *= (pan > 0 ? 1-pan:1);
+spl1 *= (pan < 0 ? 1+pan:1);
+out=(spl0+spl1)*0.5;
+t=t+x;
+
+spl0=out;
+spl1=out;
+);
+
+spl0*=vol;
+spl1*=vol;

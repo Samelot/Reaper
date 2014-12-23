@@ -1,0 +1,254 @@
+slider1:50<0,71.955,1>--cut
+slider2:0<0,4,0.01>--res
+slider3:0<0,1,0.01>--x
+slider4:0<0,1,0.01>--y
+slider5:0<-24,24,0.1>output (dB)
+slider6:100<0,100,1>amount (%)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+lowA=highA=bandA=0;
+lowB=highB=bandB=0;
+
+step = 200;
+old_f_x = 39;
+old_f_y = 39;
+old_c_x = step+39;
+old_c_y = 191;
+
+@slider
+amount = (100-slider6)/100;
+tmpx = 16+slider1*1.20103;
+tmpy = floor(exp(tmpx*log(1.059))*8.17742);
+f= 2*$pi * min(tmpy, 0.49 * srate) / srate;
+tmp=max(min(slider2,4),0.5);
+q = 1/tmp; // slider2 goes from 0.5 to infinity, max 4 is a good value
+gain=10^(slider5/20);
+
+x=slider3;
+y=slider4;
+
+@sample
+inA=spl0;
+inB=spl1;
+
+// LEFT
+lowA = d2A + f * d1A;
+highA = inA - lowA - q*d1A;
+bandA = f * highA + d1A;
+notchA = highA + lowA;
+
+d1A=bandA;
+d2A=lowA;
+
+//low, high
+pair1A = lowA * y + highA * (1-y);
+//band, notch
+pair2A = bandA * y + notchA * (1-y);
+
+// RIGHT
+lowB = d2B + f * d1B;
+highB = inB - lowB - q*d1B;
+bandB = f * highB + d1B;
+notchB = highB + lowB;
+
+d1B=bandB;
+d2B=lowB;
+
+//low, high
+pair1B = lowB * y + highB * (1-y);
+//band, notch
+pair2B = bandB * y + notchB * (1-y);
+
+//out
+out0 = (pair2A * x + pair1A * (1-x));
+out1 = (pair2B * x + pair1B * (1-x));
+
+spl0 = (out0*(1-amount)+inA*amount)*gain;
+spl1 = (out1*(1-amount)+inB*amount)*gain;
+
+@gfx 430 230
+gfx_r=0.5;
+gfx_b=0.5;
+gfx_g=1;
+gfx_a=1;
+//filter box
+gfx_r=1;
+gfx_b=1;
+gfx_g=1;
+gfx_a=1;
+gfx_y = 30;
+gfx_x = 30;
+gfx_rectto(200,200);
+gfx_r=0;
+gfx_b=0.6;
+gfx_g=0;
+gfx_a=1;
+gfx_y = 32;
+gfx_x = 32;
+gfx_rectto(198,198);
+//filter text
+gfx_r=1;
+gfx_b=1;
+gfx_g=1;
+gfx_a=1;
+gfx_x = 35;
+gfx_y = 35;
+gfx_drawchar($'H');
+gfx_drawchar($'P');
+gfx_x = 35;
+gfx_y = 187;
+gfx_drawchar($'L');
+gfx_drawchar($'P');
+gfx_x = 178;
+gfx_y = 35;
+gfx_drawchar($'N');
+gfx_drawchar($'T');
+gfx_x = 178;
+gfx_y = 187;
+gfx_drawchar($'B');
+gfx_drawchar($'P');
+//cut,res box
+gfx_r=1;
+gfx_b=1;
+gfx_g=1;
+gfx_a=1;
+gfx_y = 30;
+gfx_x = 30+step;
+gfx_rectto(200+step,200);
+gfx_r=0;
+gfx_b=0.6;
+gfx_g=0;
+gfx_a=1;
+gfx_y = 32;
+gfx_x = 32+step;
+gfx_rectto(198+step,198);
+//cut,res text
+gfx_r=1;
+gfx_b=1;
+gfx_g=1;
+gfx_a=1;
+gfx_x = 35+step;
+gfx_y = 35;
+gfx_drawchar($'C');
+gfx_drawchar($'U');
+gfx_drawchar($'T');
+gfx_x = 170+step;
+gfx_y = 187;
+gfx_drawchar($'R');
+gfx_drawchar($'E');
+gfx_drawchar($'S');
+//cut,res lines
+gfx_r=1;
+gfx_b=1;
+gfx_g=1;
+gfx_a=0.7;
+gfx_x = 40+step;
+gfx_y = 90;
+gfx_lineto(40+step,50,0.5);
+gfx_x = 110+step;
+gfx_y = 190;
+gfx_lineto(160+step,190,0.5);
+//cross lines
+gfx_x = 228/2;
+gfx_y = 30;
+gfx_lineto(228/2,198,1);
+gfx_x = 30;
+gfx_y = 228/2;
+gfx_lineto(198,228/2,1);
+gfx_x = step+30;
+gfx_y = 199;
+gfx_lineto(399,30,1);
+gfx_x = step+30;
+gfx_y = 199;
+gfx_lineto(399,30,1);
+
+//-------------get mouse
+mouse_cap == 1 && mouse_x < step+15 && target != 2 ? (
+
+target = 1;
+//-------marker1
+old_f_x = mouse_x;
+old_f_y = mouse_y;
+old_f_x = max(39,min(old_f_x,191));
+old_f_y = max(39,min(old_f_y,191));
+
+//update sliders
+slider3 = s3 = (old_f_x-39)/(191-39);
+slider4 = s4 = (old_f_y-39)/(191-39);
+sliderchange(slider3);
+sliderchange(slider4);
+);
+
+mouse_cap == 1 && mouse_x > step+15 && target != 1? (
+
+target = 2;
+//--------marker2
+old_c_x = mouse_x;
+old_c_y = mouse_y;
+old_c_x = max(39+step,min(old_c_x,191+step));
+old_c_y = max(39,min(old_c_y,191));
+
+//update sliders
+slider2 = s2 = (old_c_x-39-step)/(191-39)*4;
+slider1 = s1 = 71.955-(old_c_y-39)/(191-39)*71.955;
+sliderchange(slider4);
+sliderchange(slider5);
+);
+
+mouse_cap == 0 ? (
+target = 0;
+//slider to gfx
+old_f_x = slider3*(191-39)+39;
+old_f_y = slider4*(191-39)+39;
+old_c_x = slider2*(191-39)/4+39+step;
+old_c_y = 191-slider1*(191-39)/71.955;
+);
+
+//---------draw markers
+//----marker1
+gfx_r=0;
+gfx_b=0.5;
+gfx_g=1;
+gfx_a=0.7;
+gfx_x = old_f_x-7; 
+gfx_y = old_f_y-7;
+gfx_rectto(old_f_x+7,old_f_y+7);
+//---marker2
+gfx_r=0;
+gfx_b=0.5;
+gfx_g=1;
+gfx_a=0.7;
+gfx_x = old_c_x-7; 
+gfx_y = old_c_y-7;
+gfx_rectto(old_c_x+7,old_c_y+7);
+
+// slider
+amount = (100-slider6)/100;
+tmpx = 16+slider1*1.20103;
+tmpy = floor(exp(tmpx*log(1.059))*8.17742);
+f= 2*$pi * min(tmpy, 0.49 * srate) / srate;
+tmp=max(min(slider2,4),0.5);
+q = 1/tmp; // slider2 goes from 0.5 to infinity, max 4 is a good value
+gain=10^(slider5/20);
+
+x=slider3;
+y=slider4;
+
+// Filter text
+gfx_x=230;gfx_y=12;
+gfx_lineto(gfx_x, gfx_y,0);
+gfx_r=gfx_b=0;
+gfx_g=gfx_a=1;
+gfx_drawchar($'F');
+gfx_drawchar($' ');
+gfx_drawchar($'=');
+gfx_drawchar($' ');
+gfx_drawnumber(tmpy,0);
+gfx_drawchar($' ');
+gfx_drawchar($'H');
+gfx_drawchar($'z');

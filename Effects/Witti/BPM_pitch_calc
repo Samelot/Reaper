@@ -1,0 +1,40 @@
+// BPM can also be Frequency (Hz).
+// Then you have to type in bigger values manually. (Like 5500 Hz or something.)
+
+desc: Read info...
+
+slider1:120<10,240,1>Original BPM/Hz
+slider2:0<-2400,2400,1>Cents
+slider3:120<10,240,1>BPM/Hz
+slider4:0<0,1,1{Calculate BPM/Hz,Calculate Cents}>Mode
+slider5:0,(Semitones)
+slider6:0,(Playback Rate)
+
+in_pin:none
+out_pin:none
+
+@slider
+mode=slider4;
+
+@block
+mode ? (
+f1=slider1;
+f2=slider3;
+C = 1200 * log(f2/f1) / log(2);
+slider2=C;
+sliderchange(slider2);
+):(
+f1=slider1;
+C=slider2;
+f2 = f1 * 2^( C / 1200 );
+slider3=f2;
+sliderchange(slider3);
+);
+
+semitone=slider2/100;
+slider5=semitone;
+sliderchange(slider5);
+
+rate=slider3/slider1;
+slider6=rate;
+sliderchange(slider6);

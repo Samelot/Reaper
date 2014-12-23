@@ -1,0 +1,34 @@
+// http://forum.cockos.com/showthread.php?t=94840
+
+desc: Read info...
+
+slider1:0<0,16384,1>A-----parameter modulation (link me !)
+slider2:0<0,16384,1>adjust (automate me !)
+slider3:0<-100,100,1>offset
+slider4:100<-100,100,1>scale
+
+slider11:0<0,16384,1>B-----parameter modulation (link me !)
+slider12:0<0,1.0,0.01>adjust (automate me !)
+slider13:0<-16384,16384,1>offset
+slider14:16384<1,16384,1>scale
+slider15:6<0,10,0.1>curve
+
+in_pin:none
+out_pin:none
+
+@block
+// A
+param=slider2*(slider4/100)+(163.84*slider3);
+slider1=param;
+sliderchange(slider1);
+
+slider1<0 ? (slider1=0);
+slider1>16384 ? (slider1=16384);
+
+// B
+param=(((slider12)^ slider15)*slider14) +(slider13);
+slider11=param;
+sliderchange(slider11);
+
+slider11<0 ? (slider11=0);
+slider11>16384 ? (slider11=16384);

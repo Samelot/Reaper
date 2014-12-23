@@ -1,0 +1,234 @@
+// left mouse = move point
+// right mouse = reset to center
+// ctrl + left mouse = X-axis only
+// alt + left mouse = Y-axis only
+
+desc: use with MIDItoReaControlPath
+
+slider1:63.5<0,127,0.5>--X position
+slider2:63.5<0,127,0.5>--Y position
+slider3:1<1,16,1>output channel X
+slider4:14<1,119,1>output CC X
+slider5:1<1,16,1>output channel Y
+slider6:15<1,119,1>output CC Y
+slider7:0<0,2,1{Off,Send X (Channel+CC),Send Y (Channel+CC)}>learn
+
+in_pin:none
+out_pin:none
+
+@init
+ext_noinit = 1;
+
+cur_mousex=153;
+cur_mousey=153;
+
+stateNoteOn = 0x90;
+stateNoteOff = 0x80;
+stateCC = 0xB0;
+
+CC_MESG_MIN = 176;
+BYTE_SIZE = 256;
+offset = 0;
+click_onx=0;
+click_ony=0;
+last_xvalue = 0;
+last_yvalue = 0;
+OFF = 0;
+CC=11;
+
+@slider
+xchannel = slider3-1;
+xvalue = floor(slider1);
+xCC = slider4;
+( xvalue != last_xvalue )? click_onx = 1;
+
+ychannel = slider5-1;
+yvalue = floor(slider2);
+yCC = slider6;
+( yvalue != last_yvalue )? click_ony = 1;
+
+@block
+click_onx ?
+(
+// send the message
+msg1 = xchannel + CC_MESG_MIN;
+msg23 = xCC + (xvalue * BYTE_SIZE );
+midisend( offset, msg1, msg23 ); 
+
+// clean up
+click_onx = 0;
+last_xvalue = xvalue;
+);
+
+click_ony ?
+(
+// send the message
+msg1 = ychannel + CC_MESG_MIN;
+msg23 = yCC + (yvalue * BYTE_SIZE );
+midisend( offset, msg1, msg23 ); 
+
+// clean up
+click_ony = 0;
+last_yvalue = yvalue;
+);
+
+slider7 == 1 ? (
+msg1 = xchannel + (CC * 16);   
+CC_num = xCC;
+CC_data = 64;
+msg23 = CC_num | (CC_data*256);
+midisend(mpos, msg1, msg23);
+count +=1;
+);
+count >= 10 ? (
+count = 0;
+slider7 = OFF;
+sliderchange(-1);
+);
+
+slider7 == 2 ? (
+msg1 = ychannel + (CC * 16);   
+CC_num = yCC;
+CC_data = 64;
+msg23 = CC_num | (CC_data*256);
+midisend(mpos, msg1, msg23);
+count +=1;
+);
+count >= 10 ? (
+count = 0;
+slider7 = OFF;
+sliderchange(-1);
+);
+
+@gfx 0 307
+function draw_box(x1,y1,x2,y2)
+(
+gfx_line(x1,y1,x2,y1);
+gfx_line(x1,y1,x2,y1);
+gfx_line(x2,y1,x2,y2);
+gfx_line(x2,y2,x1,y2);
+gfx_line(x2,y2,x1,y2);
+gfx_line(x1,y2,x1,y1);
+);
+
+// draw pad
+pad.h = 265; pad.w = 265;
+pad.x = 20; pad.y = 20;
+pad.x1 = pad.x; pad.x2 = pad.x + pad.w;
+pad.y1 = pad.y; pad.y2 = pad.y + pad.h;
+
+pad.topr = 0.5; pad.topg = 0.5; pad.topb = 0.5; pad.topa = 1;
+pad.botr = 1; pad.botg = 1; pad.botb = 1; pad.bota = 1;
+
+gfx_r = 0.1; gfx_g = 0.1; gfx_b = 0.1; gfx_a = 1;
+gfx_x = pad.x1; gfx_y = pad.y1;
+
+gfx_rectto(pad.x2,pad.y2);
+
+gfx_r = 1; gfx_g = 0; gfx_b = 0; gfx_a = 1;
+draw_box(pad.x1,pad.y1,pad.x2,pad.y2);
+
+// draw middle lines
+pad.linelen = 110;
+pad.linelen2 = 109;
+pad.Ax = pad.x1 + pad.w/2; pad.Ay = pad.y1 + 12;
+pad.Bx = pad.x1 + pad.w/2; pad.By = pad.y2 - 12;
+pad.Cx = pad.x1 + 12; pad.Cy = pad.y1 + pad.h/2;
+pad.Dx = pad.x2 - 12;; pad.Dy = pad.y2 - pad.h/2;
+
+gfx_r = 0.2; gfx_g = 0.2; gfx_b = 0.2; gfx_a = 1;
+
+gfx_line(pad.Ax,pad.Ay,pad.Ax,pad.Ay + pad.linelen);
+gfx_line(pad.Bx,pad.By,pad.Bx,pad.By - pad.linelen);
+gfx_line(pad.Cx,pad.Cy,pad.Cx + pad.linelen2,pad.Cy);
+gfx_line(pad.Dx,pad.Dy,pad.Dx - pad.linelen,pad.Dy);
+
+gfx_x = pad.Ax; gfx_y = pad.Cy;
+gfx_setpixel(0.2,0.2,0.2);
+
+// mouse x,y
+(mouse_cap) == 1 ?
+(
+cur_mousex = mouse_x;
+cur_mousey = mouse_y;
+
+cur_mousex = max(min(cur_mousex,pad.x2-5),26);
+cur_mousey = max(min(cur_mousey,pad.y2-5),26);
+
+slider1 = floor(cur_mousex/2)-13;
+slider2 = floor(cur_mousey/2)-13;
+
+xvalue = floor(cur_mousex/2)-13;
+yvalue = floor(cur_mousey/2)-13;
+
+click_onx = 1;
+click_ony = 1;
+);
+
+(mouse_cap) == 2 ?
+(
+cur_mousex = 153;
+cur_mousey = 153;
+
+cur_mousex = max(min(cur_mousex,pad.x2-5),26);
+cur_mousey = max(min(cur_mousey,pad.y2-5),26);
+
+slider1 = floor(cur_mousex/2)-13;
+slider2 = floor(cur_mousey/2)-13;
+
+xvalue = floor(cur_mousex/2)-13;
+yvalue = floor(cur_mousey/2)-13;
+
+click_onx = 1;
+click_ony = 1;
+);
+
+(mouse_cap) == 5 ?
+(
+cur_mousex = mouse_x;
+cur_mousex = max(min(cur_mousex,pad.x2-5),26);
+slider1 = floor(cur_mousex/2)-13;
+xvalue = floor(cur_mousex/2)-13;
+click_onx = 1;
+);
+
+(mouse_cap) == 17 ?
+(
+cur_mousey = mouse_y;
+cur_mousey = max(min(cur_mousey,pad.y2-5),26);
+slider2 = floor(cur_mousey/2)-13;
+yvalue = floor(cur_mousey/2)-13;
+click_ony = 1;
+);
+
+(mouse_cap) == 0 ?
+(
+cur_mousex = floor((slider1+13)*2);
+cur_mousey = floor((slider2+13)*2);
+
+xvalue = floor((slider1+13)*2);
+yvalue = floor((slider2+13)*2);
+
+click_onx = 0;
+click_ony = 0;
+);
+
+cur_mousex = min(max(cur_mousex,pad.x1),pad.x2);
+cur_mousey = min(max(cur_mousey,pad.y1),pad.y2);
+
+font_size = 50;
+gfx_setfont(1, "Lucida Sans Unicode", font_size);
+gfx_r = 1.0; gfx_g = 0.80; gfx_b = 0.20; gfx_a=0.5;
+gfx_x = 305; gfx_y = 70;
+gfx_drawnumber(slider1,0);
+gfx_x = 305; gfx_y = 20;
+gfx_drawnumber(slider2,0);
+
+// draw marker
+gfx_r=0.8;
+gfx_b=0.2;
+gfx_g=0.2;
+gfx_a=1;
+gfx_x = cur_mousex-5; 
+gfx_y = cur_mousey-5;
+gfx_rectto(cur_mousex+5,cur_mousey+5);

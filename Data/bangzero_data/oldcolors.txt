@@ -1,0 +1,145 @@
+//colors - spacerose
+xed/xff, xed/xff, xed/xff // pane background color rgb
+.4, .4, .4    // foreground/text color rgb
+.95, .83, .83  // control background color rgb
+1, .2, .3, .45 // hilite color rgba
+0, 0, 0, .3   // slider bar color rgba
+.93, .93, .93, .7    // dimming color rgba
+1, .1, .2, .25    // 2ndary hilite rgba: darker for selected buttons
+.7             // 2ndary text alpha
+.07            // transp grid white delta: added to white notes r/g/b
+1              // transp grid lines brightness
+-1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0 // step/len/gate/vc/tran bg
+-1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, 1,1,1 // acc/off/ctl1/ctl2 bg
+0,0,0,0        // spares
+0,0,0,0        // spares
+0,0,0,0        // spares
+0,0        // spares
+1.25          // dot shadow alpha
+x22122411 //x2211        //x14d012c1 // dot highlight 
+115,112,97,99,101,114,111,115,101,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 //name24:spacerose
+
+//colors - love-letter
+1, 1, xf4/xff // pane background color rgb
+.5, .35, .35    // foreground/text color rgb
+.95, .85, .87  // control background color rgb
+1, .1, .2, .13 // hilite color rgba
+0, 0, 0, .3   // slider bar color rgba
+1, 1, .96, .65    // dimming color rgba
+-1, .1, .2, .25    // 2ndary hilite rgba: darker for selected buttons
+.7             // 2ndary text alpha
+.1            // transp grid white delta: added to white notes r/g/b
+1              // transp grid lines brightness
+-1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0 // step/len/gate/vc/tran bg
+-1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, 1,1,1 // acc/off/ctl1/ctl2 bg
+0,0,0,0        // spares
+0,0,0,0        // spares
+0,0,0,0        // spares
+0,0        // spares
+0 //1.25          // dot shadow alpha
+0 //x22122411 //x2211        //x14d012c1 // dot highlight 
+108,111,118,101,45,108,101,116,116,101,114,0,0,0,0,0,0,0,0,0,0,0,0,0 //name24:love-letter
+
+//colors - blue-ice
+xe5/xff, xe5/xff, xe5/xff // pane background color rgb 
+.31, .33, .35    // foreground/text color rgb
+.82, .84, .88  // control background color rgb
+.4, .6, .8, .25 // hilite color rgba
+0, 0, 0, .3   // slider bar color rgba
+xe4/xff, xe4/xff, xe4/xff, .6    // dimming color rgba
+-1,0,0, .45    // 2ndary hilite rgba: darker for selected buttons
+.7             // 2ndary text alpha
+.04            // transp grid white delta: added to white notes r/g/b
+1              // transp grid lines brightness
+-1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0 // step/len/gate/vc/tran bg
+-1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, 1,1,1 // acc/off/ctl1/ctl2 bg
+0,0,0,0        // spares
+0,0,0,0        // spares
+0,0,0,0        // spares
+0,0,0,0        // spares
+98,108,117,101,45,105,99,101,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 //name24:blue-ice
+
+//colors - ground
+.125, .094, .090 // pane background color rgb; or fffff4?
+.808, .827, .714    // foreground/text color rgb
+.345*1.4, .341*1.4, .278*1.4  // control background color rgb
+.78, .65, .573, .5 // hilite color rgba
+.702*1.2, .682*1.2, .604*1.2, 1   // slider bar color rgba
+-1,0,0, .6     // dimming color rgba
+-1,0,0, 1      // 2ndary hilite rgba: darker for selected buttons
+.7             // 2ndary text alpha
+.1             // transp grid white delta: added to white notes r/g/b
+.5              // transp grid lines brightness
+-1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0 // step/len/gate/vc/tran bg
+-1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, 1,1,1 // acc/off/ctl1/ctl2 bg
+0,0,0,0        // spares
+0,0,0,0        // spares
+0,0,0,0        // spares
+0,0,0,0        // spares
+103,114,111,117,110,100,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 //name24:ground
+
+//colors - ground-multi dim
+.125, .094, .090 // pane background color rgb; or fffff4?
+.808, .827, .714    // foreground/text color rgb
+.345*1.4, .341*1.4, .278*1.4  // control background color rgb
+.75, .4, .3, .65 // hilite color rgba
+.702*1.2, .682*1.2, .604*1.2, 1   // slider bar color rgba
+-1,0,0, .6     // dimming color rgba
+.78, .65, .573, 1      // 2ndary hilite rgba: darker for selected buttons
+.7             // 2ndary text alpha
+.1             // transp grid white delta: added to white notes r/g/b
+.5              // transp grid lines brightness
+.360*1.4, .341*1.4, .278*1.4,1,1
+.345*1.4, .356*1.4, .278*1.4,1,1
+.345*1.4, .341*1.4, .288*1.4,1,1
+.365*1.4, .361*1.4, .278*1.4,1,1
+.345*1.4, .361*1.4, .298*1.4,1,1
+.355*1.4, .341*1.4, .278*1.4,1,1
+.345*1.4, .361*1.4, .298*1.4,1,1
+.350*1.4, .346*1.4, .273*1.4,1,1
+.360*1.4, .336*1.4, .283*1.4,1,1
+1,1,1          // fade from/to color
+.355*1.4, .361*1.4, .278*1.4,1,1
+.355*1.4, .341*1.4, .288*1.4,1,1
+0,0,0,0        // spares
+.1          // dot shaddow
+x42d324c2 //x1611          // dot highlight 
+103,114,111,117,110,100,45,109,117,108,116,105,0,0,0,0,0,0,0,0,0,0,0,0 //name24:ground-multi
+
+//colors - vibe-multi
+0, 0, 0 // pane background color rgb; or fffff4?
+.698, .698, .698 // foreground/text color rgb
+.859, .859, .859 // control background color rgb
+.6, .55, .5, .55 // hilite color rgba
+.204, .439, .796, 1   // slider bar color rgba
+-1,0,0, .65     // dimming color rgba
+.400, .882, .627, 1 //.620 .969 .424 1   // 2ndary hilite rgba: darker for selected buttons
+.7             // 2ndary text alpha
+.1             // transp grid white delta: added to white notes r/g/b
+1              // transp grid lines brightness
+.937,.890,.702,1,1, .99,.75,.8,1,1, .725,.918,.996,1,1, .95,.79,.99,1,1, .816, .996, .639,1,1 //step/len/gate/vc/tran colors
+.969,.675,.694,1,1, .914,.667*1.2,.416*1.2,0,1, .784,.753,.902,1,1, .698,.900,.898,1,1,  // acc/off/ctl1/ctl2 colors
+1,1,1          // fade from/to color
+.7,.99,.88,0,1, .933*.9,.976,.804*.9,1,1
+0,0,0,0,0,0        // spares
+118,105,98,101,45,109,117,108,116,105,0,0,0,0,0,0,0,0,0,0,0,0,0,0 //name24:vibe-multi
+
+
+//colors - cool-viridian
+xf8/xff, xff/xff, xf8/xff // pane background color rgb; or f8fff2
+.25, .4, .3    // foreground/text color rgb
+.83, .95, .84  // control background color rgb
+.1, 1, .15, .2 // hilite color rgba
+0, 0, 0, .25   // slider bar color rgba
+1, 1, 1, .6    // dimming color rgba
+-1,0,0, .32     // 2ndary hilite rgba: darker for selected buttons
+.7             // 2ndary text alpha
+.1            // transp grid white delta: added to white notes r/g/b
+1              // transp grid lines brightness
+-1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0 // step/len/gate/vc/tran bg
+-1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, -1,0,0,0,0, 1,1,1 // acc/off/ctl1/ctl2 bg
+0,0,0,0        // spares
+0,0,0,0        // spares
+0,0,0,0        // spares
+0,0,0,0        // spares
+99,111,111,108,45,118,105,114,105,100,105,97,110,0,0,0,0,0,0,0,0,0,0,0 //name24:cool-viridian

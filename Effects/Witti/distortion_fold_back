@@ -1,0 +1,32 @@
+desc: Guitar distortion
+
+slider1:0<-60,0,0.1>Threshold (dB)
+slider2:0<-24,24,0.1>Gain (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@slider
+threshold=10^(slider1/20);
+gain=10^(slider2/20);
+
+@sample
+inA=spl0;
+inB=spl1;
+
+(inA>threshold || inA<-threshold) ?
+(
+(inA>threshold) ? inA= threshold - (inA-threshold);
+(inA<-threshold) ? inA= -threshold + (-threshold-inA);
+);
+
+(inB>threshold || inB<-threshold) ?
+(
+(inB>threshold) ? inB= threshold - (inB-threshold);
+(inB<-threshold) ? inB= -threshold + (-threshold-inB);
+);
+
+spl0=inA*gain;
+spl1=inB*gain;

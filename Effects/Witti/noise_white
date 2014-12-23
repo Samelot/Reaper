@@ -1,0 +1,27 @@
+slider1:-60<-60,0,0.1>Dry (dB)
+slider2:0<-24,24,0.1>Noise (dB)
+slider3:0<0,1,1{Off,On}>Noise
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+x=y=1;
+
+@slider
+vd= slider1 <= -60.0 ? 0.0 : 10 ^ (slider1 / 20);
+vn=10^((slider2-17)/20);
+
+@sample
+slider3 == 0 ? (
+spl0= spl0*vd;
+spl1= spl1*vd;
+);
+
+slider3 == 1 ? (
+y=sin((x+=1)*y);
+spl0=spl0*vd+y*vn;
+spl1=spl1*vd+y*vn;
+);

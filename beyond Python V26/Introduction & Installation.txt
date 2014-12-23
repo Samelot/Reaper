@@ -1,0 +1,113 @@
+beyond Python & beyond.Reaper V26
+=================================
+
+Dynamic Class, UI, Parallelism, Serialization, Reaper Remote Control 
+and Proxy API designed and coded by Büke Beyond.
+
+
+Installation:
+=============
+
+Until there is an Installer, here are some manual steps:
+
+Make sure Python 3.3+ is installed.
+
+Place the beyond Python directory anywhere you prefer.
+
+Edit the "beyond.pth" file and enter the full path to the
+"./Modules" directory on the first line.
+
+Copy "beyond.pth" file to 
+<Python Path>/Lib/site-packages
+
+For beyond.Reaper, edit:
+/Modules/beyond/Reaper/Settings.py 
+and follow the steps there.
+
+Run "Test Installation.py".
+
+
+
+Introducing beyond.Reaper
+=========================
+
+beyond.Reaper is a small API that brings both simpler and unlimited
+programming to Reaper Python developers.
+
+With beyond.Reaper, you can run full Python programs outside Reaper
+and use its entire API seamlessly like running inside Reaper, but with
+additional capabilities that go beyond ReaScript, a subset of Python.
+
+This enables rapid development of sophisticated applications for
+Reaper with full UIs, multi-threading, stable access to tkinter, 
+and all the other Python modules available.  In addition, programs
+can be launched externally to access Reaper only when needed, 
+be associated with file types, and be edited and debugged with
+advanced tools.
+
+beyond.Reaper also provides simpler and more robust access to Reaper.
+Projects, Tracks, Items and all Reaper Data Chunks (Elements) have
+easy to use and fast Python models. There is also a highly simplified
+UI system available with multi-threading and state saving.
+
+There is only one Reaper Action that needs to be setup:
+Modules/beyond/Reaper/RemoteControl.py
+
+When an External program accesses the Reaper API:
+import beyond.Reaper
+Reaper.OnPlayButton()
+
+behind the scenes, RemoteControl.py is launched as an Action 
+via Reaper's OSC. RemoteControl.py instantly connects back to the
+external program via TCP/IP and efficiently executes every 
+command needed, complete with intricate arguments, returns, 
+and relaying of Reaper Exceptions.
+
+To execute a series of calls in one connection:
+with Reaper as r:
+	A = r.GetTrack(0, r.CountTracks(0) - 1)
+	r.OnPlayButton()
+
+This happens very fast.  Any error exception safely closes the 
+connection, and even the Undo state is restored.
+
+Of course, you can use beyond.Reaper to program at a higher level:
+for T in Reaper.ProjectSelected.TracksSelected:
+	Say(T.Name)
+	T.Name += " :-)"
+
+beyond.Reaper was designed for performance, succinctness and expressiveness.
+Take a look at the source code inside Examples and Examples Reaper.
+
+
+Special Thanks to the Reaper Community
+======================================
+
+axel_ef
+mim
+reapertribal
+Sasje
+spk77
+Viente
+
+...and all others for the encouraging words
+
+
+
+
+
+Development Environment
+=======================
+Reaper 4.54 x64
+Python 3.4.0a3 x64
+Windows 7 x64
+
+
+
+License
+=======
+You may use this API or its portions for free or commercial Projects
+provided that the author Büke Beyond is listed in your Project's credits.
+
+You may contact the respective authors in the Examples Reaper Community
+for further Licensing.

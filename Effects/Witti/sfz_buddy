@@ -1,0 +1,282 @@
+/*
+This is a plugin for the cakewalk sfz player.
+
+Install:
+This plugin uses the GM_Patch folder.
+Put the GM_Patch folder into the Reaper\Data folder.
+(It may already exist there.)
+
+Instructions:
+(update mode)
+pan: -65=OFF
+others: -1=OFF
+or: 128=OFF
+
+Anything that is set to OFF (value depends of the slider) is NEVER sent.
+There are different options on when to send the info to the sfz player, 
+the best is probably "Seq Start at 1.1.00",
+so the data will be sent only if you start playback from the start. 
+But there are other options.
+
+For bank and patch info, you need to create a file for each patch.
+The content must be:
+
+50 (patch)
+-1  (no bank msb)
+40  (lsb = 40)
+
+Any value between -1 and 127 is good.
+*/
+
+desc: Read info...
+
+slider1:1<1,16,1>Output Channel
+slider2:/GM_Patch:/- OFF.txt:GM Patch 
+slider3:127<0,128,1>volume:
+slider4:0<-127,127,1>(volume offset)
+slider5:0<-65,63,1>pan:
+slider6:0<-1,127,1>reverb:
+slider7:0<-1,127,1>reverb size:
+slider8:0<-1,127,1>chorus:
+slider9:0<-1,127,1>chorus speed:
+slider10:127<0,128,1>cut:
+slider11:127<0,128,1>expression:
+slider12:0<-1,127,1>damper pedal:
+slider13:0<-1,127,1>env attack:
+slider14:127<0,128,1>env hold:
+slider15:127<0,128,1>env decay:
+slider16:127<0,128,1>env sustain:
+slider17:0<-1,127,1>env release:
+slider18:0<-1,127,1>modwheel:
+slider19:0<0,0,0{OFF,NOW,Seq Stop,Seq Start,Seq Start at 1.1.00}>Update Mode
+slider20:0<0,127,1>CC4 Value
+
+in_pin:none
+out_pin:none
+
+@init
+ext_noinit = 1;
+seqState = 0;
+UpdateMode = 0;
+outChn = 0;
+patchfile = 1;
+patchchange = 0;
+patch = -1;
+bankmsb = -1;
+banklsb = -1;
+vol = 128;
+newvol = 100;
+pan = -65;
+cc91 = -1; //reverb
+cc12 = -1; //reverb size
+cc93 = -1; //chorus
+cc13 = -1; //chorus speed
+cc74 = 128; // filter cutoff
+cc11 = 128; // expression
+cc64 = -1; // damper pedal
+cc73 = -1; // attack
+cc76 = 128; // hold
+cc75 = 128; // sustain
+cc70 = 128; // deacay
+cc72 = -1; // release
+cc1 = -1; // modwheel
+
+CC_MESG_MIN = 176; // a CC message on MIDI channel 1
+BYTE_SIZE = 256; // size of an 8-bit byte
+offset = 0; // sample offset for midisend
+send_cc = 0; // trigger
+last_value = 0; // last known CC value
+NOTE_ON = 9;
+
+@slider
+outChn = slider1-1;
+slider2 = floor(slider2);
+slider2 != patchfile ?
+(
+patchfile = slider2;
+fileHandle = file_open(slider2);
+fileHandle > 0 && file_text(fileHandle) ?
+(
+file_var(fileHandle, patch);
+file_var(fileHandle, bankmsb);
+file_var(fileHandle, banklsb);
+file_close(fileHandle);
+patchchange = 1;
+);
+);
+
+slider3 = floor(slider3);
+slider4 = floor(slider4);
+slider3 > - 1 ? 
+(
+newvol = slider3+slider4;
+newvol < 0 ? newvol = 0 : newvol > 127 ? newvol = 127;
+);
+slider5 = floor(slider5);
+slider6 = floor(slider6);
+slider7 = floor(slider7);
+slider8 = floor(slider8);
+slider9 = floor(slider9);
+slider10 = floor(slider10);
+slider11 = floor(slider11);
+slider12 = floor(slider12);
+slider13 = floor(slider13);
+slider14 = floor(slider14);
+slider15 = floor(slider15);
+slider16 = floor(slider16);
+slider17 = floor(slider17);
+slider18 = floor(slider18);
+slider20 = floor(slider20);
+
+cc = 4;
+value = slider20;
+( value != last_value )? send_cc = 1;
+
+@block
+refresh = 0;
+seqstate != play_state&1 ?
+(
+seqstate = play_state&1;
+slider19 > 1 ?
+(
+seqstate ?
+(
+refresh = slider19 == 3 || (slider19 == 4 && beat_position == 0.0);
+):(
+refresh = slider19 == 2;
+);
+)
+);
+slider19 == 1 ?
+(
+refresh = 1;
+slider19 = 0;
+);
+refresh ?
+(
+patchchange = 1;
+vol = -1000;
+pan = -1000;
+cc91 = -1000;
+cc12 = -1000;
+cc93 = -1000;
+cc13 = -1000;
+cc74 = -1000;
+cc11 = -1000;
+cc64 = -1000;
+cc73 = -1000;
+cc76 = -1000;
+cc75 = -1000;
+cc70 = -1000;
+cc72 = -1000;
+cc1 = -1000;
+);
+
+patchchange ?
+(
+patchchange = 0;
+patch > -1 ?
+(
+bankmsb > -1 ? midisend(0,$xB0 | outChn, 0 | ($x100*bankmsb));
+banklsb > -1 ? midisend(0,$xB0 | outChn, 32 | ($x100*banklsb));
+midisend(0,$xC0 | outChn, patch);
+);
+);
+slider3 < 128 && vol != newvol ?
+(
+vol = newvol;
+midisend(0,$xB0 | outChn, 7 | ($x100*vol));
+);
+slider5 > -65  && pan != slider5 ?
+(
+pan = slider5;
+midisend(0,$xB0 | outChn, 10 | ($x100*(pan+64)));
+);
+slider6 > -1 && cc91 != slider6 ?
+(
+cc91 = slider6;
+midisend(0,$xB0 | outChn, 91 | ($x100*cc91));
+);
+slider7 > -1 && cc12 != slider7 ?
+(
+cc12 = slider7;
+midisend(0,$xB0 | outChn, 12 | ($x100*cc12));
+);
+slider8 > -1 && cc93 != slider8 ?
+(
+cc93 = slider8;
+midisend(0,$xB0 | outChn, 93 | ($x100*cc93));
+);
+slider9 > -1 && cc13 != slider9 ?
+(
+cc13 = slider9;
+midisend(0,$xB0 | outChn, 13 | ($x100*cc13));
+);
+slider10 < 128 && cc74 != slider10 ?
+(
+cc74 = slider10;
+midisend(0,$xB0 | outChn, 74 | ($x100*cc74));
+);
+slider11 < 128 && cc11 != slider11 ?
+(
+cc11 = slider11;
+midisend(0,$xB0 | outChn, 11 | ($x100*cc11));
+);
+slider12 > -1 && cc64 != slider12 ?
+(
+cc64 = slider12;
+midisend(0,$xB0 | outChn, 64 | ($x100*cc64));
+);
+slider13 > -1 && cc73 != slider13 ?
+(
+cc73 = slider13;
+midisend(0,$xB0 | outChn, 73 | ($x100*cc73));
+);
+slider14 < 128 && cc76 != slider14 ?
+(
+cc76 = slider14;
+midisend(0,$xB0 | outChn, 76 | ($x100*cc76));
+);
+slider15 < 128 && cc75 != slider15 ?
+(
+cc75 = slider15;
+midisend(0,$xB0 | outChn, 75 | ($x100*cc75));
+);
+slider16 < 128 && cc70 != slider16 ?
+(
+cc70 = slider16;
+midisend(0,$xB0 | outChn, 70 | ($x100*cc70));
+);
+slider17 > -1 && cc72 != slider17 ?
+(
+cc72 = slider17;
+midisend(0,$xB0 | outChn, 72 | ($x100*cc72));
+);
+slider18 > -1 && cc1 != slider18 ?
+(
+cc1 = slider18;
+midisend(0,$xB0 | outChn, 1 | ($x100*cc1));
+);
+
+while
+(
+midirecv(offset,msg1,msg23) ?
+midisend(offset,(msg1 & $xF0) | outChn ,msg23);
+);
+
+while (
+midirecv(offset, msg1, msg23) ?
+(
+(msg1 & $xF0) == $xB0 ? 1 : midisend(offset, msg1, msg23);
+);
+);
+
+send_cc ?
+(
+msg1 = outChn + CC_MESG_MIN;
+msg23 = cc + ( value * BYTE_SIZE );  
+midisend( offset, msg1, msg23 ); 
+
+send_cc = 0;
+last_value = value;
+)

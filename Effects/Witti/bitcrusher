@@ -1,0 +1,60 @@
+slider1:32<1,32,1>Bit Reduction
+slider2:1<0,1,0.001>Freq Reduction
+slider3:7018<20,7018,1>LowPass (Hz)
+slider4:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+phasorA=0;
+phasorB=0;
+lastA=0;
+lastB=0;
+
+@slider
+tmp=(slider2*srate/2);
+normfreq=(tmp/srate);
+step = 1/2^(slider1);
+cut = (2*$pi*slider3/srate);
+gain=10^(slider4/20);
+
+@sample
+inputA=spl0;
+inputB=spl1;
+
+phasorA= phasorA+normfreq;
+
+(phasorA >= 1.0) ?
+(
+phasorA = phasorA - 1.0;
+lastA = step * floor( inputA/step + 0.5 );
+);
+
+phasorB= phasorB+normfreq;
+
+(phasorB >= 1.0) ?
+(
+phasorB = phasorB - 1.0;
+lastB = step * floor( inputB/step + 0.5 );
+);
+
+out0=lastA;
+out1=lastB;
+
+buf1A = ((out0 - buf1A) * cut) + buf1A;
+buf2A = ((buf1A - buf2A) * cut) + buf2A;
+buf3A = ((buf2A - buf3A) * cut) + buf3A;
+buf4A = ((buf3A - buf4A) * cut) + buf4A;
+lpoutA = buf4A;
+
+buf1B = ((out1 - buf1B) * cut) + buf1B;
+buf2B = ((buf1B - buf2B) * cut) + buf2B;
+buf3B = ((buf2B - buf3B) * cut) + buf3B;
+buf4B = ((buf3B - buf4B) * cut) + buf4B;
+lpoutB = buf4B;
+
+spl0=lpoutA*gain;
+spl1=lpoutB*gain;

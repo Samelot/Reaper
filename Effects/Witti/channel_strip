@@ -1,0 +1,391 @@
+slider1:0<-30,0,0.1>|------------------Threshold (dB)
+slider2:2<1,50,1>Ratio
+slider3:0<-12,12,0.1>Gain (dB)
+
+slider5:0<0,4,1{Off,50,80,160,300}>|----------------------------------HPF
+slider6:2<0,4,1{Off,35,60,110,220}>LowShelf (Hz)
+slider7:0<-20,20,0.1>Low (dB)
+slider8:0<0,5,1{360,700,1.6k,3.2k,4.8k,7.2k}>Mid (Hz)
+slider9:0<-20,20,0.1>Mid (dB)
+slider10:0<-20,20,0.1>12K HighShelf (dB)
+slider11:0<-12,12,0.1>Gain (dB)
+
+slider13:0<0,100,1>|-------------------Saturation (%)
+
+slider15:0<-60,24,0.1>|--------------Output Gain (dB)
+slider16:0<-100,100,1>Pan (%)
+slider17:0<-6,6,0.5>Pan Law (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+//COMPRESSOR=================================================
+log2db = 8.6858896380650365530225783783321;
+db2log = 0.11512925464970228420089957273422;
+gr_meter=1;
+gr_meter_decay = exp(1/(1*srate));
+relcoef = exp(-1000/(100 * srate));
+rmscoef=exp(-1000/(1 * srate));
+maxover=0;
+ratio=0;
+cratio=0;
+rundb=0;
+overdb=0;
+//COMPRESSOR=================================================
+
+//FILTER======================================================
+hpf = 0;
+gain1 = 0;
+freq1 = 50;
+a1 = 1;
+s1 = 1;
+q1 = 1 / (sqrt((a1 + 1/a1)*(1/s1 - 1) + 2));
+w01 = 2 * $pi * freq1/srate;
+cosw01 = cos(w01);
+sinw01 = sin(w01);
+alpha1 = sinw01 / (2 * q1);
+b01 = (1 + cosw01)/2;
+b11 = -(1 + cosw01);
+b21 = (1 + cosw01)/2;
+a01 = 1 + alpha1;
+a11 = -2 * cosw01;
+a21 = 1 - alpha1;
+b01 /= a01;
+b11 /= a01;
+b21 /= a01;
+a11 /= a01;
+a21 /= a01;
+lshelf = 0;
+gain3 = 0;
+freq3 = 35;
+a3 = 10^(gain3/40);
+s3 = 2;
+q3 = 1 / (sqrt((a3 + 1/a3)*(1/s3 - 1) + 2));
+w03 = 2 * $pi * freq3/srate;
+cosw03 = cos(w03);
+sinw03 = sin(w03);
+alpha3 = sinw03 / (2 * q3);
+b03 = a3 * ((a3+1) - (a3-1)*cosw03 + 2*sqrt(a3)*alpha3);
+b13 = 2 * a3 * ((a3-1) - (a3+1)*cosw03);
+b23 = a3 * ((a3+1) - (a3-1)*cosw03 - 2*sqrt(a3)*alpha3);
+a03 = (a3+1) + (a3-1)*cosw03 + 2*sqrt(a3)*alpha3;
+a13 = -2 * ((a3-1) + (a3+1)*cosw03);
+a23 = (a3+1)+(a3-1)*cosw03-2*sqrt(a3)*alpha3;
+b03 /= a03;
+b13 /= a03;
+b23 /= a03;
+a13 /= a03;
+a23 /= a03;
+gain5 = 0;
+freq5 = 360;
+a5 = 10^(gain5/20);
+q5 = 1.4;
+w05 = 2 * $pi * freq5/srate;
+cosw05 = cos(w05);
+sinw05 = sin(w05);
+alpha5 = sinw05 / (2 * q5);
+b05 = 1 + alpha5 * a5;
+b15 = -2 * cosw05;
+b25 = 1 - alpha5 * a5;
+a05 = 1 + alpha5 / a5;
+a15 = -2 * cosw05;
+a25 = 1 - alpha5 / a5;
+b05 /= a05;
+b15 /= a05;
+b25 /= a05;
+a15 /= a05;
+a25 /= a05;
+gain7 = 0;
+freq7 = 12000;
+a7 = 10^(gain7/40);
+s7 = 0.3;
+q7 = 1 / (sqrt((a7 + 1/a7)*(1/s7 - 1) + 2));
+w07 = 2 * $pi * freq7/srate;
+cosw07 = cos(w07);
+sinw07 = sin(w07);
+alpha7 = sinw07 / (2 * q7);
+b07 = a7 * ((a7+1) + (a7-1)*cosw07 + 2*sqrt(a7)*alpha7);
+b17 = -2*a7*((a7-1) + (a7+1)*cosw07);
+b27 = a7*((a7+1) + (a7-1)*cosw07 - 2*sqrt(a7)*alpha7);
+a07 = (a7+1) - (a7-1)*cosw07 + 2*sqrt(a7)*alpha7;
+a17 = 2*((a7-1) - (a7+1)*cosw07);
+a27 = (a7+1)-(a7-1)*cosw07 - 2*sqrt(a7)*alpha7;
+b07 /= a07;
+b17 /= a07;
+b27 /= a07;
+a17 /= a07;
+a27 /= a07;
+gain = 1;
+//FILTER======================================================
+
+//VOLUME/PAN==================================================
+src_vol = tgt_vol = slider15 <= -60.0 ? 0.0 : exp(slider15/log2db);
+src_pan = tgt_pan = 0.01*slider16;
+//VOLUME/PAN==================================================
+
+
+@slider
+//COMPRESSOR=================================================
+thresh = slider1;
+threshv = exp(thresh * db2log);
+ratio =slider2;
+volA = 10^(slider3/20);
+//COMPRESSOR=================================================
+
+//FILTER======================================================
+freq1 = (slider5 == 0 ? 50 : (slider5 == 1 ? 50 : (slider5 == 2 ? 80 : (slider5 == 3 ? 160 : 300))));
+freq3 = (slider6 == 0 ? 35 : (slider6 == 1 ? 35 : (slider6 == 2 ? 60 : (slider6 == 3 ? 110 : 220))));
+gain3 = slider7;
+freq5 = (slider8 == 0 ? 360 : (slider8 == 1 ? 700 : (slider8 == 2 ? 1600 : (slider8 == 3 ? 3200 : (slider8 == 4 ? 4800 : 7200)))));
+gain5 = slider9;
+gain7 = slider10;
+gain = 10^(slider11/20);
+slider5 == 0 ? hpf = 0 : hpf = 1;
+slider6 == 0 ? lshelf = 0 : lshelf = 1;
+a1 = 1;
+s1 = 1;
+q1 = 1 / (sqrt((a1 + 1/a1)*(1/s1 - 1) + 2));
+w01 = 2 * $pi * freq1/srate;
+cosw01 = cos(w01);
+sinw01 = sin(w01);
+alpha1 = sinw01 / (2 * q1);
+b01 = (1 + cosw01)/2;
+b11 = -(1 + cosw01);
+b21 = (1 + cosw01)/2;
+a01 = 1 + alpha1;
+a11 = -2 * cosw01;
+a21 = 1 - alpha1;
+b01 /= a01;
+b11 /= a01;
+b21 /= a01;
+a11 /= a01;
+a21 /= a01;
+a3 = 10^(gain3/40);
+s3 = 2;
+q3 = 1 / (sqrt((a3 + 1/a3)*(1/s3 - 1) + 2));
+w03 = 2 * $pi * freq3/srate;
+cosw03 = cos(w03);
+sinw03 = sin(w03);
+alpha3 = sinw03 / (2 * q3);
+b03 = a3 * ((a3+1) - (a3-1)*cosw03 + 2*sqrt(a3)*alpha3);
+b13 = 2 * a3 * ((a3-1) - (a3+1)*cosw03);
+b23 = a3 * ((a3+1) - (a3-1)*cosw03 - 2*sqrt(a3)*alpha3);
+a03 = (a3+1) + (a3-1)*cosw03 + 2*sqrt(a3)*alpha3;
+a13 = -2 * ((a3-1) + (a3+1)*cosw03);
+a23 = (a3+1)+(a3-1)*cosw03-2*sqrt(a3)*alpha3;
+b03 /= a03;
+b13 /= a03;
+b23 /= a03;
+a13 /= a03;
+a23 /= a03;
+a5 = 10^(gain5/20);
+q5 = 1.4;
+w05 = 2 * $pi * freq5/srate;
+cosw05 = cos(w05);
+sinw05 = sin(w05);
+alpha5 = sinw05 / (2 * q5);
+b05 = 1 + alpha5 * a5;
+b15 = -2 * cosw05;
+b25 = 1 - alpha5 * a5;
+a05 = 1 + alpha5 / a5;
+a15 = -2 * cosw05;
+a25 = 1 - alpha5 / a5;
+b05 /= a05;
+b15 /= a05;
+b25 /= a05;
+a15 /= a05;
+a25 /= a05;
+a7 = 10^(gain7/40);
+freq7 = 12000;
+s7 = 0.3;
+q7 = 1 / (sqrt((a7 + 1/a7)*(1/s7 - 1) + 2));
+w07 = 2 * $pi * freq7/srate;
+cosw07 = cos(w07);
+sinw07 = sin(w07);
+alpha7 = sinw07 / (2 * q7);
+b07 = a7 * ((a7+1) + (a7-1)*cosw07 + 2*sqrt(a7)*alpha7);
+b17 = -2*a7*((a7-1) + (a7+1)*cosw07);
+b27 = a7*((a7+1) + (a7-1)*cosw07 - 2*sqrt(a7)*alpha7);
+a07 = (a7+1) - (a7-1)*cosw07 + 2*sqrt(a7)*alpha7;
+a17 = 2*((a7-1) - (a7+1)*cosw07);
+a27 = (a7+1)-(a7-1)*cosw07 - 2*sqrt(a7)*alpha7;
+b07 /= a07;
+b17 /= a07;
+b27 /= a07;
+a17 /= a07;
+a27 /= a07;
+//FILTER======================================================
+
+//SATURATION==================================================
+foo=slider13/200*$pi;
+bar=sin(slider13/200*$pi);
+//SATURATION==================================================
+
+//VOLUME/PAN==================================================
+tgt_vol = slider15 <= -60.0 ? 0.0 : exp(slider15/log2db);
+tgt_pan = 0.01*slider16;
+panlaw = exp(slider17/log2db);
+pancomp = (panlaw > 1.0 ? 1.0/panlaw : panlaw);
+//VOLUME/PAN==================================================
+
+
+@block
+//VOLUME/PAN==================================================
+d_vol = (tgt_vol-src_vol)/samplesblock;
+d_pan = (tgt_pan-src_pan)/samplesblock;
+tvol = src_vol;
+tpan = src_pan;
+src_vol = tgt_vol;
+src_pan = tgt_pan;
+//VOLUME/PAN==================================================
+
+
+@sample
+//COMPRESSOR=================================================
+aspl0 = abs(spl0);
+aspl1 = abs(spl1);
+maxspl = max(aspl0, aspl1);
+maxspl = maxspl * maxspl;
+runave = maxspl + rmscoef * (runave - maxspl);
+det = sqrt(runave);
+overdb = log(det/threshv) * log2db;
+overdb > maxover ? (
+maxover = overdb;
+attime=0.010;
+atcoef=exp(-1/(attime * srate));
+reltime = overdb / 125;
+relcoef = exp(-1/(reltime * srate));
+);
+overdb = max(0,overdb);
+overdb > rundb ? (
+rundb = overdb + atcoef * (rundb - overdb);
+) : (
+rundb = overdb + relcoef * (rundb - overdb);
+);
+overdb = rundb;
+gr = -overdb * (ratio-1)/ratio;
+grv = exp(gr * db2log);
+runmax = maxover + relcoef * (runmax - maxover);
+maxover = runmax;
+grv < gr_meter ? gr_meter=grv : ( gr_meter*=gr_meter_decay; gr_meter>1?gr_meter=1; );
+spl0 *= grv*volA;
+spl1 *= grv*volA;
+//COMPRESSOR=================================================
+
+//FILTER======================================================
+hpf != 0 ? (
+ospl0 = spl0;
+spl0 = b01 * spl0 + b11 * xl11 + b21 * xl21 - a11 * yl11 - a21 * yl21;
+xl21 = xl11;
+xl11 = ospl0;
+yl21 = yl11;
+yl11 = spl0 ;
+ospl1 = spl1;
+spl1 = b01 * spl1 + b11 * xr11 + b21 * xr21 - a11 * yr11 - a21 * yr21;
+xr21 = xr11;
+xr11 = ospl1;
+yr21 = yr11;
+yr11 = spl1 ;
+);
+lshelf != 0 && gain3 != 0 ? (
+ospl0 = spl0;
+spl0 = b03 * spl0 + b13 * xl13 + b23 * xl23 - a13 * yl13 - a23 * yl23;
+xl23 = xl13;
+xl13 = ospl0;
+yl23 = yl13;
+yl13 = spl0;
+ospl1 = spl1;
+spl1 = b03 * spl1 + b13 * xr13 + b23 * xr23 - a13 * yr13 - a23 * yr23;
+xr23 = xr13;
+xr13 = ospl1;
+yr23 = yr13;
+yr13 = spl1;
+);
+gain5 != 0 ? (
+ospl0 = spl0;
+spl0 = b05 * spl0 + b15 * xl15 + b25 * xl25 - a15 * yl15 - a25 * yl25;
+xl25 = xl15;
+xl15 = ospl0;
+yl25 = yl15;
+yl15 = spl0;
+ospl1 = spl1;
+spl1 = b05 * spl1 + b15 * xr15 + b25 * xr25 - a15 * yr15 - a25 * yr25;
+xr25 = xr15;
+xr15 = ospl1;
+yr25 = yr15;
+yr15 = spl1;
+);
+gain7 != 0 ? (
+ospl0 = spl0;
+spl0 = b07 * spl0 + b17 * xl17 + b27 * xl27 - a17 * yl17 - a27 * yl27;
+xl27 = xl17;
+xl17 = ospl0;
+yl27 = yl17;
+yl17 = spl0;
+ospl1 = spl1;
+spl1 = b07 * spl1 + b17 * xr17 + b27 * xr27 - a17 * yr17 - a27 * yr27;
+xr27 = xr17;
+xr17 = ospl1;
+yr27 = yr17;
+yr17 = spl1;
+);
+spl0 *= gain;
+spl1 *= gain;
+//FILTER======================================================
+
+//SATURATION==================================================
+slider13 ? (
+spl0 = min(max( sin(max(min(spl0,1),-1)*foo)/bar ,-1) ,1);
+spl1 = min(max( sin(max(min(spl1,1),-1)*foo)/bar ,-1) ,1);
+);
+//SATURATION==================================================
+
+//VOLUME/PAN==================================================
+tvol += d_vol;
+tpan += d_pan;
+adj = tvol;
+panlaw != 1.0 ? (
+panlaw > 1.0 ? adj *= panlaw;
+panatt = abs(tpan);
+adj *= pancomp+(1.0-pancomp)*(2.0/(2.0-panatt)-1.0);  
+);
+adj0 = adj1 = adj;
+tpan < 0.0 ? adj1 *= 1.0+tpan;
+tpan > 0.0 ? adj0 *= 1.0-tpan;
+spl0 *= adj0;
+spl1 *= adj1;
+//VOLUME/PAN==================================================
+
+
+@gfx 0 36
+//COMPRESSOR=================================================
+gr_meter *= exp(1/30); gr_meter>1?gr_meter=1;
+gfx_r=1; gfx_g=gfx_b=0; gfx_a=0.8;
+meter_bot=20;
+meter_h=min(gfx_h,32);
+xscale=gfx_w*20/meter_bot;
+gfx_y=0;
+gfx_x=gfx_w + log10(gr_meter)*xscale;
+gfx_rectto(gfx_w,meter_h);
+gfx_r=gfx_g=gfx_b=1.0; gfx_a=0.6;
+s2=sqrt(2)/2;
+g = s2;
+while(
+gfx_x=gfx_w + log10(g)*xscale;
+gfx_x >= 0 ? 
+(
+gfx_y=0;
+gfx_lineto(gfx_x,meter_h,0);
+gfx_y=meter_h-gfx_texth;
+gfx_x+=2;
+gfx_drawnumber(log10(g)*20,0);
+gfx_drawchar($'d');
+gfx_drawchar($'B');
+);
+g*=s2;
+gfx_x >=0;
+);
+//COMPRESSOR=================================================

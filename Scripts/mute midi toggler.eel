@@ -1,0 +1,7 @@
+Main_OnCommand(30, 0);
+
+Undo_OnStateChange("No Undo Point");
+CSurf_FlushUndo(force);
+
+UpdateArrange();
+

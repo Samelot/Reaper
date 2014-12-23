@@ -1,0 +1,328 @@
+// This is a mod of the IXix channel switcher with rather unfinished meters.
+// The more track channels the more meters you will see.
+// Max is 5 meters.
+
+desc: 10 channel input switcher. Read info...
+
+slider1:0<0,4,1{1+2,3+4,5+6,7+8,9+10}>Output source
+slider2:0<-60,12,0.1>Level 1 + 2 (dB)
+slider3:0<-60,12,0.1>Level 3 + 4 (dB)
+slider4:0<-60,12,0.1>Level 5 + 6 (dB)
+slider5:0<-60,12,0.1>Level 7 + 8 (dB)
+slider6:0<-60,12,0.1>Level 9 +10 (dB)
+slider7:350<50,500,10>Window (ms)
+
+@init
+
+AMP_dB = 8.6858896380650365530225783783321;
+DB_MAX = 0.0;
+dbMin = -60;
+dbRange = DB_MAX - dbMin;
+window = slider7*srate*0.001;
+b1 = exp(-1/window);
+a0 = 1 - b1;
+
+@slider
+
+window = slider7*srate*0.001;
+b1 = exp(-1/window);
+a0 = 1 - b1;
+
+source = slider1;
+
+gain12 = slider2 <= -60.0 ? 0.0 : 10 ^ (slider2 / 20);
+gain34 = slider3 <= -60.0 ? 0.0 : 10 ^ (slider3 / 20);
+gain56 = slider4 <= -60.0 ? 0.0 : 10 ^ (slider4 / 20);
+gain78 = slider5 <= -60.0 ? 0.0 : 10 ^ (slider5 / 20);
+gain91 = slider6 <= -60.0 ? 0.0 : 10 ^ (slider6 / 20);
+
+ch12 = gain12 * (source == 0 ? 1 : 0);
+ch34 = gain34 * (source == 1 ? 1 : 0);
+ch56 = gain56 * (source == 2 ? 1 : 0);
+ch78 = gain78 * (source == 3 ? 1 : 0);
+ch91 = gain91 * (source == 4 ? 1 : 0);
+
+@sample
+
+in0=(spl0+spl1)*0.5;
+cur_spl0 = in0;
+fout0 = a0*(cur_spl0*cur_spl0) + b1*fout0;
+rms0 = sqrt(fout0)*gain12;
+
+in1=(spl2+spl3)*0.5;
+cur_spl1 = in1;
+fout1 = a0*(cur_spl1*cur_spl1) + b1*fout1;
+rms1 = sqrt(fout1)*gain34;
+
+in2=(spl4+spl5)*0.5;
+cur_spl2 = in2;
+fout2 = a0*(cur_spl2*cur_spl2) + b1*fout2;
+rms2 = sqrt(fout2)*gain56;
+
+in3=(spl6+spl7)*0.5;
+cur_spl3 = in3;
+fout3 = a0*(cur_spl3*cur_spl3) + b1*fout3;
+rms3 = sqrt(fout3)*gain78;
+
+in4=(spl8+spl9)*0.5;
+cur_spl4 = in4;
+fout4 = a0*(cur_spl4*cur_spl4) + b1*fout4;
+rms4 = sqrt(fout4)*gain91;
+
+spl0 = spl0 * ch12 + spl2 * ch34 + spl4 * ch56 + spl6 * ch78 + spl8 * ch91;
+spl1 = spl1 * ch12 + spl3 * ch34 + spl5 * ch56 + spl7 * ch78 + spl9 * ch91;
+
+@gfx 0 220
+gfx_a = 0.75;
+
+// first
+lA = tA = 20;
+wA = 40;
+hA = 180;
+rA = lA + wA;
+bA = tA + hA;
+
+slider2>-60?(
+gfx_r = 1.0; gfx_g = gfx_b = 0.0;
+):(
+gfx_r = gfx_g = gfx_b = 0.0;
+);
+gfx_x = lA;
+gfx_y = bA;
+
+levelA = ceil(AMP_dB*log(rms0));
+levelAx = min(max((levelA-dbMin)/dbRange, 0.0), 1.0);
+gfx_rectto(rA, bA - (levelAx * hA));
+
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = lA;
+gfx_y = tA;
+gfx_lineto(rA, tA, 0);
+gfx_lineto(rA, bA, 0);
+gfx_lineto(lA, bA, 0);
+gfx_lineto(lA, tA, 0);
+
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 64;
+gfx_y = 38;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 64;
+gfx_y = 74;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 64;
+gfx_y = 110;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 64;
+gfx_y = 146;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 64;
+gfx_y = 182;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+
+// second
+num_ch>2 ?( 
+lB = 100;
+tB = 20;
+wB = 40;
+hB = 180;
+rB = lB + wB;
+bB = tB + hB;
+
+slider3>-60?(
+gfx_r = 1.0; gfx_g = gfx_b = 0.0;
+):(
+gfx_r = gfx_g = gfx_b = 0.0;
+);
+gfx_x = lB;
+gfx_y = bB;
+
+levelB = ceil(AMP_dB*log(rms1));
+levelBx = min(max((levelB-dbMin)/dbRange, 0.0), 1.0);
+gfx_rectto(rB, bB - (levelBx * hB));
+
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = lB;
+gfx_y = tB;
+gfx_lineto(rB, tB, 0);
+gfx_lineto(rB, bB, 0);
+gfx_lineto(lB, bB, 0);
+gfx_lineto(lB, tB, 0);
+
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 144;
+gfx_y = 38;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 144;
+gfx_y = 74;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 144;
+gfx_y = 110;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 144;
+gfx_y = 146;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 144;
+gfx_y = 182;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+);
+
+// third
+num_ch>4 ?( 
+lC = 180;
+tC = 20;
+wC = 40;
+hC = 180;
+rC = lC + wC;
+bC = tC + hC;
+
+slider4>-60?(
+gfx_r = 1.0; gfx_g = gfx_b = 0.0;
+):(
+gfx_r = gfx_g = gfx_b = 0.0;
+);
+gfx_x = lC;
+gfx_y = bC;
+
+levelC = ceil(AMP_dB*log(rms2));
+levelCx = min(max((levelC-dbMin)/dbRange, 0.0), 1.0);
+gfx_rectto(rC, bC - (levelCx * hC));
+
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = lC;
+gfx_y = tC;
+gfx_lineto(rC, tC, 0);
+gfx_lineto(rC, bC, 0);
+gfx_lineto(lC, bC, 0);
+gfx_lineto(lC, tC, 0);
+
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 224;
+gfx_y = 38;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 224;
+gfx_y = 74;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 224;
+gfx_y = 110;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 224;
+gfx_y = 146;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 224;
+gfx_y = 182;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+);
+
+// fourth
+num_ch>6 ?( 
+lD = 260;
+tD = 20;
+wD = 40;
+hD = 180;
+rD = lD + wD;
+bD = tD + hD;
+
+slider5>-60?(
+gfx_r = 1.0; gfx_g = gfx_b = 0.0;
+):(
+gfx_r = gfx_g = gfx_b = 0.0;
+);
+gfx_x = lD;
+gfx_y = bD;
+
+levelD = ceil(AMP_dB*log(rms3));
+levelDx = min(max((levelD-dbMin)/dbRange, 0.0), 1.0);
+gfx_rectto(rD, bD - (levelDx * hD));
+
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = lD;
+gfx_y = tD;
+gfx_lineto(rD, tD, 0);
+gfx_lineto(rD, bD, 0);
+gfx_lineto(lD, bD, 0);
+gfx_lineto(lD, tD, 0);
+
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 304;
+gfx_y = 38;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 304;
+gfx_y = 74;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 304;
+gfx_y = 110;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 304;
+gfx_y = 146;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 304;
+gfx_y = 182;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+);
+
+// fifth
+num_ch>8 ?( 
+lE = 340;
+tE = 20;
+wE = 40;
+hE = 180;
+rE = lE + wE;
+bE = tE + hE;
+
+slider6>-60?(
+gfx_r = 1.0; gfx_g = gfx_b = 0.0;
+):(
+gfx_r = gfx_g = gfx_b = 0.0;
+);
+gfx_x = lE;
+gfx_y = bE;
+
+levelE = ceil(AMP_dB*log(rms4));
+levelEx = min(max((levelE-dbMin)/dbRange, 0.0), 1.0);
+gfx_rectto(rE, bE - (levelEx * hE));
+
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = lE;
+gfx_y = tE;
+gfx_lineto(rE, tE, 0);
+gfx_lineto(rE, bE, 0);
+gfx_lineto(lE, bE, 0);
+gfx_lineto(lE, tE, 0);
+
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 384;
+gfx_y = 38;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 384;
+gfx_y = 74;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 384;
+gfx_y = 110;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 384;
+gfx_y = 146;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+gfx_r = gfx_g = gfx_b = 1.0;
+gfx_x = 384;
+gfx_y = 182;
+gfx_lineto(gfx_x+10, gfx_y, 0);
+);

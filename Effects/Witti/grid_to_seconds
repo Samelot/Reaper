@@ -1,0 +1,45 @@
+/*
+Say you want to insert an item of a specific length
+between some adjacent items on (another) track.
+
+You can use Xenakios 'Reposition items...' action
+to insert gaps of a specific length between these items.
+
+Unfortunately the action is based on seconds.
+(and this plugin is only working with items which are perfectly fitting to the grid.)
+
+So set your grid division and count the beats(bars) of the item you want to insert.
+Adjust these values in the plugin.
+The plugin will readout the seconds.
+Put the result into the Xenakios action window.
+This will give you the exact gap.
+
+Then copy/paste the item between the other items.
+
+Sounds more complicated than it is, really... :)
+*/
+
+desc: To use with Xenakios 'Reposition items...'
+
+slider1:2<0,8,1{1,1/2,1/4,1/8,1/16,1/32,1/64,1/128,1/256}>grid
+slider2:1<1,64,1>bars
+slider3:0,>>>>> seconds
+slider4:0,(dotted grid) seconds
+slider5:0,(triplet grid) seconds
+
+in_pin:none
+out_pin:none
+
+@slider
+mult = (2 ^ -(slider1))*4;
+bars=slider2;
+
+@block
+seconds=(((bars*mult)/tempo)*60);
+
+slider3=seconds;
+sliderchange(slider3);
+slider4=seconds*(6/4);
+sliderchange(slider4);
+slider5=seconds*(2/3);
+sliderchange(slider5);

@@ -1,0 +1,701 @@
+// "MIDI velocity tool" (14.3.2014 - spk77)
+// 15.3.2014 added: "ctrl-drag to set exponential velocity curves"
+// 16.3.2014 added: "alt-drag to set (linear or exponential) velocity curves and compress start or end"
+// 17.3.2014 added: "compress/expand slider"
+// 22.3.2014  - mode button added (velocity/CC)
+//            - "ctrl+z" to undo and "Esc" to exit
+// 30.3.2014 adjust only "the last clicked CC lane"
+// 6.4.2014  added "weight" and "target" sliders (for compressing/expanding)
+
+function get_events(take) local(i, index, selectedOut, mutedOut, startppqpos, endppqposOut, chanOut, pitchOut, event_value)
+(
+  first_point_drag_started == 0 || last_point_drag_started == 0 || compress_knob_drag_started == 0 || compr_target_knob_drag_started == 0 || compr_weight_knob_drag_started == 0 ? (
+    memset(note_list, 0, sel_event_count * 3);
+    sel_event_count = 0;
+    event_value_sum = 0;
+    average_event_value = 0;
+    index = -1;
+    i = 0;
+    mode == "Velocity" ? (
+      while ((index = MIDI_EnumSelNotes(take, index)) != -1) (
+        MIDI_GetNote(take, index, selectedOut, mutedOut, startppqpos, endppqposOut, chanOut, pitchOut, event_value);
+        note_list[i] = index;
+        note_list[i + 1] = event_value;
+        note_list[i + 2] = startppqpos;
+        i += 3;
+        sel_event_count += 1;
+        event_value_sum += event_value;
+      );
+    ) : (
+      while ((index = MIDI_EnumSelCC(take, index)) != -1) (
+        //bool MIDI_GetCC(MediaItem_Take* take, int ccidx, bool &selectedOut, bool &mutedOut, &ppqposOut, int &chanmsgOut, int &chanOut, int &msg2Out, int &msg3Out)
+        MIDI_GetCC(take, index, selectedOut, mutedOut, startppqpos, chanmsgOut, chanOut, msg2Out, event_value);
+        msg2Out == last_clicked_cc_lane ? (
+          note_list[i] = index;
+          note_list[i + 1] = event_value;
+          note_list[i + 2] = startppqpos;
+          i += 3;
+          sel_event_count += 1;
+          event_value_sum += event_value;
+        );
+      );
+    );  
+    first_event_pos = note_list[2];
+    last_event_pos = note_list[sel_event_count * 3 - 1];
+    average_event_value = event_value_sum / sel_event_count;
+  );
+);
+
+function set_default_colors()
+(
+  gfx_r = 0.5;
+  gfx_g = 0.8;
+  gfx_b = 0.5;
+);
+
+function scale_y_to_range(range_start, range_end, y_coord, y_start_offs, y_end_offs) local (scaled_y)
+(
+  //scaled_y = floor(range_end - (range_end - range_start) * (y_coord - y_start_offs) / (gfx_h - y_start_offs - y_end_offs) + 0.5);
+  scaled_y = range_end - (range_end - range_start) * (y_coord - y_start_offs) / (gfx_h - y_start_offs - y_end_offs);
+  scaled_y > range_end ? scaled_y = range_end;
+  scaled_y < range_start ? scaled_y = range_start;
+  scaled_y;
+);
+
+function scale_x_to_range(range_start, range_end, x_coord, x_start_offs, x_end_offs) local (scaled_x)
+(
+  //scaled_x = floor(range_end - (range_end - range_start) * (x_coord - x_start_offs) / (gfx_w - x_start_offs - x_end_offs) + 0.5);
+  scaled_x = range_end - (range_end - range_start) * (x_coord - x_start_offs) / (gfx_w - x_start_offs - x_end_offs);
+  scaled_x > range_end ? scaled_x = range_end;
+  scaled_x < range_start ? scaled_x = range_start;
+  scaled_x;
+);
+
+ function mode_btn(x, y, s_w, s_h) local (cc_info_w, cc_info_h)
+( 
+  #cc_info = "";
+  gfx_x = x; gfx_y = y;
+  set_default_colors();
+  //mode_s = sprintf(#, "%d", offset);
+  
+  // is mouse on string?
+  mouse_x >= x && mouse_x <= x + s_w && mouse_y >= y && mouse_y <= y + s_h && lmb_click_outside_window == 0 && first_point_drag_started == 0 && last_point_drag_started == 0 && compress_knob_drag_started == 0 && compr_target_knob_drag_started == 0 && compr_weight_knob_drag_started == 0 ? (
+      gfx_r += 0.2;
+      gfx_g += 0.2;
+      gfx_b += 0.2;
+    mouse_cap == 1 && lmb_down == 0 ? (
+      mode == "Velocity" ? mode = "CC" : mode = "Velocity";
+      lmb_down = 1;
+    );
+  );
+  //gfx_y += gfx_texth;
+  gfx_printf("%s", mode);
+  
+  mode == "CC" ? (
+    set_default_colors();
+/*     gfx_x = center_x - cc_info_w / 2;
+    gfx_y = draw_start_y + 2 * gfx_texth; */
+    last_clicked_cc_lane == -1 ? (
+      #cc_info = "Select a CC lane";
+    ) : last_clicked_cc_lane > 127 && last_clicked_cc_lane < 512 ? (
+      #cc_info = "14-bit values not supported";
+    ) : last_clicked_cc_lane >= 512 ? (
+      #cc_info = "Not a CC lane (click/select a CC lane)";
+    ) : (
+      #cc_info = "CC";
+      #cc_info += sprintf(#, "%d", last_clicked_cc_lane);
+    );
+    gfx_measurestr(#cc_info, cc_info_w, cc_info_h);
+    gfx_x = center_x - cc_info_w / 2;
+    gfx_y = draw_start_y + 2 * gfx_texth;
+    gfx_printf(#cc_info);
+  );
+);
+
+function env_point_1(x,y,r, range_start, range_end) local (m_y, fill)
+(
+  //m_y = first_point_last_y;
+  fill = 0;
+  m_y = center_y;
+  set_default_colors();
+  (mouse_x >= draw_start_x - r && mouse_x < draw_start_x + (draw_end_x - draw_start_x) / 2 && mouse_y >= draw_start_y - r && mouse_y <= draw_end_y + r) || first_point_drag_started == 1 && last_point_drag_started == 0 && compress_knob_drag_started == 0 && compr_target_knob_drag_started == 0 && compr_weight_knob_drag_started == 0 && lmb_click_outside_window == 0 && lmb_down == 0 ? (
+    gfx_g += 0.1;
+    mouse_cap == 1 || mouse_cap == 5 || mouse_cap == 17 ? (
+      first_point_drag_started = 1;
+      gfx_g += 0.2;
+      m_y = mouse_y;
+      mouse_y > draw_end_y ? m_y = draw_end_y;
+      mouse_y < draw_start_y ? m_y = draw_start_y;
+      fill = 1;
+      //first_point_last_y = m_y;
+    ) : (
+      m_y = center_y;
+      first_point_drag_started = 0;
+      //m_y = first_point_last_y;
+      fill = 1;
+    );
+  );    
+  env_point_1_val = scale_y_to_range(range_start, range_end, m_y, draw_start_y, gfx_h - draw_end_y);
+  gfx_circle(x, m_y, r, fill);
+  gfx_x = x;
+  gfx_y = m_y - 20;
+  gfx_drawnumber(env_point_1_val, 0);
+  first_point_last_y = m_y;
+);
+
+function mouse_on_point2()
+(
+  //(mouse_x > floor(draw_start_x + (draw_end_x - draw_start_x) / 2 + 0.5) && mouse_x <= draw_end_x + r && mouse_y >= draw_start_y - r && mouse_y <= draw_end_y + r)
+  (mouse_x > draw_start_x + (draw_end_x - draw_start_x) / 2 && mouse_x <= draw_end_x + r && mouse_y >= draw_start_y - r && mouse_y <= draw_end_y + r)
+);
+
+function env_point_2(x, y, r, range_start, range_end) local (m_y, fill, s_w, s_h)
+(
+  fill = 0;
+  //m_y = last_point_last_y;
+  m_y = center_y;
+  set_default_colors();
+  mouse_on_point2() || last_point_drag_started == 1 && first_point_drag_started == 0 && compress_knob_drag_started == 0 && compr_target_knob_drag_started == 0 && compr_weight_knob_drag_started == 0 && lmb_click_outside_window == 0 && lmb_down == 0 ? (
+    gfx_g += 0.1;
+    mouse_cap == 1 || mouse_cap == 5 || mouse_cap == 17 ? (
+      last_point_drag_started = 1;
+      gfx_g += 0.2;
+      m_y = mouse_y;
+      mouse_y > draw_end_y ? m_y = draw_end_y;
+      mouse_y < draw_start_y ? m_y = draw_start_y;
+      fill = 1;
+      //last_point_last_y = m_y;
+    ) : (
+      m_y = center_y;
+      last_point_drag_started = 0;
+      //m_y = last_point_last_y;
+      fill = 1;
+    );
+  );
+  
+  env_point_2_val = scale_y_to_range(range_start, range_end, m_y, draw_start_y, gfx_h - draw_end_y);
+  gfx_circle(x, m_y, r, fill);
+  //gfx_x = x;
+  gfx_measurestr(sprintf(env_point_2_val_str, "%d", env_point_2_val), s_w, s_h);
+  gfx_y = m_y - 20;
+  
+  //gfx_x = floor(x - s_w/2 + 0.5);
+  gfx_x = x - s_w/2;
+  //gfx_printf(gfx_x);
+  //gfx_y = y - 20;
+  gfx_drawstr(env_point_2_val_str);
+  //gfx_drawnumber(env_point_2_val, 0);
+  last_point_last_y = m_y;
+);
+
+function set_event_values() local(i, m_x, value, new_event_value)
+(
+  i = 0;  
+  //gfx_y = 50;
+  
+  loop(sel_event_count,
+    mode == "Velocity" ? (
+      MIDI_GetNote(take, note_list[i], selectedOut, mutedOut, startppqposOut, endppqposOut, chanOut, pitchOut, value);
+    ) : (
+      MIDI_GetCC(take, note_list[i], selectedOut, mutedOut, startppqposOut, chanmsgOut, chanOut, msg2Out, value);
+    );
+    
+    pos_diff = last_event_pos - first_event_pos;
+    note_rel_pos_end = (last_event_pos - startppqposOut) / pos_diff; //  == 0 at the end pos
+    note_rel_pos_start = (startppqposOut - first_event_pos) / pos_diff; // == 0 at the start pos
+    
+    first_point_drag_started == 1 ? ( // currently dragging the first point
+      curve = env_point_1_val * note_rel_pos_end;
+    ) : last_point_drag_started == 1 ? ( // else if currently dragging the last point
+      curve = env_point_2_val * note_rel_pos_start;
+    );
+    
+    // "point y pos" or "mouse_x" changed (while dragging points)
+    env_point_1_val != last_env_point_1_val || env_point_2_val != last_env_point_2_val || compress_knob_val !=last_compress_knob_val || mouse_x != last_mouse_x ? (
+      undo_block == 0 ? ( 
+        undo_block = 1;
+      );
+      mouse_x < 1 ? m_x = 1 : m_x = mouse_x;
+      c_x = scale_x_to_range(0.5, 2, m_x, 0, 0);
+      
+      mouse_cap == 5 && first_point_drag_started == 1 ? ( // ctrl+drag first point 
+        curve = env_point_1_val * pow(note_rel_pos_end, c_x);// + m_x/gfx_w *note_rel_pos_end;
+      ) : mouse_cap == 5 && last_point_drag_started == 1 ? ( // ctrl+drag last point 
+        curve = env_point_2_val * pow(note_rel_pos_start, c_x);// + m_x/gfx_w *note_rel_pos_end;
+      );
+      new_event_value = note_list[i + 1] + curve;
+      
+      /*// sine curves      
+      mouse_x < 0 ? mousex = 0 : mousex = mouse_x;
+      mouse_cap == 17 ? asasas = 10 * exp(mouse_y / gfx_h) : asasas = 1;
+      first_point_drag_started == 1 ? new_event_value = note_list[i + 1] + (64 * env_point_1_val * 1/128) * (exp(-note_rel_pos_end * 5 * mousex / gfx_w))* sin(2*$pi * asasas * note_rel_pos_end);
+      last_point_drag_started == 1 ? new_event_value = note_list[i + 1] + (64 * env_point_2_val * 1/128) * (exp(-note_rel_pos_start * 5 * mousex/gfx_w))* sin(2*$pi * 4 * note_rel_pos_start);
+      
+      //gfx_x = 100;
+      //gfx_printf("%f", new_event_value);
+      //gfx_y += 10;*/       
+      
+      mouse_cap == 17 && first_point_drag_started == 1 ? ( // alt+drag first point 
+        new_event_value *= note_rel_pos_start;
+      ) : mouse_cap == 17 && last_point_drag_started == 1 ? ( // alt+drag last point 
+        new_event_value *= note_rel_pos_end;
+      );
+      new_event_value = floor(new_event_value + 0.5);
+      //gfx_printf("%f", new_event_value);
+      mode == "Velocity" ? (
+        new_event_value < 1 ? (
+          new_event_value = 1;
+        );
+      ) : new_event_value < 0 ? (
+          new_event_value = 0;
+        );
+        
+      new_event_value > 127 ? (
+        new_event_value = 127;
+      );
+      
+      new_event_value != value ? (
+        mode == "Velocity" ? (
+          MIDI_SetNote(take, note_list[i], selectedOut, mutedOut, startppqposOut, endppqposOut, chanOut, pitchOut, new_event_value);
+        ) : (
+          MIDI_SetCC(take, note_list[i], selectedOut, mutedOut, startppqposOut, chanmsgOut, chanOut, msg2Out, new_event_value);
+        );
+      );
+    );
+    i += 3;
+      //gfx_x = 100;
+      //gfx_printf("%d", vel);
+      //gfx_y+= 10;
+  );
+  //last_mouse_x = mouse_x;
+  last_env_point_1_val = env_point_1_val;
+  last_env_point_2_val = env_point_2_val;
+  last_compress_knob_val = compress_knob_val;
+  last_compr_target_knob_val = compr_target_knob_val;
+);
+      
+function compress_knob (x,y,r) local (m_x, fill, s_w, s_h)
+(
+  fill = 0;
+  gfx_r = 0.8;
+  gfx_g = 0.8;
+  gfx_b = 0.8;
+  m_x = center_x;
+  (mouse_x >= draw_start_x - r && mouse_x <= draw_end_x && mouse_y >= y - r && mouse_y <= y + r) || compress_knob_drag_started == 1 && compr_target_knob_drag_started == 0 && compr_weight_knob_drag_started == 0 && first_point_drag_started == 0 && last_point_drag_started == 0 && lmb_click_outside_window == 0 && lmb_down == 0 ? (
+    gfx_b += 0.1;
+    mouse_cap == 1 || mouse_cap == 5 ? (
+      compress_knob_drag_started = 1;
+      gfx_b += 0.2;
+      m_x = mouse_x;
+      mouse_x > draw_end_x ? m_x = draw_end_x;
+      mouse_x < draw_start_x ? m_x = draw_start_x;
+      fill = 1;
+      //compress_knob_last_x = m_x;
+    ) : (
+      //m_x = center_x;
+      compress_knob_drag_started = 0;
+      m_x = center_x;
+      fill = 1;
+    );
+  );
+  
+  compress_knob_val = -scale_x_to_range (-100, 100, m_x, draw_start_x, gfx_w - draw_end_x);
+  gfx_measurestr(sprintf(compress_knob_val_str, "%d", compress_knob_val), s_w, s_h);
+  gfx_circle(m_x, y, r, fill);
+  
+  //gfx_x = floor(m_x - s_w/2 + 0.5);
+  //gfx_y = y - 20;
+  compress_knob_last_x = m_x;
+);
+
+function compr_target_knob(x,y,r, range_start, range_end) local (m_x, fill, s_w, s_h, info_str_w, info_str_h)
+(
+  #info_str = "";
+  #compr_target_knob_val_str = "";
+  fill = 0;
+  gfx_r = 0.8;
+  gfx_g = 0.8;
+  gfx_b = 0.8;
+  m_x = compr_target_knob_last_x;
+  (mouse_x >= draw_start_x - r && mouse_x <= draw_end_x + r && mouse_y > y - r && mouse_y < y + r) || compr_target_knob_drag_started == 1 && compress_knob_drag_started == 0 && compr_weight_knob_drag_started == 0 && first_point_drag_started == 0 && last_point_drag_started == 0 && lmb_click_outside_window == 0 && lmb_down == 0 ? (
+    #info_str = ("Target velocity or CC value\n(ctrl+click -> set to 'average')");
+    gfx_measurestr(#info_str, info_str_w, info_str_h);
+    gfx_x = center_x - floor(info_str_w / 2 + 0.5);
+    gfx_y = draw_end_y - gfx_texth * 3;
+    gfx_drawstr(#info_str);
+    gfx_b += 0.1;
+    mouse_cap == 1 || mouse_cap == 5 ? (
+      compr_target_knob_drag_started = 1;
+      gfx_b += 0.2;
+      mouse_cap == 5 ? m_x = draw_start_x : m_x = mouse_x;
+      mouse_x > draw_end_x ? m_x = draw_end_x;
+      mouse_x < draw_start_x ? m_x = draw_start_x;
+        fill = 1;
+        //compress_knob_last_x = m_x;
+    ) : (
+      //m_x = center_x;
+      compr_target_knob_drag_started = 0;
+      m_x = compr_target_knob_last_x;
+      fill = 1;
+    );
+  );
+  
+  compr_target_knob_val = range_end - scale_x_to_range(range_start, range_end, m_x, draw_start_x, gfx_w - draw_end_x);
+  compr_target_knob_val = floor(compr_target_knob_val + 0.5);
+
+  mode == "Velocity" ? (
+    compr_target_knob_val >= 1 ? (
+      gfx_measurestr(sprintf(#compr_target_knob_val_str, "%d", compr_target_knob_val), s_w, s_h);
+    ) : (
+      gfx_measurestr("avg.", s_w, s_h);
+      #compr_target_knob_val_str = "avg.";
+    );
+  );
+  
+  mode == "CC" ? (
+    compr_target_knob_val -= 1;
+    compr_target_knob_val >= 0 ? (
+      gfx_measurestr(sprintf(#compr_target_knob_val_str, "%d", compr_target_knob_val), s_w, s_h);
+    ) : (
+      gfx_measurestr("avg.", s_w, s_h);
+      #compr_target_knob_val_str = "avg.";
+    );
+  );
+  gfx_circle(m_x, y, r, fill);
+  gfx_x = floor(m_x - s_w/2 + 0.5);
+  gfx_y = y - 20;
+  gfx_printf(#compr_target_knob_val_str);
+  compr_target_knob_last_x = m_x;
+  
+);
+
+function compr_weight_knob(x,y,r) local (m_x, fill, s_w, s_h, info_str_w, info_str_h)
+(
+  #compr_weight_knob_str = "";
+  #info_str = "";
+  fill = 0;
+  gfx_r = 0.8;
+  gfx_g = 0.8;
+  gfx_b = 0.8;
+  m_x = compr_weight_knob_last_x;
+  (mouse_x >= draw_start_x - r && mouse_x <= draw_end_x + r && mouse_y > y - r && mouse_y < y + r) || compr_weight_knob_drag_started == 1 && compr_target_knob_drag_started == 0 && compress_knob_drag_started == 0 && first_point_drag_started == 0 && last_point_drag_started == 0 && lmb_click_outside_window == 0 && lmb_down == 0 ? (
+    #info_str = ("Weight (ctrl+click ->\nset to 'even weight')");
+    gfx_measurestr(#info_str, info_str_w, info_str_h);
+    gfx_x = center_x - floor(info_str_w / 2 + 0.5);
+    gfx_y = draw_end_y - gfx_texth * 3;
+    gfx_drawstr(#info_str);
+    gfx_b += 0.1;
+    mouse_cap == 1 || mouse_cap == 5 ? (
+      compr_weight_knob_drag_started = 1;
+      gfx_b += 0.2;
+      mouse_cap == 5 ? m_x = center_x : m_x = mouse_x;
+      mouse_x > draw_end_x ? m_x = draw_end_x;
+      mouse_x < draw_start_x ? m_x = draw_start_x;
+      fill = 1;
+    ) : (
+      //m_x = center_x;
+      compr_weight_knob_drag_started = 0;
+      m_x = compr_weight_knob_last_x;
+      fill = 1;
+    );
+  );
+  
+  compr_weight_knob_val = -scale_x_to_range (-100, 100, m_x, draw_start_x, gfx_w - draw_end_x);
+  compr_weight_knob_val = floor(compr_weight_knob_val + 0.5);
+  
+  sprintf(#compr_weight_knob_val_str, "%d", compr_weight_knob_val);
+  gfx_measurestr(#compr_weight_knob_val_str, s_w, s_h);
+
+  gfx_circle(m_x, y, r, fill);
+  
+  gfx_x = floor(m_x - s_w/2 + 0.5);
+  gfx_y = y - 20;
+  gfx_printf(#compr_weight_knob_val_str);
+  //gfx_drawstr(#compr_weight_knob_val_str)
+  compr_weight_knob_last_x = m_x;
+);
+
+
+function compress() local (i, value, new_event_value)
+(
+  gfx_y = 50;
+  i = 0;
+  pos_diff = last_event_pos - first_event_pos;
+  loop(sel_event_count,
+    mode == "Velocity" ? (
+      compr_target_knob_val >= 1 ? (
+        average_event_value = compr_target_knob_val;
+      );
+      MIDI_GetNote(take, note_list[i], selectedOut, mutedOut, startppqposOut, endppqposOut, chanOut, pitchOut, value);
+    ) : (
+      compr_target_knob_val >= 0 ? (
+        average_event_value = compr_target_knob_val;
+      );
+      MIDI_GetCC(take, note_list[i], selectedOut, mutedOut, startppqposOut, chanmsgOut, chanOut, msg2Out, value);
+    );
+    //MIDI_GetNote(take, note_list[i], selectedOut, mutedOut, startppqposOut, endppqposOut, chanOut, pitchOut, velOut);
+    compress_knob_val != last_compress_knob_val || mouse_x != last_mouse_x ? ( // || mouse_y != last_mouse_y ? (
+      undo_block == 0 ? ( 
+        undo_block = 1;
+      );
+      mouse_cap == 1 ? (
+        c = compress_knob_val / 100;
+      ); //: mouse_cap == 5 || last_mouse_y != mouse_y ? (
+      //);
+      
+      note_rel_pos_end = (last_event_pos - startppqposOut) / pos_diff; //  == 0 at the end pos
+      note_rel_pos_start = (startppqposOut - first_event_pos) / pos_diff; // == 0 at the start pos
+      
+      //gfx_printf("%f", compr_weight_knob_val);
+      compr_target_knob_val >= 1 ? (
+        average_event_value = compr_target_knob_val;
+      );
+      //new_event_value = note_list[i + 1] + (average_event_value - note_list[i + 1]) * c;
+/*       d = 1-(compr_weight_knob_val/100)*(note_rel_pos_end);
+      e = (compr_weight_knob_val/100)*(1-note_rel_pos_end);
+      gfx_printf("%f", d+e);
+      gfx_y += 10;
+      gfx_x = 50; */
+      new_event_value = note_list[i + 1] + (average_event_value - note_list[i + 1]) * c * (1 - (compr_weight_knob_val / 100)*(note_rel_pos_end) + (compr_weight_knob_val / 100) * (1 - note_rel_pos_end)) / (1 - (-abs(compr_weight_knob_val) / 100));
+      new_event_value = floor(new_event_value + 0.5);
+      
+      mode == "Velocity" ? (
+        new_event_value < 1 ? (
+          new_event_value = 1;
+        );
+      ) : new_event_value < 0 ? (
+        new_event_value = 0;
+      );
+      
+      new_event_value > 127 ? (
+        new_event_value = 127;
+      );
+      
+      new_event_value != value ? (
+        mode == "Velocity" ? (
+          MIDI_SetNote(take, note_list[i], selectedOut, mutedOut, startppqposOut, endppqposOut, chanOut, pitchOut, new_event_value);
+        ) : (
+          MIDI_SetCC(take, note_list[i], selectedOut, mutedOut, startppqposOut, chanmsgOut, chanOut, msg2Out, new_event_value);
+        );
+      );
+    );
+    i += 3;
+  );
+  //last_mouse_x = mouse_x;
+  //last_mouse_y = mouse_y;
+  last_compress_knob_val = compress_knob_val;
+);
+
+
+
+function apply_curve() //local (m_x, c_x)
+(
+  (take = MIDIEditor_GetTake(MIDIEditor_GetActive())) ? (
+    mode == "CC" ? (
+      last_clicked_cc_lane = MIDIEditor_GetSetting_int(MIDIEditor_GetActive(), "last_clicked_cc_lane");
+    );
+    
+    // dragging points
+    first_point_drag_started == 1 || last_point_drag_started == 1 || compress_knob_drag_started == 1 ? (
+      // update "note_list" to get vel and pos (if "not currently adjusting points")
+      adjusting_vel == 0 ? (
+        get_events(take);
+      );
+      adjusting_vel = 1;
+      compress_knob_drag_started == 1 ? ( // adjusting compress/expand
+        mode == "CC" && last_clicked_cc_lane >= 0 && last_clicked_cc_lane <= 127 ? (
+          compress();
+        ) : mode == "Velocity" ? compress();
+      ) : ( // adjusting first or last point
+        set_event_values();
+      );
+    ) : (
+    adjusting_vel == 1 ? adjusting_vel = 0;
+    );
+  );
+);
+
+function run() local (s_w, s_h, range_start, range_end, comp_target_range_start, comp_target_range_end)
+(
+  set_default_colors();
+  gfx_a = 1;
+  
+  //draw_start_x = 22;
+  //draw_start_y = 20;
+
+  draw_end_x = gfx_w - 22;
+  draw_end_y = gfx_h - 80;
+  gfx_x = draw_start_x;
+  gfx_y = draw_start_y;
+  
+  gfx_h != last_h ? (
+    //center_y = floor(draw_start_y + (draw_end_y - draw_start_y) / 2 + 0.5);
+    center_y = draw_start_y + (draw_end_y - draw_start_y) / 2;
+    first_point_last_y = center_y; 
+    last_point_last_y = center_y;
+    last_h = gfx_h;
+  );
+  gfx_w != last_w ? (
+    center_x = floor(draw_start_x + (draw_end_x - draw_start_x) / 2 + 0.5);
+    mode == "Velocity" ? (
+      compr_target_knob_last_x = gfx_w - (draw_start_x + (127 - compr_target_knob_val)*(draw_end_x - draw_start_x) / 127);
+    ) : (
+      compr_target_knob_last_x = gfx_w - (draw_start_x + (128 - compr_target_knob_val - 1)*(draw_end_x - draw_start_x) / 128);
+    );
+    compr_weight_knob_last_x = gfx_w - (draw_start_x + (100 - compr_weight_knob_val)*(draw_end_x - draw_start_x) / 200);
+
+    //center_x = draw_start_x + (draw_end_x - draw_start_x) / 2;
+    // first_point_last_x = center_x; 
+    // last_point_last_x = center_x;
+    compress_knob_last_x = center_x;
+    last_w = gfx_w;
+  );
+  
+  center_y = draw_start_y + (draw_end_y - draw_start_y) / 2;
+  center_x = draw_start_x + (draw_end_x - draw_start_x) / 2;
+  
+    // check if "lmb down" and "mouse cursor is not in window" and "not currently adjusting env points"
+    mouse_cap >= 1 && (mouse_x <= 0 || mouse_x >= gfx_w || mouse_y < 2 || mouse_y >= gfx_h) && first_point_drag_started == 0 && last_point_drag_started == 0 && compress_knob_drag_started == 0 && compr_target_knob_drag_started == 0 && compr_weight_knob_drag_started == 0 ? (
+      lmb_click_outside_window = 1;
+    ) : mouse_cap == 0 ? (
+      lmb_click_outside_window = 0;
+    );
+  
+  //center_y = floor(draw_start_y + (draw_end_y - draw_start_y) / 2 + 0.5);
+  //center_x = floor(draw_start_x + (draw_end_x - draw_start_x) / 2 + 0.5);
+
+  gfx_r = 0;
+  gfx_g = 0.6;
+  gfx_b = 0.3;
+  gfx_a = 0.5;
+  
+  mode == "Velocity" ? (
+    gfx_measurestr("Velocity", s_w, s_h);
+    range_start = -126;
+    range_end = 126;
+    comp_target_range_start = 1;
+    comp_target_range_end = 128;
+  ) : (
+    gfx_measurestr("CC", s_w, s_h);
+    range_start = -127;
+    range_end = 127;
+    comp_target_range_start = 0;
+    comp_target_range_end = 128;
+  );
+  
+  mode_btn(center_x - s_w / 2, draw_start_y - gfx_texth * 2, s_w, s_h);
+  
+  set_default_colors();
+  
+  gfx_line(draw_start_x, draw_start_y, draw_end_x, draw_start_y);
+  gfx_line(draw_start_x, center_y, draw_end_x, center_y);
+  gfx_line(draw_start_x, draw_end_y, draw_end_x, draw_end_y);
+  
+  gfx_setfont(1, "Verdana", 12, 'b');
+  
+  // Draw points and line between points
+  gfx_a = 1;
+  env_point_1(draw_start_x, first_point_last_y, 3, range_start, range_end);
+  env_point_2(draw_end_x, last_point_last_y, 3, range_start, range_end);
+  
+  compress_knob(center_x, gfx_h - 70, 4);
+  
+  compr_target_knob(compr_target_knob_last_x, gfx_h - 45, 4, comp_target_range_start, comp_target_range_end);
+  compr_weight_knob(compr_weight_knob_last_x, gfx_h - 20, 4);
+  
+  //gfx_setfont(1, "Verdana", 12);
+  gfx_r = 0.7;
+  gfx_g = 0.7;
+  gfx_b = 1;
+  gfx_a = 0.1;
+  
+  gfx_x = center_x + 10;
+  gfx_line(draw_start_x, draw_end_y + 10, draw_end_x, draw_end_y + 10);
+  gfx_a = 0.5;
+  gfx_y = gfx_h - 70 - gfx_texth / 2;
+  gfx_drawstr("Compress ->");
+  gfx_measurestr("<-Expand", e_w, e_h);
+  gfx_x = center_x - e_w - 10;
+  gfx_drawstr("<-Expand");
+  
+  gfx_a = 0.5;
+  
+  set_default_colors();
+  gfx_line(draw_start_x, first_point_last_y, draw_end_x, last_point_last_y);
+    
+  apply_curve();
+  
+  // add undo point if necessary
+  undo_block == 1 && first_point_drag_started == 0 && last_point_drag_started == 0  && compress_knob_drag_started == 0 ? (
+    undo_block = 0;
+    Undo_OnStateChange("Adjust velocity or CC");
+  );
+  
+  // just to make sure that the point states are "reseted"
+  mouse_cap == 0 ? (
+    first_point_drag_started = 0; last_point_drag_started = 0; compress_knob_drag_started = 0; lmb_down = 0;
+  );
+  
+  char = gfx_getchar();
+  char == 26 ? (
+    Main_OnCommand(40029, 0); // undo
+  );
+  char == 27 ? (
+    undo_block == 1 ? (
+      Undo_OnStateChange("Adjust velocity or CC");
+    );
+    gfx_quit();
+  );
+  char >= 0 ? (
+    defer("run();");
+  );
+  //gfx_printf("%d", lmb_click_outside_window);
+  //gfx_y = 100;
+  //gfx_printf("%f", event_value);
+  last_mouse_x = mouse_x;
+  last_h = gfx_h;
+  last_w = gfx_w;
+  gfx_update();
+);
+
+// init
+function init()
+(
+  gfx_init("MIDI Velocity/CC tool",280,320);
+
+  last_w = gfx_w;
+  last_h = gfx_h;
+
+  draw_start_x = 22;
+  draw_end_x = gfx_w - 22;
+  draw_start_y = 30;
+  draw_end_y = gfx_h - 80;
+  //center_x = floor(draw_start_x + (draw_end_x - draw_start_x) / 2 + 0.5);
+  //center_y = floor(draw_start_y + (draw_end_y - draw_start_y) / 2 + 0.5);
+  center_x = draw_start_x + (draw_end_x - draw_start_x) / 2;
+  center_y = draw_start_y + (draw_end_y - draw_start_y) / 2;
+
+  gfx_setfont(1, "Verdana", 12, 'b');
+
+  first_point_last_y = center_y;
+  last_point_last_y = center_y;
+  compress_knob_last_x = center_x;
+  compr_target_knob_last_x = draw_start_x;
+  compr_weight_knob_last_x = center_x;
+
+  // "mouse/env. point states"
+  adjusting_vel = 0;
+  lmb_click_outside_window = 0;
+
+  note_list = 10000;
+  
+  mode = "Velocity";
+  last_clicked_cc_lane == -1;
+
+  (take = MIDIEditor_GetTake(MIDIEditor_GetActive())) ? (
+    get_events(take);
+  );
+);
+
+init();
+run();

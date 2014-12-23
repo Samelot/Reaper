@@ -1,0 +1,174 @@
+desc:spectrum analyzer
+/*
+Copyright (C) 2007 Cockos Incorporated
+License: GPL - http://www.gnu.org/licenses/gpl.html
+*/
+
+slider1:6<0,9,1{16,32,64,128,256,512,1024,2048,4096,8192,16384,32768}>FFT size
+slider2:-120<-228,-12,6>floor
+slider3:0<0,1,1{disabled,enabled}>show phase
+slider4:2<0,3,1{rectangular,hamming,blackman-harris,blackman}>window
+
+in_pin:left input
+in_pin:right input
+
+@init
+recpos=0;
+fftsize=32768;
+gfx_clear=-1;
+windowtype=-1;
+
+histsize=128*1024;
+window=histsize;
+fftworkspace=window+65536;
+lrecpos=0;
+
+
+@slider
+lfft=fftsize;
+a=(slider1|0);
+a<0?a=0:a>11?a=11;
+fftsize=2^(a+4);
+lfft!=fftsize?(
+recbuf=recpos=0;
+);
+
+@block
+
+ifftsize=1/fftsize;
+
+@sample
+recpos[]=spl(0)+spl(1);
+recpos+=1;
+recpos >= histsize ? recpos=0;
+
+@gfx 640 400
+
+// only update if new fft data is there or if the size changed
+recpos != lrecpos || old_w != gfx_w || old_h!=gfx_h? (
+
+
+old_w=gfx_w; old_h=gfx_h;
+
+gfx_r=gfx_g=gfx_b=0; gfx_a=1;
+gfx_x=gfx_y=0;
+gfx_rectto(gfx_w,gfx_h);
+
+sc=(gfx_h-20)*20/(-slider2 * log(10));
+
+// draw horz grid
+gfx_r=gfx_g=gfx_b=0.6;
+gfx_a=0.5;
+gv=1;
+cnt=100;
+gfx_y=-100;
+while(
+  gfx_x=0; y=20-log(gv)*sc;
+  y> gfx_y ? (
+    gfx_y=y;
+    gfx_lineto(gfx_w,gfx_y,0);
+    gfx_x=0; 
+    gfx_y+=2;
+    gfx_drawnumber(log10(gv)*20,0);
+    gfx_drawchar($'d');
+    gfx_drawchar($'B');
+    gfx_y+=gfx_texth;
+  );
+  gv*=0.5;
+
+  gfx_y<gfx_h && cnt-=1 > 0;
+);
+
+
+wsc=gfx_w/log(1+400);
+
+// draw vert grid
+f=100;
+while(
+
+  tx = log(1.0+((f-40)/srate*2.0)*400)*wsc;
+  tx > gfx_x+2 ? (
+    gfx_x=tx;
+    gfx_y=0;
+    gfx_lineto(gfx_x,gfx_h,0);
+    gfx_y -= gfx_texth;
+    gfx_x+=3;
+    gfx_drawnumber(f,0);
+    gfx_drawchar($'H');
+    gfx_drawchar($'z');
+  );
+  f+=f;
+  f < srate*0.5;
+);
+
+lrecpos=recpos;
+
+(
+  windowsize != fftsize || windowtype != slider4 ? (
+    windowtype=slider4; 
+    windowsize=fftsize;
+    i=0;
+    dwindowpos = $pi*2/(fftsize-1);
+    windowpos=0;
+
+    loop(fftsize,
+       window[i] = (
+         windowtype==1 ? 0.53836 - cos(windowpos)*0.46164 :
+         windowtype==2 ? 0.35875 - 0.48829 * cos(windowpos) + 0.14128 * cos(2*windowpos) - 0.01168 * cos(6*windowpos) :
+         windowtype==3 ? 0.42 - 0.50 * cos(windowpos) + 0.08 * cos(2.0*windowpos) :
+          1.0)*ifftsize*0.5;
+       windowpos+=dwindowpos;
+       i+=1;
+    );
+  );
+
+
+  buf1=lrecpos-fftsize;
+  buf1<0 ? buf1+=histsize;
+  buf2=window;
+  buf3=fftworkspace;
+  loop(fftsize,
+    buf3[] = buf1[]*buf2[];
+    buf3[1]=0;
+    buf3+=2;
+
+    buf2+=1;
+    (buf1+=1) >= histsize ? buf1 -= histsize;
+  );
+  fft(fftworkspace,fftsize);
+  fft_permute(fftworkspace,fftsize);
+
+  i=0;
+  ascale=gfx_h/$pi*0.25;
+  xscale=800/(fftsize-4);
+  loop(fftsize*0.5-1,
+    aa=fftworkspace[i*2+2]; bb=fftworkspace[i*2+3];
+    dv=max(aa*aa+bb*bb,0.00000000000000000000000001);
+    ty= (-log(dv)*0.5)*sc+20;
+
+    ang=-atan2(aa,bb);
+
+    ty2=ang*ascale + gfx_h*0.5;
+
+    tx = log(1.0+i*xscale)*wsc;
+
+
+
+    i ? 
+    ( 
+      slider3?(
+      gfX_r=0.6; gfx_g=0; gfx_b=0.8; gfx_a=1;
+      gfx_x=lx; gfx_y=ly2; gfx_lineto(tx,ty2,1) ;
+      );
+
+      gfX_r=gfx_g=1; gfx_b=0;gfx_a=1.0;
+      gfx_x=lx; gfx_y=ly; gfx_lineto(tx,ty,1) ;
+    );
+
+    lx=tx; ly=ty; ly2=ty2;
+    i+=1;
+  );
+);
+
+
+);

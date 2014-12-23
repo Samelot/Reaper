@@ -1,0 +1,523 @@
+// Item Inspector by SPK 77
+// 12.2.2014
+
+// gfx window size
+window_w = 400;
+window_h = 200;
+
+// font sizes
+track_font_sz = 14;
+item_font_sz = 14;
+take_font_sz = 14;
+
+// mouse states (vars are checked at the end)
+lmb_already_down = 0;
+ctrl_lmb_started = 0;
+ctrl_rmb_started = 0;
+
+// Track volume min and max
+
+// lowest possible slider val (tested with REAPER track vol slider at min):
+// == 0.00000000000000000000000000000000000000000000000001 (-999.999999999999890 dB)
+//track_vol_min = 0.00000000000000000000000000000000000000000000000001;
+track_vol_min = pow(10, -150 / 20); // -150 dB
+track_vol_min_dB = -150;
+
+// highest possible slider val (tested with REAPER track vol slider at max):
+// == 15.848931924611136 (24 dB)
+//track_vol_max = 15.848931924611136;
+track_vol_max_dB = 24.08;	// has to be over 24 (otherwise, "track vol slider" in Reaper doesn't go to max pos)
+track_vol_max = pow(10, 24.08 / 20); // 24 dB
+
+// Item volume min and max (-150dB to +24.08 dB)
+item_vol_min = pow(10, -150 / 20);
+item_vol_max = pow(10, 24.08 / 20);
+item_vol_min_dB = -150;
+item_vol_max_dB = 24.08;
+
+// Take volume min and max (-150dB to +24.08 dB)
+take_vol_min = pow(10, -150 / 20);
+take_vol_max = pow(10, 24.08 / 20);
+take_vol_min_dB = -150;
+take_vol_max_dB = 24.08;
+
+// Take pan min and max
+take_pan_min = -1.0;
+take_pan_max = 1.0;
+
+function select_font(index font_size)
+(
+	index == 1 ? gfx_setfont(1,"Verdana", font_size);
+	index == 2 ? gfx_setfont(2,"Verdana", font_size, 'b');
+);
+
+function adjust_track_font_size(mouse_wheel_val)
+(
+	mouse_wheel_val > 0 ? (
+		track_font_sz < 20 ? (
+			track_font_sz += 2;
+		);
+	);
+	
+	mouse_wheel_val < 0 ? (
+		track_font_sz > 8 ? (
+			track_font_sz -= 2;
+		);
+	);
+	//mouse_wheel = 0;
+);
+
+function adjust_item_font_size(mouse_wheel_val)
+(
+	mouse_wheel_val > 0 ? (
+		item_font_sz < 20 ? (
+			item_font_sz += 2;
+		);
+	);
+	
+	mouse_wheel_val < 0 ? (
+		item_font_sz > 8 ? (
+			item_font_sz -= 2;
+		);
+	);
+	//mouse_wheel = 0;
+);
+
+function adjust_take_font_size(mouse_wheel_val)
+(
+	mouse_wheel_val > 0 ? (
+		take_font_sz < 20 ? (
+			take_font_sz += 2;
+		);
+	);
+	
+	mouse_wheel_val < 0 ? (
+		take_font_sz > 8 ? (
+			take_font_sz -= 2;
+		);
+	);
+	//mouse_wheel = 0;
+);
+
+function adjust_font_size(mouse_wheel_val)
+(
+	mouse_wheel_val > 0 ? (
+		//gfx_printf("%d", track_font_sz);
+		(track_font_sz < 20 && item_font_sz < 20 && take_font_sz < 20) ? (
+			track_font_sz += 2;
+			item_font_sz += 2;
+			take_font_sz += 2;
+		);
+	);
+	
+	mouse_wheel_val < 0 ? (
+		(track_font_sz > 12 && item_font_sz > 12 && take_font_sz > 12) ? (
+			track_font_sz -= 2;
+			item_font_sz -= 2;
+			take_font_sz -= 2;
+		);
+	);
+	//mouse_wheel = 0;
+);
+
+function highlight_mouse_hover()
+(
+	gfx_r += 0.1;
+	gfx_g += 0.1;
+	gfx_b += 0.1;
+);
+
+function highlight_mouse_on_press()
+(
+	gfx_r += 0.2;
+	gfx_g += 0.2;
+	gfx_b += 0.2;
+);
+
+function is_value_between(value start end)
+(
+		(value >= start && value <= end) ? 1 : 0;
+);
+
+function is_mouse_inside_rectangle(rect_x rect_y rect_w rect_h)
+(
+	(is_value_between(mouse_x, rect_x, rect_w) && is_value_between(mouse_y, rect_y, rect_h)) ? 1 : 0;
+);
+
+// Track functions
+function get_track_volume(track)
+(	
+	track_volume = GetMediaTrackInfo_Value(track, "D_VOL")
+);
+
+function get_track_volume_dB(track_volume)
+(	
+	track_volumedB = 20 * log10(track_volume);
+);
+
+function get_track_volume_dB_str(track_volume)
+(	
+	track_volumedB = 20 * log10(track_volume);
+	track_volumedB_str = sprintf(#, "%.2f", track_volumedB);
+);
+
+// Item functions
+function get_item_volume(item)
+(	
+	item_volume = GetMediaItemInfo_Value(item, "D_VOL")
+);
+
+function get_item_volume_dB(item_volume)
+(	
+	item_volumedB = 20 * log10(item_volume);
+);
+
+function get_item_volume_dB_str(item_volume)
+(	
+	item_volumedB = 20 * log10(item_volume);
+	item_volumedB_str = sprintf(#, "%.2f", item_volumedB);
+);
+
+// Take functions //
+// Take volume
+function get_take_volume(take)
+(	
+	take_volume = GetMediaItemTakeInfo_Value(take, "D_VOL");
+);
+
+function get_take_volume_dB(take_volume)
+(	
+	take_volumedB = 20 * log10(take_volume);
+);
+
+function get_take_volume_dB_str(take_volume)
+(	
+	take_volumedB = 20 * log10(take_volume);
+	take_volumedB_str = sprintf(#, "%.2f", take_volumedB);
+);
+
+// Take pan
+function get_take_pan(take)
+(	
+	take_pan = GetMediaItemTakeInfo_Value(take, "D_PAN");
+);
+
+function get_take_pan_str(take_pan)
+(	
+	take_pan_str = sprintf(#, "%.2f", abs(take_pan));
+);
+
+// Track volume - "clickable string"
+function draw_track_vol_string(track_id tr_vol_str_x tr_vol_str_y r g b a) local (tr_vol_dB tr_vol_dB_str tr_vol_dB_adj)
+(	
+	gfx_x = tr_vol_str_x;
+	gfx_y = tr_vol_str_y;
+	
+	gfx_r = r;
+	gfx_g = g;
+	gfx_b = b;
+	gfx_a = a;
+	
+	tr_vol_dB = get_track_volume_dB(get_track_volume(track_id));
+	tr_vol_dB_str = get_track_volume_dB_str(get_track_volume(track_id));
+	gfx_measurestr(tr_vol_dB_str, tr_vol_str_w, tr_vol_str_h);
+
+	// is mouse on string...?
+	is_mouse_inside_rectangle(tr_vol_str_x, tr_vol_str_y, tr_vol_str_x + tr_vol_str_w, tr_vol_str_y + tr_vol_str_h) ? (
+		highlight_mouse_hover(); // set string highlighted
+		// ...and "ctrl" or "shift + ctrl" pressed?
+		mouse_cap == 4 || mouse_cap == 12  ? (
+			mouse_cap == 4 ? (
+				tr_vol_dB_adj = mouse_cap / 4;	// adjust by 1 dB
+			) : (
+				tr_vol_dB_adj = mouse_cap / 12 / 10; // adjust by 0.1 dB
+			);
+			// ...and mouse wheel moving? 
+			mouse_wheel != 0 ? (
+				mouse_wheel > 0 ? (
+					tr_vol_dB += tr_vol_dB_adj;
+					tr_vol_dB > track_vol_max_dB ? tr_vol_dB = track_vol_max_dB;
+				) : mouse_wheel < 0 ? (
+					tr_vol_dB -= tr_vol_dB_adj;
+					tr_vol_dB < track_vol_min_dB ? tr_vol_dB = track_vol_min_dB;
+				);
+				highlight_mouse_on_press(); // highlight more when moving the mousewheel
+				SetMediaTrackInfo_Value(track_id, "D_VOL", pow(10, tr_vol_dB / 20));
+				mouse_wheel = 0
+			);
+		// else if "ctrl + rmb" clicked -> reset volume to 0	
+		) : mouse_cap == 6  && ctrl_rmb_started == 0 ? (
+			SetMediaTrackInfo_Value(track_id, "D_VOL", 1.0);
+		);
+	);
+	gfx_printf("%s", get_track_volume_dB_str(get_track_volume(track_id)));
+);
+
+// Item volume - "clickable string"
+function draw_item_vol_string(item_id item_vol_str_x item_vol_str_y r g b a) local (item_vol_dB item_vol_dB_str item_vol_dB_adj)
+(	
+	gfx_x = item_vol_str_x;
+	gfx_y = item_vol_str_y;
+	
+	gfx_r = r;
+	gfx_g = g;
+	gfx_b = b;
+	gfx_a = a;
+	
+	item_vol_dB = get_item_volume_dB(get_item_volume(item_id));
+	item_vol_dB_str = get_item_volume_dB_str(get_item_volume(item_id));
+	gfx_measurestr(item_vol_dB_str, item_vol_str_w, item_vol_str_h);
+
+	is_mouse_inside_rectangle(item_vol_str_x, item_vol_str_y, item_vol_str_x + item_vol_str_w, item_vol_str_y + item_vol_str_h) ? (
+		highlight_mouse_hover(); // set string highlighted
+		// ...and "ctrl" or "shift + ctrl" pressed?
+		mouse_cap == 4 || mouse_cap == 12  ? (
+			mouse_cap == 4 ? (
+				item_vol_dB_adj = mouse_cap / 4;	// adjust by 1 dB
+			) : (
+				item_vol_dB_adj = mouse_cap / 12 / 10; // adjust by 0.1 dB
+			);
+			// ...and mouse wheel moving? 
+			mouse_wheel != 0 ? (
+				mouse_wheel > 0 ? (
+					item_vol_dB += item_vol_dB_adj;
+					item_vol_dB > item_vol_max_dB ? item_vol_dB = item_vol_max_dB;
+				) : mouse_wheel < 0 ? (
+					item_vol_dB -= item_vol_dB_adj;
+					item_vol_dB < item_vol_min_dB ? item_vol_dB = item_vol_min_dB;
+				);
+				highlight_mouse_on_press(); // highlight more when moving the mousewheel
+				SetMediaItemInfo_Value(item_id, "D_VOL", pow(10, item_vol_dB / 20));
+				mouse_wheel = 0
+			);
+			//UpdateItemInProject(item_id);
+		// else if "ctrl + rmb" clicked -> reset volume to 0	
+		) : mouse_cap == 6  && ctrl_rmb_started == 0 ? (
+					SetMediaItemInfo_Value(item_id, "D_VOL", 1.0);
+		);
+		UpdateItemInProject(item_id);
+	);
+		//mouse_wheel = 0;
+	gfx_printf("%s", get_item_volume_dB_str(get_item_volume(item_id)));
+);
+
+// Take volume - "clickable string"
+function draw_take_vol_string(take_id take_vol_str_x take_vol_str_y r g b a font_index font_sz) local (take_vol)
+(	
+	gfx_x = take_vol_str_x;
+	gfx_y = take_vol_str_y;
+	
+	gfx_r = r;
+	gfx_g = g;
+	gfx_b = b;
+	gfx_a = a;
+	
+	take_vol = get_take_volume_dB_str(get_take_volume(take_id));
+	gfx_measurestr(take_vol, take_vol_str_w, take_vol_str_h);
+	
+	is_mouse_inside_rectangle(take_vol_str_x, take_vol_str_y, take_vol_str_x + take_vol_str_w, take_vol_str_y + take_vol_str_h) ? (
+		highlight_mouse_hover();
+		mouse_cap == 4 || mouse_cap == 12  ? (
+			mouse_cap == 4 ? mwheel_c = 10 : mwheel_c = 1;
+			curr_take_vol = get_take_volume(take_id);
+			mouse_wheel != 0 ? (
+				highlight_mouse_on_press();
+				
+				// mouse_wheel delta usually +-120
+				new_take_vol = get_take_volume(take_id) * mouse_wheel / (mouse_wheel - mwheel_c);
+				new_take_vol > take_vol_max ? new_take_vol = take_vol_max;
+				new_take_vol < take_vol_min ? new_take_vol = take_vol_min;
+				SetMediaItemTakeInfo_Value(take_id, "D_VOL", new_take_vol);
+			);				
+			UpdateItemInProject(GetMediaItemTake_Item(take_id));
+		) : mouse_cap == 6  && ctrl_rmb_started == 0 ? ( // else if "ctrl + rmb" clicked -> reset volume to 0
+					SetMediaItemTakeInfo_Value(take_id, "D_VOL", 1.0);
+					UpdateItemInProject(GetMediaItemTake_Item(take_id));
+		);
+		mouse_wheel = 0;
+	);
+	select_font(font_index, font_sz);
+	gfx_printf("%s\n", get_take_volume_dB_str(get_take_volume(take_id)));
+);
+
+// Take pan - "clickable string"
+function draw_take_pan_string(take_id take_pan_str_x take_pan_str_y r g b a font_index) local (take_pan take_pan_scaled)
+(	
+	gfx_x = take_pan_str_x;
+	gfx_y = take_pan_str_y;
+	
+	gfx_r = r;
+	gfx_g = g;
+	gfx_b = b;
+	gfx_a = a;
+	
+	take_pan = get_take_pan_str(get_take_pan(take_id));
+	gfx_measurestr(take_pan, take_pan_str_w, take_pan_str_h);
+
+	// is mouse on string?
+	is_mouse_inside_rectangle(take_pan_str_x, take_pan_str_y, take_pan_str_x + take_pan_str_w, take_pan_str_y + take_pan_str_h) ? (
+		highlight_mouse_hover();
+		mouse_cap == 4 || mouse_cap == 12 || mouse_cap == 28 ? (
+			//mouse_cap == 4 ? mwheel_c = 0.005 : mwheel_c = 0.06;
+			curr_take_pan = get_take_pan(take_id);
+			mouse_wheel != 0 ? (
+				highlight_mouse_on_press();
+				// mouse_wheel delta usually +-120
+				new_take_pan = get_take_pan(take_id) + (mouse_cap * mouse_wheel / abs(mouse_wheel)) / 400;
+				new_take_pan > take_pan_max ? new_take_pan = take_pan_max;
+				new_take_pan < take_pan_min ? new_take_pan = take_pan_min;
+				SetMediaItemTakeInfo_Value(take_id, "D_PAN", new_take_pan);
+			);				
+			UpdateItemInProject(GetMediaItemTake_Item(take_id));
+		) : (
+		// else if "ctrl + rmb" clicked -> reset pan to 0
+		mouse_cap == 6  && ctrl_rmb_started == 0 ? SetMediaItemTakeInfo_Value(take_id, "D_PAN", 0.0);
+		UpdateItemInProject(GetMediaItemTake_Item(take_id));
+		);
+		//mouse_wheel = 0;
+	);
+	
+	select_font(font_index, take_font_sz);
+	get_take_pan(take_id) < 0 ? gfx_drawstr("L");
+	get_take_pan(take_id) === 0 ? gfx_drawstr("C");
+	get_take_pan(take_id) > 0 ? gfx_drawstr("R");
+
+	gfx_printf("%s", (get_take_pan_str(get_take_pan(take_id) * 100)));
+	//gfx_printf("%s\n", get_take_pan_str(abs(get_take_pan(take_id) * 100)));
+);
+
+ function draw_label(lbl_x lbl_y r g b a font_index font_size name)
+(	
+	gfx_x = lbl_x;
+	gfx_y = lbl_y;
+	
+	gfx_r = r;
+	gfx_g = g;
+	gfx_b = b;
+	gfx_a = a;
+	
+	select_font(font_index, font_size);
+	label_text = name;
+	gfx_measurestr(label_text, lbl_w, lbl_h);
+
+	
+	gfx_printf("%s", label_text);
+	gfx_y += lbl_h;
+);
+
+// draw take name string and check "mouse on string" states (ctrl + lmb)
+ function take_name_label(take_id x y r g b a font_index font_size name) local (take_name_lbl_text)
+(	
+	gfx_x = x;
+	gfx_y = y;
+	
+	gfx_r = r;
+	gfx_g = g;
+	gfx_b = b;
+	gfx_a = a;
+	
+	select_font(font_index, font_size);
+	take_name_lbl_text = name;
+	gfx_measurestr(take_name_lbl_text, take_name_lbl_w, take_name_lbl_h);
+	
+	is_mouse_inside_rectangle(x, y, x + take_name_lbl_w, y + take_name_lbl_h) ? (
+		highlight_mouse_hover();
+			mouse_cap == 5 && ctrl_lmb_started == 0 ? (
+				highlight_mouse_on_press();
+				SetActiveTake(take_id);
+				UpdateItemInProject(GetMediaItemTake_Item(take_id));
+		);
+	);
+	gfx_printf("%s", take_name_lbl_text);
+	gfx_y += lbl_h;
+);
+
+
+//	MAIN FUNCTION
+//
+
+function run()
+(
+	gfx_x = gfx_y = 10;
+	(sel_item = GetSelectedMediaItem(0, 0)) ? (
+		(track_id = GetMediaItem_Track(sel_item)) ? (
+			GetSetMediaTrackInfo_String(track_id, "P_NAME", #track_name, 0);
+
+			// Track labels/buttons
+			select_font(1, track_font_sz);
+			draw_label(gfx_x, gfx_y, 0.5, 0.5, 0.8, 1, 1, track_font_sz, "Track: ");
+			draw_label(gfx_x, gfx_y - lbl_h, 0.5, 0.8, 0.5, 1, 1, track_font_sz, #track_name);
+			draw_label(10, gfx_y, 0.5, 0.5, 0.8, 1, 1, track_font_sz, "Vol");
+			gfx_printf("\n");
+			draw_track_vol_string(track_id, gfx_x, gfx_y - lbl_h, 0.5, 0.8, 0.5, 1);
+					
+			// Item labels/buttons
+			gfx_y += 2 * lbl_h;
+			draw_label(10, gfx_y, 0.5, 0.5, 0.8, 1, 1, item_font_sz, "Item");
+			draw_label(10, gfx_y, 0.5, 0.5, 0.8, 1, 1, item_font_sz, "Vol ");
+			draw_item_vol_string(sel_item, gfx_x, gfx_y - lbl_h, 0.5, 0.8, 0.5, 1);
+			
+			// Take labels/buttons
+			(take_count = CountTakes(sel_item)) ? (
+				(active_take = GetActiveTake(sel_item)) ? (
+					GetTakeName(#act_take_name, active_take);
+
+					gfx_y += 2 * gfx_texth;
+					draw_label(10, gfx_y, 0.5, 0.5, 0.8, 1, 3, take_font_sz, "Vol");
+					gfx_y -= lbl_h;
+					draw_label(5 * take_font_sz, gfx_y, 0.5, 0.5, 0.8, 1, 1, take_font_sz, "Pan");
+					gfx_printf("\n");
+					take_counter = 0;
+					loop(take_count,
+						take_color_r = 0.5; take_color_g = 0.8; take_color_b = 0.5;
+						gfx_x = 10;
+						(take = GetTake(sel_item, take_counter)) ? (
+							take == active_take ? (
+								take_color_r = 0.1; take_color_g = 0.8; take_color_b = 0.8;
+								font_index = 2;
+							) : (
+								font_index = 1;
+							);
+							GetTakeName(#take_name, take);
+							gfx_x = 10;
+							draw_take_vol_string(take, gfx_x, gfx_y, take_color_r, take_color_g, take_color_b, 1, font_index, take_font_sz);
+							gfx_x += 10;
+							draw_take_pan_string(take, 5 * take_font_sz, gfx_y, take_color_r, take_color_g, take_color_b, 1, font_index);
+							take_name_label(take, 10 * take_font_sz, gfx_y, take_color_r, take_color_g, take_color_b, 1, font_index, take_font_sz, #take_name);
+							gfx_y += 1; // move y pos by 1 pixel to separate take names
+						);
+						take_counter += 1;
+					);
+				);
+			);
+		);
+	) : (	// 0 items selected:
+	gfx_r = 0.8; gfx_g = 0.8; gfx_b = 1.0;
+	select_font(1, 18);
+	gfx_printf("No item(s) selected");
+	);
+	
+	// CHECK/SET "MOUSE STATE" VARIABLES
+
+	//lmb
+	mouse_cap == 1 ? lmb_already_down = 1 : lmb_already_down = 0;
+	// ctrl + lmb
+	mouse_cap == 5 ? ctrl_lmb_started = 1 : ctrl_lmb_started = 0;
+	// ctrl + rmb
+	mouse_cap == 6 ? ctrl_rmb_started = 1 : ctrl_rmb_started = 0;
+	// alt (+ mouse wheel) for font size adjust
+	mouse_cap == 16 ? ( 
+		mouse_wheel != 0 ? (
+			adjust_font_size(mouse_wheel);
+		);
+	);
+
+	// reset mouse wheel
+	mouse_wheel = 0;
+		
+	gfx_update();
+	gfx_getchar() >= 0 ? defer("run();");
+);
+
+gfx_init("Item Inspector", window_w, window_h);
+run();

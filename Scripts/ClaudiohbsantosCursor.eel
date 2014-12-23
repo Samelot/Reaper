@@ -1,0 +1,50 @@
+cursor = GetCursorPosition();
+selnum = CountSelectedTracks(0);
+
+
+  temp = 0;
+  newtemp = 0;
+  trackindex = 0;
+
+while (trackindex < selnum) 
+(
+
+  trackid = GetSelectedTrack(0,trackindex);
+  numitems = GetTrackNumMediaItems(trackid);
+
+  itemindex = 0;
+
+  while (itemindex < numitems)
+  (
+    item = GetTrackMediaItem(trackid,itemindex);
+    edge = GetMediaItemInfo_Value(item, "D_POSITION");
+    
+    edge < cursor ?
+    (
+      newtemp = edge;
+    );
+   
+    edge = GetMediaItemInfo_Value(item, "D_POSITION") + GetMediaItemInfo_Value(item,    "D_LENGTH");
+     
+    edge < cursor ?
+    (
+      newtemp = edge;
+    );
+
+    itemindex += 1;
+
+    newtemp > temp ? (
+    temp = newtemp;
+    );
+
+  );
+
+  trackindex += 1;
+);
+
+  cursor = temp;
+
+  SetEditCurPos(cursor,1,0);
+
+Undo_OnStateChange("Move edit cursor");
+CSurf_FlushUndo(force);

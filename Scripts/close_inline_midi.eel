@@ -1,0 +1,11 @@
+function do_actions()
+(
+	// close_inline_midi = 41887; 
+	restore_arrange_view = 53872; 
+	
+	// Main_OnCommand(close_inline_midi, 0);
+	Main_OnCommand(restore_arrange_view, 0);
+
+);
+
+do_actions();

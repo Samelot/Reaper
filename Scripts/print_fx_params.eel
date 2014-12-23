@@ -1,0 +1,26 @@
+function msg_s(m)
+(
+  ShowConsoleMsg(m);
+  //ShowConsoleMsg("\n");
+);
+
+function write_fx_param_names_to_file(file_name)
+(
+  (tr = GetTrack(0, 0)) && (num_params = TrackFX_GetNumParams(tr, 0)) ? ( //get first track and first FX
+    (file = fopen(file_name, "w")) ? (
+      i = 0;
+      loop(num_params,
+        TrackFX_GetParamName(tr, 0, i, #param_name) ? (
+          #param_name += "\n";
+          //msg_s(#param_name); // show parameter names
+          fwrite(file, #param_name, 0);
+        );
+        i += 1
+      );
+      fclose(file);
+    );
+  );
+);
+
+file_name = "/Users/samenglander/Desktop/pnames.txt"; // (it seems that single backslashes don't work in "file_name")
+write_fx_param_names_to_file(file_name);

@@ -1,0 +1,60 @@
+// Code is very raw.
+// Outputs a sound on channel 3+4, to protect your speakers... Can be loud !!
+// This is just a code snippet...
+
+desc: Read info...
+
+slider1:100<0,500,1>threshold max
+slider2:90<0,500,1>threshold min
+slider3:-18<-60,0,0.1>output (dB)
+
+@init
+Filter1Out=0;
+Filter2Out=0;
+PeakEnv=0;
+BeatTrigger=0;
+PrevBeatPulse=0;
+
+FREQ_LP_BEAT=150;
+T_FILTER=1/(2*$pi*FREQ_LP_BEAT);
+BEAT_RTIME=0.02;
+
+KBeatFilter=1.0/(srate*T_FILTER);
+BeatRelease=exp(-1/(srate*BEAT_RTIME));
+
+@slider
+tmpmax=slider1/1000;
+tmpmin=slider2/1000;
+
+gain=10^(slider3/20);
+
+@sample
+input=(abs(spl0)+abs(spl1))*0.5;
+Filter1Out=Filter1Out+(KBeatFilter*(input-Filter1Out));
+Filter2Out=Filter2Out+(KBeatFilter*(Filter1Out-Filter2Out));
+
+EnvIn=abs(Filter2Out);
+(EnvIn>PeakEnv)?(
+PeakEnv=EnvIn;
+):(
+PeakEnv*=BeatRelease;
+PeakEnv+=(1-BeatRelease)*EnvIn;
+);
+
+(!BeatTrigger) ? (
+(PeakEnv>tmpmax) ? BeatTrigger=1;
+):(
+(PeakEnv<tmpmin) ? BeatTrigger=0;
+);
+
+BeatPulse=0;
+((BeatTrigger)&&(!PrevBeatPulse))?(
+BeatPulse=1;
+PrevBeatPulse=BeatTrigger;
+);
+
+spl0=spl0;
+spl1=spl1;
+
+spl2=BeatTrigger*gain;
+spl3=spl2;

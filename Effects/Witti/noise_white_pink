@@ -1,0 +1,40 @@
+slider1:-60<-60,0,0.1>Dry (dB)
+slider2:0<-24,24,0.1>Noise (dB)
+slider3:0<0,2,1{Off,White,Pink}>Mode
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@slider
+vw=10^(-15.2/20);
+vp=10^(-24.9/20);
+vn=10^(slider2/20);
+vd= slider1 <= -60.0 ? 0.0 : 10 ^ (slider1 / 20);
+
+@sample
+slider3 == 0 ? (
+spl0= spl0*vd;
+spl1= spl1*vd;
+);
+
+slider3 == 1 ? (
+noise=rand(2)-1;
+spl0=spl0*vd+(noise*vw*vn);
+spl1=spl1*vd+(noise*vw*vn);
+);
+
+slider3 == 2 ? (
+noise=rand(2)-1;
+b0 = 0.99886 * b0 + noise * 0.0555179;
+b1 = 0.99332 * b1 + noise * 0.0750759;
+b2 = 0.96900 * b2 + noise * 0.1538520;
+b3 = 0.86650 * b3 + noise * 0.3104856;
+b4 = 0.55000 * b4 + noise * 0.5329522;
+b5 = -0.7616 * b5 - noise * 0.0168980;
+pink = b0 + b1 + b2 + b3 + b4 + b5 + b6 + noise * 0.5362;
+b6 = noise * 0.115926;
+spl0=spl0*vd+(pink*vp*vn);
+spl1=spl1*vd+(pink*vp*vn);
+);

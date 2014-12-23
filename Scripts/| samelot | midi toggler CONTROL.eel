@@ -1,0 +1,63 @@
+GetExtState(#foo,"jj","value");
+
+!match("1", #foo) && !match("2", #foo) && !match("3", #foo) && !match("4", #foo)  ? (
+	SetExtState("jj","value","1", 1);
+	ShowConsoleMsg(#foo);
+);
+
+match("1", #foo) ? (
+	track = GetSelectedTrack(0, 0);
+
+	// NewVolDB=floor((0.00 + 0.05) * 10) / 10;
+	// NewVolGain=exp(NewVolDB*0.115129254);
+
+	curTake = SetMediaTrackInfo_Value(track, "D_VOL", 0.00);
+
+	Main_OnCommand(40358, 0); // Set track to random colors
+
+	SetExtState("jj","value","2", 1);
+) : match("2", #foo) ? (
+	track = GetSelectedTrack(0, 0);
+
+	// NewVolDB=floor((-1.00 + 0.05) * 10) / 10;
+	// NewVolGain=exp(NewVolDB*0.115129254);
+
+	curTake = SetMediaTrackInfo_Value(track, "D_VOL", 0.10);
+
+	Main_OnCommand(40358, 0); // Set track to random colors
+
+	SetExtState("jj","value","3", 1);
+) : match("3", #foo) ? (
+	track = GetSelectedTrack(0, 0);
+
+	// NewVolDB=floor((-1.00 + 0.05) * 10) / 10;
+	// NewVolGain=exp(NewVolDB*0.115129254);
+
+	curTake = SetMediaTrackInfo_Value(track, "D_VOL", 0.20);
+
+	Main_OnCommand(40358, 0); // Set track to random colors
+
+	SetExtState("jj","value","4", 1);
+) : match("4", #foo) ? (
+	track = GetSelectedTrack(0, 0);
+
+	// NewVolDB=floor((-1.00 + 0.05) * 10) / 10;
+	// NewVolGain=exp(NewVolDB*0.115129254);
+
+	curTake = SetMediaTrackInfo_Value(track, "D_VOL", 0.30);
+
+	Main_OnCommand(40358, 0); // Set track to random colors
+
+	SetExtState("jj","value","1", 1);
+);
+
+UpdateArrange()
+// track = GetSelectedTrack(0, 0);
+
+// NewVolDB=floor((0.10 + 0.05) * 10) / 10;
+// NewVolGain=exp(NewVolDB*0.115129254);
+
+// curTake = SetMediaTrackInfo_Value(track, "D_VOL", NewVolGain);
+// UpdateArrange();
+
+

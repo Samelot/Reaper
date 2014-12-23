@@ -1,0 +1,53 @@
+slider1:0<0,1,0.001>cut
+slider2:0<0,1,0.001>steep
+slider3:0<0,1,1{peak,notch}>filter type
+slider4:0<-24,24,0.1>output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+outpA=0;
+outp1A=0;
+outp2A=0;
+
+outpB=0;
+outp1B=0;
+outp2B=0;
+
+@slider
+r=slider2*0.99609375;
+f=cos($pi*slider1);
+a0=(1-r)*sqrt(r*(r-4*(f*f)+2)+1);
+b1=2*f*r;
+b2=-(r*r);
+ftype=slider3;
+
+gain=10^(slider4/20);
+
+@sample
+inA=spl0;
+inB=spl1;
+
+outpA=a0*inA+b1*outp1A+b2*outp2A;
+outp2A=outp1A;
+outp1A=outpA;
+ftype==0?( 
+resultA=outpA; //peak
+):(
+resultA=inA-outpA; //notch
+);
+
+outpB=a0*inB+b1*outp1B+b2*outp2B;
+outp2B=outp1B;
+outp1B=outpB;
+ftype==0?( 
+resultB=outpB; //peak
+):(
+resultB=inB-outpB; //notch
+);
+
+spl0=resultA*gain;
+spl1=resultB*gain;

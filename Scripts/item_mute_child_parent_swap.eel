@@ -1,0 +1,87 @@
+function toggle_mute() local(item, muted_state, folder_state, parent_track)
+(
+	action_select_child = 53784;  
+	action_select_parent = 53787;
+	action_unselect_tracks = 40297;
+
+	action_cursor_start = 41173;
+	action_save_cursor = 54096;
+	action_restore_cursor = 54101;
+
+	action_cut = 40699; 
+	action_paste = 53588;
+
+	action_unmute = 40720;
+	action_mute = 40719;
+
+	action_folder_state_normal = 54456;
+	
+	i = 0;
+	  loop(CountSelectedMediaItems(0),
+	    item = GetSelectedMediaItem(0, i);
+	    parent_track = GetMediaItem_Track(item);
+	    Main_OnCommand(action_unselect_tracks, 0);
+	    SetTrackSelected(parent_track, 1);
+
+		folder_state = GetMediaTrackInfo_Value(parent_track, "I_FOLDERDEPTH");
+		// ShowConsoleMsg(sprintf(#, "%i", folder_state));
+		// ShowConsoleMsg(sprintf(#, "%i ", parent_track));
+		
+		// ShowConsoleMsg(sprintf(#dest, "%i, ", GetTrack(0, parent_track)));
+		i += 1;
+		folder_count += folder_state;
+
+	);
+	  	folder_state == 1 ? (
+				Main_OnCommand(action_save_cursor, 0);	  		
+	  			Main_OnCommand(action_cursor_start, 0);
+
+				Main_OnCommand(action_cut, 0);
+			  	Main_OnCommand(action_select_child, 0);
+			  	Main_OnCommand(action_paste, 0);		
+				
+
+				Main_OnCommand(action_mute, 0);
+				Main_OnCommand(action_restore_cursor, 0);				
+
+			);
+	  	folder_state < 0 ? (
+
+				Main_OnCommand(action_save_cursor, 0);	  		
+	  			Main_OnCommand(action_cursor_start, 0);
+
+				Main_OnCommand(action_cut, 0);
+			  	Main_OnCommand(action_select_parent, 0);
+			  	Main_OnCommand(action_paste, 0);	
+
+				Main_OnCommand(action_unmute, 0);	
+				Main_OnCommand(action_restore_cursor, 0);					
+			);
+
+		// folder_count != i && folder_count != 0 ? (
+		// 	ShowConsoleMsg("this will not work, attempting a folder reset");
+		// 	// Main_OnCommand(action_folder_state_normal, 0);
+		// ) : (
+		//   	folder_count == (i) ? (
+		// 		Main_OnCommand(action_save_cursor, 0);
+		// 		Main_OnCommand(action_cut, 0);
+		// 	  	Main_OnCommand(action_select_child, 0);
+		// 	  	Main_OnCommand(action_paste, 0);		
+		// 		Main_OnCommand(action_restore_cursor, 0);
+
+		// 		Main_OnCommand(action_mute, 0);
+
+		// 	);
+		// 	folder_count == 0 ? (
+		// 		Main_OnCommand(action_save_cursor, 0);
+		// 		Main_OnCommand(action_cut, 0);
+		// 	  	Main_OnCommand(action_select_parent, 0);
+		// 	  	Main_OnCommand(action_paste, 0);	
+		// 	  	Main_OnCommand(action_restore_cursor, 0);
+
+		// 		Main_OnCommand(action_unmute, 0);		  	
+		// 	);
+		// );
+);
+
+toggle_mute();

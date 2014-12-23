@@ -1,0 +1,35 @@
+# Normalize and reduce take volue
+
+from reaper_python import *
+from contextlib import contextmanager
+import math
+
+@contextmanager
+def undoable(message):
+    RPR_Undo_BeginBlock2(0)
+    try:
+        yield
+    finally:
+        RPR_Undo_EndBlock2(0,message,-1)
+
+with undoable('Normalize and reduce take volue'):
+
+    def msg(m):
+        RPR_ShowConsoleMsg(m)
+
+    def script():
+        item = RPR_GetSelectedMediaItem(0, 0)
+        take = RPR_GetTake(item, 0)
+
+        old_vol = 20 * math.log10(RPR_GetMediaItemTakeInfo_Value(take, "D_VOL"))
+        RPR_Main_OnCommandEx(40108, 0, 0)
+        new_vol = 20 * math.log10(RPR_GetMediaItemTakeInfo_Value(take, "D_VOL"))
+
+        vol = new_vol - old_vol
+        RPR_SetMediaItemTakeInfo_Value(take, "D_VOL", vol)
+        RPR_UpdateItemInProject(item)
+
+        msg("volume math: "+ str(new_vol) +" - "+ str(old_vol) +" = "+ str(vol) +"\n")
+
+    # do script
+    script()

@@ -1,0 +1,36 @@
+slider1:0<-60,12,0.1>MID volume
+slider2:0<-60,12,0.1>SIDE volume
+slider3:0<0,2,1{Inline,MS from LR,MS to LR}>mode
+slider4:0<-60,12,0.1>LR volume
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@slider
+vol1 = slider1 <= -60.0 ? 0.0 : 10 ^ (slider1 / 20);
+vol2 = slider2 <= -60.0 ? 0.0 : 10 ^ (slider2 / 20);
+vol3 = slider4 <= -60.0 ? 0.0 : 10 ^ (slider4 / 20);
+
+@sample
+slider3 == 0 ? (
+tmp1 = ((spl0+spl1) * 0.5)*vol1;
+tmp2 = ((spl0-spl1) * 0.5)*vol2;
+spl0 = (tmp1 + tmp2)*vol3;
+spl1 = (tmp1 - tmp2)*vol3;
+);
+
+slider3 == 1 ? (
+tmp1=spl0;
+tmp2=spl1;
+spl0 = ((tmp1+tmp2) * 0.5)*vol1*vol3;
+spl1 = ((tmp1-tmp2) * 0.5)*vol2*vol3;
+);
+
+slider3 == 2 ? (
+tmp1= (spl0 + spl1)*vol1;
+tmp2= (spl0 - spl1)*vol2;
+spl0 = tmp1*vol3;
+spl1 = tmp2*vol3;
+);

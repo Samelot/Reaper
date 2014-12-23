@@ -1,0 +1,101 @@
+slider1:0<-30,0,0.1>Threshold (dB)
+slider2:2<1,20,0.1>Ratio
+slider3:3<1,50,1>Attack (ms)
+slider4:100<1,500,1>Release (ms)
+slider5:50<10,100,1>Env Decay (ms)
+slider6:1<0,20,1>RMS (ms)
+slider7:0<-24,24,0.1>Output (dB)
+slider8:0<0,1,1{OFF,ON}>Delta
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+output = 1;
+transfer_A = 0;
+transfer_B = 1;
+gain = 1;
+env=0;
+
+log2dB = 8.6858896380650365530225783783321;
+db2log = 0.11512925464970228420089957273422;
+gr_meter=1;
+gr_meter_decay = exp(1/(1*srate));
+
+@slider
+threshold=10^(slider1/20);
+
+transfer_A = (1/slider2)-1;
+transfer_B = output * pow(threshold,-transfer_A);
+
+attack = exp(-1/(slider3/1000*srate));
+release = exp(-1/(slider4/1000*srate));
+envelope_decay = exp(-1/(slider5/1000*srate));
+rmstime = max(min(slider6/1000,0.02),0.00004);
+rms = exp(-1/(rmstime * srate));
+
+vol=10^(slider7/20);
+
+@sample
+in0=spl0;
+in1=spl1;
+
+slider6>0 ? (
+ave=in0*in0+in1*in1;
+runave = ave + rms * (runave - ave);
+det = sqrt(runave);
+):(
+ave = 0;
+det = max(abs(in0),abs(in1));
+);
+
+det += 0.000000000001;
+env = det >= env ? det : det+envelope_decay*(env-det);
+transfer_gain = env > threshold ? pow(env,transfer_A)*transfer_B:output;
+gain = transfer_gain < gain ? transfer_gain+attack *(gain-transfer_gain) : transfer_gain+release*(gain-transfer_gain);
+
+slider8 == 1 ? (
+spl0 = ((in0 * gain)-in0)*vol;
+spl1 = ((in1 * gain)-in1)*vol;
+):(
+spl0 = in0 * gain*vol;
+spl1 = in1 * gain*vol;
+);
+
+gr = log(gain)*log2dB;
+grv = exp(gr * db2log);
+grv < gr_meter ? gr_meter=grv : ( gr_meter*=gr_meter_decay; gr_meter>1?gr_meter=1; );
+
+@gfx 0 36
+gr_meter *= exp(1/30); gr_meter>1?gr_meter=1;
+gfx_r=1; gfx_g=gfx_b=0; gfx_a=0.8;
+
+meter_bot=20;
+meter_h=min(gfx_h,32);
+xscale=gfx_w*20/meter_bot;
+
+gfx_y=0;
+gfx_x=gfx_w + log10(gr_meter)*xscale;
+gfx_rectto(gfx_w,meter_h);
+
+gfx_r=gfx_g=gfx_b=1.0; gfx_a=0.6;
+
+s2=sqrt(2)/2;
+g = s2;
+while(
+gfx_x=gfx_w + log10(g)*xscale;
+gfx_x >= 0 ? 
+(
+gfx_y=0;
+gfx_lineto(gfx_x,meter_h,0);
+gfx_y=meter_h-gfx_texth;
+gfx_x+=2;
+gfx_drawnumber(log10(g)*20,0);
+gfx_drawchar($'d');
+gfx_drawchar($'B');
+);
+g*=s2;
+gfx_x >=0;
+);

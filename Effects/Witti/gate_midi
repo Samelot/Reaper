@@ -1,0 +1,80 @@
+/*
+By default the gate is on.
+Triggering any note will turn the gate off.
+Adjust the attack and release times.
+
+How i would use it:
+
+Live:
+
+-track1: Audio file with the gate_midi inserted as an fx 
+-track2: Route track2 to track1. Record-arm the track to record midi in or out.
+-press 'playback' or 'record' and hit some notes on your vmk or on your hardware stuff
+          to hear the effect doing it's job.
+          (using the vmk is not very succesful here...)
+
+Not Live:
+
+-track1: Audio file with the gate_midi inserted as an fx 
+-track2: Route track2 to track1. Insert a new midi file with the same length
+            and add some 1/8 or 1/32 or 1/64 or 1/128 notes
+            and play with the attack and release settings, to add some 'glitch' to the loop.
+*/
+
+desc: Read info...
+
+slider1:1<1,20,1>attack (ms)
+slider2:1<1,500,1>release (ms)
+
+@init
+silentcnt=0;
+seekv=1;
+seekto=1;
+sillen=0;
+thresh=1;
+
+NOTE_ON = 8;
+NOTE_OFF = 9;
+
+@slider
+attack = 1/pow(10,1/(srate*slider1/1000));
+release = 1/pow(10,1/(srate*slider2/1000));
+
+@block
+while (
+midirecv(ts, msg1, msg23) ? (
+n = msg23&127;
+(n == NOTE_ON*16 || n == NOTE_OFF*16) ? (
+midisend(ts, msg1, msg23);
+);
+);
+);
+
+@sample
+msg23>127 ? (
+thresh=0;
+):(
+thresh=1;
+);
+
+a=abs(spl0) > thresh || abs(spl1) > thresh;
+
+a ? 
+(
+silentcnt=0; 
+seekto=1;
+) : (
+(silentcnt+=1) > sillen ?  seekto=0;
+);
+
+seekto > 0.5 ? 
+( // fading in
+seekv=seekv*attack + (1-attack);
+)
+:
+( // fading out
+seekv=seekv*release;
+);
+
+spl0*=seekv;
+spl1*=seekv;

@@ -1,0 +1,26 @@
+Main_OnCommand(40421,0); // select all items on track
+
+item = GetSelectedMediaItem(0, 1); // store first selected item
+curTake = GetMediaItemInfo_Value(item, "I_CURTAKE");
+
+// ShowConsoleMsg(#foo);
+
+curTake == 0 ? (
+	curTake = SetMediaItemInfo_Value(item, "I_CURTAKE", 1);	
+	SetExtState("test","value","set_1",1);
+	Main_OnCommand(41239, 0);
+) : curTake == 1 ? (
+	curTake = SetMediaItemInfo_Value(item, "I_CURTAKE", 2);
+	SetExtState("test","value","set_2",1);
+	Main_OnCommand(41240, 0);	
+) : curTake == 2 ? (
+	curTake = SetMediaItemInfo_Value(item, "I_CURTAKE", 3);
+	SetExtState("test","value","set_3",1);
+	Main_OnCommand(41241, 0);		
+) : curTake == 3 ? (
+	curTake = SetMediaItemInfo_Value(item, "I_CURTAKE", 0);
+	SetExtState("test","value","set_4",1);
+	Main_OnCommand(41242, 0);			
+);
+UpdateArrange()
+

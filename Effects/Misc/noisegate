@@ -1,0 +1,44 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+desc: noise gate (simple)
+slider1:-60<-120,6,1>threshold (dB) 
+slider2:50<1,4000,10>silence length for fadeout (ms)
+slider3:10<1,100,5>fadein response (ms)
+slider4:100<1,1000,10>fadeout response (ms)
+
+@init
+silentcnt=0;
+seekv=1; seekto=1;
+
+@slider
+thresh=2 ^ (slider1/6);
+sillen=slider2*srate/1000;
+fadeout = 1/pow(10,1/(srate*slider4/1000));
+fadein  = 1/pow(10,1/(srate*slider3/1000));
+
+@sample
+
+a=abs(spl0) > thresh || abs(spl1) > thresh;
+
+a ? 
+(
+   silentcnt=0; 
+   seekto=1;
+) : (
+   (silentcnt+=1) > sillen ?  seekto=0;
+);
+
+// we should make this better, me thinks
+
+seekto > 0.5 ? 
+( // fading in
+  seekv=seekv*fadein + (1-fadein);
+)
+:
+( // fading out
+  seekv=seekv*fadeout;
+);
+
+
+spl0=spl0*seekv;
+spl1=spl1*seekv;

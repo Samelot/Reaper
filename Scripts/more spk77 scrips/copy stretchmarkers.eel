@@ -1,0 +1,14 @@
+// EEL script - Store active take's ID (by spk77 27.6.2014)
+// save as "Store take ID.eel", for example
+// 
+ 
+function store_take_id()
+(
+  (item = GetSelectedMediaItem(0, 0)) ? ( // get only first selected item
+    (take = GetActiveTake(item)) ? (
+      SetExtState("stretchmarkers", "take", sprintf(#, "%d", take), 0);
+    );
+  );
+);
+
+store_take_id();

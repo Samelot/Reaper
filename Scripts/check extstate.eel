@@ -1,0 +1,17 @@
+// SetExtState("test","value","test2",1);
+// SetExtState("test15","value","oinko",0);
+// GetExtState(#foo,"test","value");
+// GetExtState(#foo2,"test15","value");
+
+// MB(#foo,#foo2,0);
+SetExtState("test","value","test2d",1);
+GetExtState(#foo,"test","value");
+
+ShowConsoleMsg(#foo);
+ShowConsoleMsg("\n");
+
+match("test2", #foo) ? (
+	ShowConsoleMsg("uh"); // Why does this message not show up?? Is the ExtState not set to the string of "test2"?
+) : (
+	ShowConsoleMsg("NATHA");
+);

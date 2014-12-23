@@ -1,0 +1,33 @@
+// based on EEL script by spk77
+
+function grow_note_starts_to_earliest_note()
+(
+	(take = MIDIEditor_GetTake(MIDIEditor_GetActive())) ? (
+		note_idxs = 100;
+		MIDI_CountEvts(take, note_count, 0, 0);
+		
+		num_selected = 0;
+		cur_note = 0;
+		earliest_start = 1 << 20;
+		while(cur_note < note_count) (
+			MIDI_GetNote(take, cur_note, sel, muted, start_pos, end_pos, chan, pitch, velOut);
+			sel ? (
+				note_idxs[num_selected] = cur_note;
+				num_selected += 1;
+				earliest_start = min(start_pos, earliest_start);				
+			);			 
+			cur_note += 1;
+		);
+	
+	i = 0;
+	loop(num_selected,
+		cur_note = note_idxs[i];
+		MIDI_GetNote(take, cur_note, sel, muted, start_pos, end_pos, chan, pitch, velOut);
+		MIDI_SetNote(take, cur_note, sel, muted, earliest_start, end_pos, chan, pitch, velOut); 
+		i += 1;
+	);
+   Undo_OnStateChange("Grow note starts to earliest note start.");
+  );
+);
+
+grow_note_starts_to_earliest_note();

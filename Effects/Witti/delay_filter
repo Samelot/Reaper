@@ -1,0 +1,230 @@
+desc: needs improvements
+
+slider1:3<0,5,1{1,1/2,1/4,1/8,1/16,1/32}>A------------------------delay
+slider2:-6<-30,-1,0.1>feedback
+slider3:-6<-30,12,0.1>volume
+slider4:800<30,8000,10>BP freq
+slider5:1<0,1,0.05>(narrow<>wide) BP Q
+slider6:0<-100,100,1>pan
+slider7:0<0,2,1{default,dotted,triplet}>Mode
+
+slider11:3<0,5,1{1,1/2,1/4,1/8,1/16,1/32}>B------------------------delay
+slider12:-6<-30,-1,0.1>feedback
+slider13:-6<-30,12,0.1>volume
+slider14:800<30,8000,10>BP freq
+slider15:1<0,1,0.05>(narrow<>wide) BP Q
+slider16:0<-100,100,1>pan
+slider17:0<0,2,1{default,dotted,triplet}>Mode
+
+slider21:3<0,5,1{1,1/2,1/4,1/8,1/16,1/32}>C------------------------delay
+slider22:-6<-30,-1,0.1>feedback
+slider23:-6<-30,12,0.1>volume
+slider24:800<30,8000,10>BP freq
+slider25:1<0,1,0.05>(narrow<>wide) BP Q
+slider26:0<-100,100,1>pan
+slider27:0<0,2,1{default,dotted,triplet}>Mode
+
+slider31:0<-60,12,0.1>output wet
+slider32:0<-60,12,0.1>output dry
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+delayposa=0;
+delayposb=0;
+delayposc=0;
+
+@slider
+wetmixa = 10 ^ (slider2 / 20);
+wetmixa2 = slider3 <= -60.0 ? 0.0 : 10 ^ (slider3 / 20);
+
+wetmixb = 10 ^ (slider12 / 20);
+wetmixb2 = slider13 <= -60.0 ? 0.0 : 10 ^ (slider13 / 20);
+
+wetmixc = 10 ^ (slider22 / 20);
+wetmixc2 = slider23 <= -60.0 ? 0.0 : 10 ^ (slider23 / 20);
+
+
+wet = slider31 <= -60.0 ? 0.0 : 10 ^ (slider31 / 20);
+dry = slider32 <= -60.0 ? 0.0 : 10 ^ (slider32 / 20);
+
+dampeninga=slider5*0.999 + 0.001;
+ca = ( 1 / tan( $pi*slider4 / srate ) );
+aa2 = 1 + ca*(ca+dampeninga);
+faa1 = 2 * (1 - ca*ca) / aa2;
+faa0 = (1 + ca*(ca-dampeninga)) / aa2;
+fka = ca*dampeninga / aa2;
+lastdampa=dampeninga;
+
+dampeningb=slider15*0.999 + 0.001;
+cb = ( 1 / tan( $pi*slider14 / srate ) );
+ab2 = 1 + cb*(cb+dampeningb);
+fab1 = 2 * (1 - cb*cb) / ab2;
+fab0 = (1 + cb*(cb-dampeningb)) / ab2;
+fkb = cb*dampeningb / ab2;
+lastdampb=dampeningb;
+
+dampeningc=slider25*0.999 + 0.001;
+cc = ( 1 / tan( $pi*slider24 / srate ) );
+ac2 = 1 + cc*(cc+dampeningc);
+fac1 = 2 * (1 - cc*cc) / ac2;
+fac0 = (1 + cc*(cc-dampeningc)) / ac2;
+fkc = cc*dampeningc / ac2;
+lastdampc=dampeningc;
+
+panA = slider6*0.01;
+lA = panA > 0 ? 1-panA:1;
+rA = panA < 0 ? 1+panA:1;
+
+panB = slider16*0.01;
+lB = panB > 0 ? 1-panB:1;
+rB = panB < 0 ? 1+panB:1;
+
+panC = slider26*0.01;
+lC = panC > 0 ? 1-panC:1;
+rC = panC < 0 ? 1+panC:1;
+
+@block
+slider1==0?(
+grid=1;
+);
+slider1==1?(
+grid=1/2;
+);
+slider1==2?(
+grid=1/4;
+);
+slider1==3?(
+grid=1/8;
+);
+slider1==4?(
+grid=1/16;
+);
+slider1==5?(
+grid=1/32;
+);
+
+slider7==0?(
+delaylena=min(((grid*240)/tempo)*srate,500000);
+);
+slider7==1?(
+delaylena=min((((grid*(6/4))*240/tempo))*srate,500000);
+);
+slider7==2?(
+delaylena=min((((grid*(2/3))*240/tempo))*srate,500000);
+);
+
+slider11==0?(
+grid=1;
+);
+slider11==1?(
+grid=1/2;
+);
+slider11==2?(
+grid=1/4;
+);
+slider11==3?(
+grid=1/8;
+);
+slider11==4?(
+grid=1/16;
+);
+slider11==5?(
+grid=1/32;
+);
+
+slider17==0?(
+delaylenb=min(((grid*240)/tempo)*srate,500000);
+);
+slider17==1?(
+delaylenb=min((((grid*(6/4))*240/tempo))*srate,500000);
+);
+slider17==2?(
+delaylenb=min((((grid*(2/3))*240/tempo))*srate,500000);
+);
+
+slider21==0?(
+grid=1;
+);
+slider21==1?(
+grid=1/2;
+);
+slider21==2?(
+grid=1/4;
+);
+slider21==3?(
+grid=1/8;
+);
+slider21==4?(
+grid=1/16;
+);
+slider21==5?(
+grid=1/32;
+);
+
+slider27==0?(
+delaylenc=min(((grid*240)/tempo)*srate,500000);
+);
+slider27==1?(
+delaylenc=min((((grid*(6/4))*240/tempo))*srate,500000);
+);
+slider27==2?(
+delaylenc=min((((grid*(2/3))*240/tempo))*srate,500000);
+);
+
+@sample
+dpinta = delayposa*2;
+dpintb = delayposb*2;
+dpintc = delayposc*2;
+
+osa1=dpinta[0];
+osa2=dpinta[1];
+osb1=dpintb[0];
+osb2=dpintb[1];
+osc1=dpintc[0];
+osc2=dpintc[1];
+
+dpinta[0]=min(max(spl0 + osa1*wetmixa,-4),4);
+dpinta[1]=min(max(spl1 + osa2*wetmixa,-4),4);
+dpintb[0]=min(max(spl0 + osb1*wetmixb,-4),4);
+dpintb[1]=min(max(spl1 + osb2*wetmixb,-4),4);
+dpintc[0]=min(max(spl0 + osc1*wetmixc,-4),4);
+dpintc[1]=min(max(spl1 + osc2*wetmixc,-4),4);
+
+(delayposa+=1) >= delaylena ? delayposa=0;
+(delayposb+=1) >= delaylenb ? delayposb=0;
+(delayposc+=1) >= delaylenc ? delayposc=0;
+
+da0_l = fka*osa1 - (faa1*fda1_l + faa0*fda2_l);
+da0_r = fka*osa2 - (faa1*fda1_r + faa0*fda2_r);
+db0_l = fkb*osb1 - (fab1*fdb1_l + fab0*fdb2_l);
+db0_r = fkb*osb2 - (fab1*fdb1_r + fab0*fdb2_r);
+dc0_l = fkc*osc1 - (fac1*fdc1_l + fac0*fdc2_l);
+dc0_r = fkc*osc2 - (fac1*fdc1_r + fac0*fdc2_r);
+
+osa1 = (da0_l - fda2_l);
+osa2 = (da0_r - fda2_r);
+osb1 = (db0_l - fdb2_l);
+osb2 = (db0_r - fdb2_r);
+osc1 = (dc0_l - fdc2_l);
+osc2 = (dc0_r - fdc2_r);
+
+fda2_l = fda1_l;
+fda2_r = fda1_r;
+fdb2_l = fdb1_l;
+fdb2_r = fdb1_r;
+fdc2_l = fdc1_l;
+fdc2_r = fdc1_r;
+
+fda1_l = da0_l;
+fda1_r = da0_r;
+fdb1_l = db0_l;
+fdb1_r = db0_r;
+fdc1_l = dc0_l;
+fdc1_r = dc0_r;
+
+spl0=spl0*dry + (osa1*wetmixa2*lA + osb1*wetmixb2*lB + osc1*wetmixc2*lC)*wet;
+spl1=spl1*dry + (osa2*wetmixa2*rA + osb2*wetmixb2*rB + osc2*wetmixc2*rC)*wet;

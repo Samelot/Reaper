@@ -1,0 +1,154 @@
+desc: LMB=Sound/Color   RMB=Image Position
+
+slider1:0<0,255,1>--R
+slider2:0<0,255,1>--G
+slider3:0<0,255,1>--B
+slider4:0<0,1,0.001>--R (gfx)
+slider5:0<0,1,0.001>--G (gfx)
+slider6:0<0,1,0.001>--B (gfx)
+
+slider7:150<0,400,1>--pos x
+slider8:10<0,100,1>--pos y
+slider9:1<0.5,4,0.1>Zoom
+slider10:0<0,14,1>Image
+slider11:0<0,2,1{sine - RED,triangle - GREEN,saw - BLUE}>Shape
+slider12:-18<-30,-6,1>Output (dB)
+
+filename:0,RGB_mousegfx/001.png
+filename:1,RGB_mousegfx/002.png
+filename:2,RGB_mousegfx/003.png
+filename:3,RGB_mousegfx/004.png
+filename:4,RGB_mousegfx/005.png
+filename:5,RGB_mousegfx/006.png
+filename:6,RGB_mousegfx/007.png
+filename:7,RGB_mousegfx/008.png
+filename:8,RGB_mousegfx/009.png
+filename:9,RGB_mousegfx/010.png
+filename:10,RGB_mousegfx/011.png
+filename:11,RGB_mousegfx/012.png
+filename:12,RGB_mousegfx/013.png
+filename:13,RGB_mousegfx/014.png
+filename:14,RGB_mousegfx/test.png
+//....add more images. Update slider10 !
+
+in_pin:none
+out_pin:L out
+out_pin:R out
+
+@init
+ext_noinit = 1;
+f=srate*0.5;
+
+rc = 0.05; // tweak the RC time constant to adjust the smoothness
+a = 1 / (rc * srate + 1);
+
+@slider
+vol= slider12 <= -30 ? 0.0 : 10 ^ (slider12 / 20);
+
+@block
+r=255*slider4;
+slider1 = ceil(r);
+sliderchange(slider1);
+g=255*slider5;
+slider2 = ceil(g);
+sliderchange(slider2);
+b=255*slider6;
+slider3 = ceil(b);
+sliderchange(slider3);
+
+dr=slider1*256*256;
+dg=slider2*256;
+db=slider3;
+
+tmpr=max(floor(dr*(f/16711680)),440);
+tmpg=max(floor(dg*(f/65280)),440);
+tmpb=max(floor(db*(f/255)),440);
+
+@sample
+(mouse_cap) == 1 ?
+(
+(slider11 == 0) ? (
+adj = 2.0*$pi*tmpr*2^-4.6472/srate;
+tone = cos(pos);
+);
+(slider11 == 1) ? (
+adj = 2.0*$pi*tmpg*2^-4.6472/srate;
+tone = 2.0*pos/$pi-1.0;
+(tone > 1.0) ? tone = 2.0-tone;
+);
+(slider11 == 2) ? (
+adj = 2.0*$pi*tmpb*2^-4.6498/srate;
+tone = 1.0-pos/$pi;
+);
+);
+
+tone *= vol;
+
+lp += a * (1 - lp);
+dry = 1 - lp;
+wet = lp;
+
+spl0 = dry *spl0 + wet * tone;
+spl1 = dry *spl1 + wet * tone;
+
+pos=pos+adj;
+(pos >= 2.0*$pi) ? pos -= 2.0*$pi;
+
+@gfx 0 120
+gfx_a =1;
+gfx_r=slider4;gfx_g=slider5;gfx_b=slider6;
+gfx_x=0;gfx_y=0;
+gfx_rectto(gfx_w,gfx_h);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+(mouse_cap) == 2 ?
+(
+gfx_x=mouse_x;
+gfx_y=mouse_y;
+slider7=mouse_x;
+slider8=mouse_y;
+):(
+gfx_x=slider7;
+gfx_y=slider8;
+);
+gfx_getimgdim(slider10,w,h);
+gfx_blit(slider10,slider9,0);
+
+(mouse_cap) == 1 ?
+(
+((mouse_x < slider7+w*slider9) && (mouse_y < slider8+h*slider9) && (mouse_x > slider7) && (mouse_y > slider8)) ?
+(
+gfx_x = mouse_x;
+gfx_y = mouse_y;
+
+gfx_getpixel(slider4,slider5,slider6);
+sliderchange(slider4);
+sliderchange(slider5);
+sliderchange(slider6);
+);
+);
+
+gfx_x=gfx_w-145;
+gfx_y=gfx_h-gfx_texth-2;
+gfx_r=gfx_g=gfx_b=0;
+gfx_a=1;
+gfx_rectto(gfx_w,gfx_h);
+
+gfx_x=gfx_w-143;
+gfx_y=gfx_h-gfx_texth;
+gfx_r=gfx_g=gfx_b=1;
+gfx_drawstr("R:");
+gfx_drawnumber(slider1,0);
+
+gfx_x=gfx_w-92;
+gfx_y=gfx_h-gfx_texth;
+gfx_r=gfx_g=gfx_b=1;
+gfx_drawstr("G:");
+gfx_drawnumber(slider2,0);
+
+gfx_x=gfx_w-41;
+gfx_y=gfx_h-gfx_texth;
+gfx_r=gfx_g=gfx_b=1;
+gfx_drawstr("B:");
+gfx_drawnumber(slider3,0);

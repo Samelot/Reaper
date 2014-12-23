@@ -1,0 +1,100 @@
+// arp!0 global settings
+
+1 // play/pause with host
+1 // midi through when paused
+1 // clear notes on host seek
+1+2+4+8+16+32+64+128 // button style bits: 0 is default
+  // 1/+2/+4/+8 are icons for len/gate/vc/transp
+  // +16/+32/+64/+128 are numbers for len/gate/vc/transp
+  // +256 disables gate >= 1 tick
+  // add/remove addends from "1+2+4+8+16+32+64+128+256" to enable/disable
+0 // load notes with preset
+0 //1+(1*32)+2048 // midi lock: 0 for per preset midi settings; otherwise 
+  // default chan (1 based) + (bus*32) + 1024/2048 for basic/extended midi control
+0 // base midi cc number for basic midi control; 0 for default of 32
+
+0,0,0,0,0 // 5 spares
+0,0,0,0,0,0,0,0,0,0 // 10 spares
+0,0,0,0,0,0,0,0,0,0 // 10 spares
+
+//colors - cool-rainbow
+xf8/xff, xff/xff, xf8/xff // fx window background color r/g/b
+.25, .4, .3    // borders/text color r/g/b
+.83, .95, .84  // control background color r/g/b
+.5, .5, .5, .35 // current step highlight color r/g/b/a
+0, 0, 0, .3   // slider bar color r/g/b/a
+-1,0,0, .6     // dimming color r/g/b/a; if r <0 then use r/g/b of window bg
+.1, .5, .15, .32 // selected buttons highlight color r/g/b/a; 
+               // if r <0 then use r/g/b of cur step highlight color
+.7             // 2ndary dim text alpha
+.06            // transp grid white delta: added to white notes r/g/b
+1              // transp grid horizontal lines brightness
+.992, .600, .733,.5,.5, .6,.9,.3,.5,.5, .914, .667, .416,.5,.5, .471, .835, .992,.4,.5, .95,.95,.4,.4,.4 
+               // step/length/gate/voices/transp background colors r/g/b/a1/a2
+               // r is -1 to use default control bg color
+               // a1 is minimum color fade based on step value; 1 disables fade
+               // positive a1 fades from fade color to r/g/b
+               // negative a1 fades from r/g/b to fade color
+               // a2 is alpha for drop down grids
+.90, .86, .98,1,1, .95,.9,.7,1,1, .78,.99,.88,1,1, .8,.9,.99,1,1 
+               // accent/offset/control1/control2 background colors r/g/b/a1/a2
+               // a1/a2 not currently used for acc/off/ctl1/ctl2
+1,1,1          // fade from/to color r/g/b
+.88,.77,.77,0,1, .88,.88,.77,0,1 // control3/control4 colors
+0,0,0,0        // spares
+0 //.03        // dot shadow: alpha for dot highlights; if >1 shadow is drawn
+               // in white
+0 //x1d012c00  // dot highlight: if non-zero; 8 nibbles defining 2 rects near
+               // the upper left of a step drawn in the step highlight color/alpha
+               // low nibble (4 bits) is h-offset from top left corner; if > xb
+               // the offset is negative; next is v-offset; then h-width; if > xb
+               // an offset from top right corner; then v-heigth; then 2nd rect
+99,111,111,108,45,114,97,105,110,98,111,119,0,0,0,0,0,0,0,0,0,0,0,0 //name24:cool-rainbow
+
+//colors - dark-rainbow
+.123, .123, .123 // pane background color rgb; or fffff4?
+.698, .698, .698 // foreground/text color rgb
+.859, .859, .859 // control background color rgb
+.43, .46, .45, .7 // hilite color rgba
+0, 0, 0, .4   // slider bar color rgba
+-1,0,0, .65     // dimming color rgba
+.580, .878, .722, 1   // 2ndary hilite rgba: darker for selected buttons
+.7             // 2ndary text alpha
+.1             // transp grid white delta: added to white notes r/g/b
+1              // transp grid lines brightness
+.992, .600, .733,.5,.5, .6,.9,.3,.5,.5, .914,.667,.416,.5,.5, .471,.835,.992,.4,.5, .95,.95,.4,.4,.4 
+.90, .86, .98,1,1, .95,.9,.7,1,1, .78,.99,.88,1,1, .8,.9,.99,1,1 
+1,1,1          // fade from/to color
+.88,.77,.77,0,1, .88,.88,.77,0,1      // ctl3/4
+0,0,0,0        // spares
+0            // spares
+x53e151d2        //x14d012c1 // dot highlight 
+100,97,114,107,45,114,97,105,110,98,111,119,0,0,0,0,0,0,0,0,0,0,0,0 //name24:dark-rainbow
+
+//colors - ponies
+.87/.95, .85/.95, .93 // pane background color rgb; or fffff4?
+.349, .337, .443    // foreground/text color rgb
+.725, .710, .880  // control background color rgb
+.725*.7, .710*.7, .820*.7, .7 //.796 .459 .565 .4 // hilite color rgba
+.796, .4, .535, 1   // slider bar color rgba
+-1,0,0, .6     // dimming color rgba
+.788*1.2, .342*1.2, .56*1.2, 1      // 2ndary hilite rgba: darker for selected buttons
+.7             // 2ndary text alpha
+.1             // transp grid white delta: added to white notes r/g/b
+.9              // transp grid lines brightness
+.949, .761, .906,1,1        // spares
+.949, .776, .918,1,1        // spares
+.949, .788, .925,1,1
+.949, .804, .925,1,1
+.949, .816, .933,1,1
+.941, .816, .949,1,1
+.881, .765, .969,1,1
+.902, .788, .949,1,1
+.816, .715, .955,1,1
+1,1,1          // fade from/to color
+.774, .652, .945,1,1
+.73, .62, .941,1,1
+0,0,0,0,0        // spares
+x42d324c2   // dot hilite
+112,111,110,105,101,115,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 //name24:ponies
+

@@ -1,0 +1,58 @@
+slider1:0<0,4,1{1+2,3+4,5+6,7+8,9+10}>Output
+//slider1:0<0,4,1>Output
+
+@init
+src_vol1 = tgt_vol1 = 1;
+src_vol2 = tgt_vol2 = 0;
+src_vol3 = tgt_vol3 = 0;
+src_vol4 = tgt_vol4 = 0;
+src_vol5 = tgt_vol5 = 0;
+
+@slider
+tgt_vol1 = slider1 == 0 ? 1 : 0;
+tgt_vol2 = slider1 == 1 ? 1 : 0;
+tgt_vol3 = slider1 == 2 ? 1 : 0;
+tgt_vol4 = slider1 == 3 ? 1 : 0;
+tgt_vol5 = slider1 == 4 ? 1 : 0;
+
+@block
+d_vol1 = (tgt_vol1-src_vol1)/samplesblock;
+d_vol2 = (tgt_vol2-src_vol2)/samplesblock;
+d_vol3 = (tgt_vol3-src_vol3)/samplesblock;
+d_vol4 = (tgt_vol4-src_vol4)/samplesblock;
+d_vol5 = (tgt_vol5-src_vol5)/samplesblock;
+tvol1 = src_vol1;
+tvol2 = src_vol2;
+tvol3 = src_vol3;
+tvol4 = src_vol4;
+tvol5 = src_vol5;
+src_vol1 = tgt_vol1;
+src_vol2 = tgt_vol2;
+src_vol3 = tgt_vol3;
+src_vol4 = tgt_vol4;
+src_vol5 = tgt_vol5;
+
+@sample
+tvol1 += d_vol1;
+tvol2 += d_vol2;
+tvol3 += d_vol3;
+tvol4 += d_vol4;
+tvol5 += d_vol5;
+
+s0 = spl0;
+s1 = spl1;
+
+spl0 *= tvol1;
+spl1 *= tvol1;
+
+spl2 = (tvol2 * s0);
+spl3 = (tvol2 * s1);
+
+spl4 = (tvol3 * s0);
+spl5 = (tvol3 * s1);
+
+spl6 = (tvol4 * s0);
+spl7 = (tvol4 * s1);
+
+spl8 = (tvol5 * s0);
+spl9 = (tvol5 * s1);

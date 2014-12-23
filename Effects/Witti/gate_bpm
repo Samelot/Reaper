@@ -1,0 +1,71 @@
+slider1:-30<-120,0,0.1>Threshold (dB)
+slider2:100<1,500,1>(read only in bpm mode) Release (ms)
+slider3:50<1,500,1>(read only in bpm mode) Env Decay (ms)
+slider4:0<-24,24,0.1>Output (dB)
+slider5:1<0,3,1{OFF,ON,Release only,Env Decay only}>BPM sync
+slider6:8<0,21,1{1,1T,1/2,1/2T,1/4,1/4T,1/8,1/8T,1/16,1/16T,1/32,1/32T,1/64,1/64T,1/128,1/128T,1/256,1/256T,1/512,1/512T,1/1024,1/1024T}>Release Units
+slider7:10<0,21,1{1,1T,1/2,1/2T,1/4,1/4T,1/8,1/8T,1/16,1/16T,1/32,1/32T,1/64,1/64T,1/128,1/128T,1/256,1/256T,1/512,1/512T,1/1024,1/1024T}>Env Decay Units
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+output = 1;
+transfer = 1;
+gain = 1;
+env = 0;
+attack = exp(-1/(0.004/1000*srate));
+
+@block
+slider5==0?(
+release = exp(-1/(slider2/1000*srate));
+envelope_decay = exp(-1/(slider3/1000*srate));
+);
+slider5==1?(
+Rms=(60000 / tempo * multR);
+slider2 = Rms;
+sliderchange(slider2);
+Ems=(60000 / tempo * multE);
+slider3 = Ems;
+sliderchange(slider3);
+release = exp(-1/(Rms/1000*srate));
+envelope_decay = exp(-1/(Ems/1000*srate));
+);
+slider5==2?(
+Rms=(60000 / tempo * multR);
+slider2 = Rms;
+sliderchange(slider2);
+release = exp(-1/(Rms/1000*srate));
+envelope_decay = exp(-1/(slider3/1000*srate));
+);
+slider5==3?(
+Ems=(60000 / tempo * multE);
+slider3 = Ems;
+sliderchange(slider3);
+release = exp(-1/(slider2/1000*srate));
+envelope_decay = exp(-1/(Ems/1000*srate));
+);
+
+@slider
+multR = (slider6 & 1) ? 2 ^ -(slider6 >> 1 - 3) / 3 : 2 ^ -(slider6 >> 1 - 2);
+multE = (slider7 & 1) ? 2 ^ -(slider7 >> 1 - 3) / 3 : 2 ^ -(slider7 >> 1 - 2);
+
+threshold = 10^(slider1/20);
+transfer = output * pow(threshold,0);
+
+vol = 10^(slider4/20);
+
+@sample
+inL = spl0;
+inR = spl1;
+
+det = max(abs(inL),abs(inR));
+det += 0.000000000001;
+env = det >= env ? det : det+envelope_decay*(env-det);
+transfer_gain = env > threshold ? pow(env,0)*transfer:0;
+gain = transfer_gain < gain ? transfer_gain+release *(gain-transfer_gain) : transfer_gain+attack*(gain-transfer_gain);
+
+spl0 = inL * gain * vol;
+spl1 = inR * gain * vol;

@@ -1,0 +1,10 @@
+function do_actions_from_main_and_midi_sections()
+(
+	midi_editor_section_action = 2; // 2 == close midi editor window
+	main_section_action1 = 53872; // 53872 == restore arrenge view, slot 1
+	
+	MIDIEditor_OnCommand(MIDIEditor_GetActive(), midi_editor_section_action);
+	Main_OnCommand(main_section_action1, 0);
+);
+
+do_actions_from_main_and_midi_sections();

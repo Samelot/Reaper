@@ -1,0 +1,13 @@
+GetExtState(#foo,"test","value");
+// ShowConsoleMsg(#foo);
+
+match("set_1", #foo) ? (
+	Main_OnCommand(41239, 0);	
+) : match("set_2", #foo) ? (	
+	Main_OnCommand(41240, 0);	
+) : match("set_3", #foo) ? (	
+	Main_OnCommand(41241, 0);	
+) : match("set_4", #foo) ? (	
+	Main_OnCommand(41242, 0);			
+);
+

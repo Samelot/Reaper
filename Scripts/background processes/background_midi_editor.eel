@@ -1,0 +1,45 @@
+function main() local(last_sel_item)
+(
+
+	action_select_item_under_mouse = 40528;
+	action_open_edior = 40153;
+
+	// midi editor actions
+	action_hide_unused = 40453;
+	action_zoom_content = 40466;
+	
+	// editor_status = MIDIEditor_GetActive();
+	// ShowConsoleMsg(sprintf(#, "%i", editor_status));
+
+  	current_sel_item = GetSelectedMediaItem(0, 0); // get first selected item
+  	current_sel_item != last_sel_item ? (
+    	// ShowConsoleMsg("Item selection changed\n");
+
+		// editor_status == 0 ? (
+		// 		ShowConsoleMsg("midi editor offline");			
+		// 		// Main_OnCommand(action_select_item_under_mouse, 0);	
+		// 	) : (
+		// 		// ShowConsoleMsg("midi editor online");						
+		// 		Main_OnCommand(2009, 0);
+		// 		MIDIEditor_OnCommand(MIDIEditor_GetActive(), action_hide_unused);
+		// 		MIDIEditor_OnCommand(MIDIEditor_GetActive(), action_zoom_content);
+		// 	);
+
+  	  	MIDIEditor_OnCommand(MIDIEditor_GetActive(), 2); // File: Close window
+  		Main_OnCommand(40153, 0); // Item: Open in built-in MIDI editor (set default behavior in preferences)
+		// Main_OnCommand(40132, 0); // Item: Open item copies in primary external editor
+		Main_OnCommand(2009, 0); // Action: Wait 0.5 seconds before next action
+		// Main_OnCommand(40454, 0); // Screenset: Load window set #01
+  		// MIDIEditor_OnCommand(MIDIEditor_GetActive(), 40466); // Zoom to content
+
+		
+  		// *** I believe that as of now, only one window can ever be open. But if you move a window of one instance of midi editor (linked to a particular item), it will remember that location upon reopening. 
+    
+    	last_sel_item = current_sel_item;
+  	);
+
+  	defer("main();");
+
+);
+
+main();

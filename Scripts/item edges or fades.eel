@@ -1,0 +1,15 @@
+Main_OnCommand(40421,0); 
+
+item = GetSelectedMediaItem(0, 0); // store first selected item
+
+curTake = GetMediaItemInfo_Value(item, "I_CURTAKE");
+
+// ShowConsoleMsg(sprintf(#, "%i ", curTake));
+
+curTake == 0 ? (
+		ShowConsoleMsg("0");
+	) : (
+		ShowConsoleMsg("1");
+	);
+
+UpdateArrange();

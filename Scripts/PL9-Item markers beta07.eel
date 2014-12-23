@@ -1,0 +1,1540 @@
+//============================================================
+//======          Item Marker Tool beta0.07           ========
+//============================================================
+
+// Script by Planet Nine 
+// This version: 14-Nov-14
+
+
+
+function xs(x) local(new_x)
+(
+	// calculates x-position for any font size using orig 16pt x-values
+	// -excludes 10pt LHS pad from scaling...
+	new_x=(((x-10)/16)*font_size) +10; // h_pixppt
+	new_x
+);
+
+
+function hw_sz(fs)
+(
+	// calculates horz window size based upon required width at font 16ppt
+	hw_size = h_pixppt*fs+20;
+	hw_size;
+);
+
+function vw_sz(fs)
+(
+	// calculates vert window size based upon required height at font 16ppt
+	vw_size = v_pixppt*fs+20;
+	vw_size;
+);
+
+function src_offset(f_position, f_item, f_take)
+(
+	item_pos = GetMediaItemInfo_value(f_item, "D_POSITION");
+	item_length = GetMediaItemInfo_value(f_item, "D_LENGTH");
+	take_offset = GetMediaItemTakeInfo_value(f_take, "D_STARTOFFS");
+	take_playrate = GetMediaItemTakeInfo_value(f_take, "D_PLAYRATE");
+	
+	// Calculate a position's source offset, using item & take parameters...
+	position_source_offset = (f_position - item_pos) * take_playrate + take_offset;
+);
+
+function tl_pos(f_source_offset, f_item, f_take)
+(
+	item_pos = GetMediaItemInfo_value(f_item, "D_POSITION");
+	item_length = GetMediaItemInfo_value(f_item, "D_LENGTH");
+	take_offset = GetMediaItemTakeInfo_value(f_take, "D_STARTOFFS");
+	take_playrate = GetMediaItemTakeInfo_value(f_take, "D_PLAYRATE");
+
+	// Calculate timeline position from position's source offset, using item & take parameters...
+	timeline_position = ((f_source_offset - take_offset)/take_playrate) + item_pos;
+);
+
+
+// === adjust font, window size, and nudge frames upon mousewheel change ===
+function get_mousewheel(mouse_wheel_val)
+(
+	mouse_x <= xs(50) && mouse_y <= xs(50) ? // check mouse is in 50x50 resizing landing-zone...
+	(
+		mouse_wheel_val > 0 ? 
+		(
+			font_size < 32 ? 
+			(
+				font_size += 1;
+			);
+		);
+	  
+		mouse_wheel_val < 0 ? 
+		(
+			(font_size > 8 ) ? 
+			(
+				font_size -= 1;
+			);
+		);
+		//gfx_quit();
+		//gfx_init(version_num, hw_sz(font_size), vw_sz(font_size)); // quit and reinitialise window to match font size
+		// un-comment these lines if you want window to auto re-size.
+		gfx_setfont(1, font_name, font_size);
+	);
+	
+	mkrrenum_start_zone == 1 ?
+	(
+		mouse_wheel_val > 0 ? 
+		(
+			marker_renum_start +=1;
+			marker_renum_start >20 ? marker_renum_start = 20;
+		);
+		mouse_wheel_val < 0 ? 
+		(
+			marker_renum_start -=1;
+			marker_renum_start <1 ? marker_renum_start = 1;
+		);
+	);
+	mkrrenum_incr_zone == 1 ?
+	(
+		mouse_wheel_val > 0 ? 
+		(
+			marker_renum_incr +=1;
+			marker_renum_incr >10 ? marker_renum_incr = 10;
+		);
+		mouse_wheel_val < 0 ? 
+		(
+			marker_renum_incr -=1;
+			marker_renum_incr <1 ? marker_renum_incr = 1;
+		);
+	);
+
+
+	mouse_wheel = 0; // reset parameter before reusing...
+);
+
+
+function get_source_time(time_pos, item, take) local(stp, repeat_num)
+(		
+	item ? ( // if item exists (if there are at least one item selected) -> get item position
+		item_pos = GetMediaItemInfo_value(item, "D_POSITION");
+		item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+		//edit_cursor_pos = GetCursorPosition();
+		// take_pcm_source = GetMediaItemTake_Source(take);
+		PCM_Source_GetSectionInfo(GetMediaItemTake_Source(take), offset, source_length, reverse); // to obtain source_length
+		take ? (// if take_pointer > 0 
+			take_start_offset = GetMediaItemTakeInfo_value(take, "D_STARTOFFS");
+			take_playrate = GetMediaItemTakeInfo_value(take, "D_PLAYRATE");
+        
+			// get active take number
+			active_take_number = GetMediaItemTakeInfo_value(take, "IP_TAKENUMBER");
+			//gfx_a = 1; // set brighter text (alpha value) - gfx_r, gfx_g and gfx_b stays the same as above
+        
+			// Print "edit cursor position in source", using this formula:
+			// STP = ((ECP-MIP)*PBR)+SIS
+			stp = (time_pos - item_pos) * take_playrate + take_start_offset;
+			repeat_num = ceil(stp/source_length)-1;
+			stp = stp - (source_length * (ceil(stp/source_length)-1)); // modulus = n-d*int(n/d)
+			//gfx_printf("stp: %f", stp) // bugfix line
+		);
+	);
+	stp; // return source time pos
+);	
+
+
+function get_repeat_num(time_pos, item, take) local (stp)
+(		
+	item ? 
+	( // if item exists (if there are at least one item selected) -> get item position
+		item_pos = GetMediaItemInfo_value(item, "D_POSITION");
+		item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+		PCM_Source_GetSectionInfo(GetMediaItemTake_Source(take), offset, source_length, reverse); // to obtain source_length
+	
+		take ? 
+		(// if take_pointer > 0 
+			take_start_offset = GetMediaItemTakeInfo_value(take, "D_STARTOFFS");
+			take_playrate = GetMediaItemTakeInfo_value(take, "D_PLAYRATE");
+        
+			// Print "edit cursor position in source", using this formula:
+			// STP = ((ECP-MIP)*PBR)+SIS
+			stp = (time_pos - item_pos) * take_playrate + take_start_offset;
+			repeat_num = ceil(stp/source_length)-1;
+		);
+	);
+	repeat_num; // return repeat number
+);	
+
+
+
+function oob(time_pos, item, take) local(bound_flag)
+(
+	item ? 
+	( // if item exists (if there are at least one item selected) -> get item position
+		item_pos = GetMediaItemInfo_value(item, "D_POSITION");
+		item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+		PCM_Source_GetSectionInfo(GetMediaItemTake_Source(take), offset, source_length, reverse); // to obtain source_length
+		item_pos <= time_pos && (item_pos + item_length) >= time_pos ? ( // if item > 0 ("item" variable is TRUE)
+			bound_flag = 0; // yellow +within item flag.
+		) : ( // ...else edit cursor is not within item
+			bound_flag = 1; // red and outside item flag.
+		);
+	);
+	bound_flag; // return out-of-bounds flag
+);
+
+
+
+function show_take_name(x, y, item, take)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set white colour
+	gfx_printf("Take name:        ");
+	gfx_a = 1; // brighter text
+  
+	item && take ? ( // if item_pointer > 0 and take_pointer > 0
+		GetTakeName(#take_name, take); //store take name to "#take_name" variable
+		gfx_printf(#take_name);
+	) : ( // no selected item or item has no takes
+		gfx_r = 1; gfx_g = 0; gfx_b = 0; // red
+		gfx_printf("No selected item (or empty item)");
+	);
+);
+
+function show_number_of_takes_in_item(x, y, item, take) local(active_take_number)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set white colour
+	gfx_printf("Active take:        ");
+  
+	item ? (
+		take ? (
+			// get active take number
+			active_take_number = GetMediaItemTakeInfo_value(take, "IP_TAKENUMBER");
+			gfx_a = 1; //alpha to brightest
+			// active take No. zero based -> add 1 to value
+			gfx_printf("%d of %d", (active_take_number + 1), CountTakes(item)) // %d converts to string, (direct format)
+		);
+	);
+);
+
+
+function get_take_filename(take) local(count, fn_length)
+(
+	#filenamebuf = ""; // clear #filenamebuf 
+	#filenameonly = ""; // empty string for file name only
+	GetMediaSourceFileName(GetMediaItemTake_Source(take), #filenamebuf); // store file name to #filenamebuf
+	#pathbuf = #filenamebuf; // whole path stored to #pathbuf, later cropped to path-only...
+	strlen(#filenamebuf) ? (
+		count = strlen(#filenamebuf);
+		while (str_getchar(#filenamebuf, count, c) != 92) // count down from end to find "\" char.
+		(
+			count -=1; // count down from end
+		);
+		str_setlen(#pathbuf, count +1); // trims length of #pathbuf to "path only"
+		fn_length = strlen(#filenamebuf)-count; // length for #filenameonly determined
+		str_setlen(#filenameonly, fn_length);   // length of #filenameonly set...
+	
+		strcpy_from(#filenameonly, #filenamebuf, count+1); // filename-only
+	);
+);
+
+function show_help_page(x, y)
+(
+	gfx_x = x; gfx_y = y;
+	gfx_a = 1.0; gfx_r = 1; gfx_g = 0.5; gfx_b = 0.5; // set to pnk?
+	gfx_printf("Item Marker Tool");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_a = 0.8; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to wht
+	gfx_printf("Stick item markers onto your waveforms...");
+	
+	gfx_y +=2*gfx_texth;
+	gfx_x = xs(x);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to wht
+	gfx_printf("~This tool turns project markers into ''item markers'' which can be stuck onto the waveforms in your items. ");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("~The tool allows you to store an item's take ID and relative time position into the name-field of a marker.");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("~If locked to that take, it will track any movement and move the ''sticky'' marker with it. The marker-take");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("association is stored in the marker so that it can be read by the tool immediately on project load or marker");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("recall by marker/region sets. ");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("~The marker name can be edited providing the data header and following digits are not changed.");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("~The marker can be locked onto the currently selected item/take, to the item/take and offset stored in the ");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("marker, or the stored offset can be applied to a newly selected item/take. ");
+	gfx_y +=gfx_texth;
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("The display shows a list of all markers active in the project, their names and timeline positions. If ");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("an item is selected, the time-bounds will be shown as ''rail-tracks'' to the left of any markers within it.");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("A green tint is applied to any item markers, and the ''╪'' displayed under Type, followed by ''θ'' or ''ύ''");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("for locked/unlocked. Any marker attached to the currently selected item/take will be shown highlighted.");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("In addition, the marker's source time is shown, with a green square to its left indicating BWF data is");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("present, solid if non-zero timecode is found. Clicking the source time will apply the BWF timecode to the");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("source time. Unlocked markers are orange, locked, red. The original colour is stored in the data.");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("An ''!'' in the lock column indicates an invalid take stored (usu since deleted), and an ''*'' means the ");
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_printf("marker is outside its locked item.");
+	
+	gfx_y +=gfx_texth;
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 0.5; gfx_b = 0.5; // set to pnk?
+	gfx_printf("LC marker type:");
+	gfx_x = xs(x+140);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to wht?
+	gfx_printf("Toggles project marker/ item marker type. Stores selected item/take and offset.");
+
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 0.5; gfx_b = 0.5; // set to pnk?
+	gfx_printf("LC lock:");
+	gfx_x = xs(x+140);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to wht?
+	gfx_printf("Toggles lock/unlock on marker to selected item/take and offset.");
+
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 0.5; gfx_b = 0.5; // set to pnk?
+	gfx_printf("Shift-LC lock:");
+	gfx_x = xs(x+140);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to wht?
+	gfx_printf("Lock/unlock marker to stored item/take and offset.");
+
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 0.5; gfx_b = 0.5; // set to pnk?
+	gfx_printf("Ctrl-Shift-LC lock:");
+	gfx_x = xs(x+140);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to wht?
+	gfx_printf("Lock/unlock marker to stored offset and selected item/take.");
+
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 0.5; gfx_b = 0.5; // set to pnk?
+	gfx_printf("RC item marker line:");
+	gfx_x = xs(x+140);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to wht?
+	gfx_printf("Highlights item marker and associated item/take.");
+
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 0.5; gfx_b = 0.5; // set to pnk?
+	gfx_printf("Shift-RC item mkr line:");
+	gfx_x = xs(x+140);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to wht?
+	gfx_printf("Zooms out to project and highlights item marker and associated item/take.");
+
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 0.5; gfx_b = 0.5; // set to pnk?
+	gfx_printf("LC marker src time:");
+	gfx_x = xs(x+140);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to wht?
+	gfx_printf("Toggles use of BWF timecode in source time (if take src is BWF).");
+
+	gfx_y +=gfx_texth;
+	gfx_x = xs(x);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 0.5; gfx_b = 0.5; // set to pnk?
+	gfx_printf("Alt LC type/lock:");
+	gfx_x = xs(x+140);
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to wht?
+	gfx_printf("Unlocks and returns to project marker (deletes header).");
+);
+
+
+function get_bwf_data(bwf_item, bwf_take)
+(
+	GetMediaSourceFileName(GetMediaItemTake_Source(bwf_take), #filenamebuf); // store file name to #filenamebuf
+
+	fo = 0; bext_found =0; bext_time_offset = 0;
+	#bext_Description = "";
+	#bext_Originator = "";
+	#bext_OriginatorReference = "";
+	#bext_OriginationDate = "";
+	#bext_OriginationTime = "";
+	#bext_TimeRefLow = "";
+	#bext_TimeRefHigh = "";
+	#bext_VersionNum = "";
+	#riff_header = "";
+	#file_size_buf = "";
+	#wave_header = "";
+	#chunk_header = "";
+	#chunk_size_buf = "";
+	#chunk_data_buf = "";
+	#time_offset="";
+	// I stopped here, but the full set of bext metadata can be retrieved -PM me for further details/help -planetnine
+
+	//GetMediaSourceFileName(GetMediaItemTake_Source(bwf_take), #filenamebuf); // store file name to #filenamebuf
+
+	opchn = fopen(#filenamebuf, "rb");  // open file for read
+	opchn !=0 ?
+	(
+		fread(opchn, #riff_header, 4); // import riff header
+		fread(opchn, #file_size_buf, 4); // import file size as string
+		fo +=8;
+		file_size = str_getchar(#file_size_buf, 0, 'iu'); // read file size, double, LE	
+		fread(opchn, #wave_header, 4); // import wave header
+		fo +=4;
+		
+		while ((bext_found ==0) && (fo < file_size))
+		(
+			#hex_section ="";
+			fread(opchn, #chunk_header, 4); // import chunk header
+			//gfx_printf("ChH:%s ", #chunk_header);
+			fread(opchn, #chunk_size_buf, 4); // import chunk size as string
+			chunk_size = str_getchar(#chunk_size_buf, 0, 'iu'); // read file size, double, LE	
+			fo +=8;
+			//gfx_printf("ChSz:%d ", chunk_size);
+			fread(opchn, #chunk_data_buf, chunk_size); // import chunk data as string
+			fo += chunk_size;
+
+			ch_offset = 0;
+			/*gfx_printf("Chunk: ");	// these are bugfix/development lines -enable to see the bext chunk in full :)
+			gfx_x = xs(x); gfx_y +=gfx_texth;
+			while (ch_offset < strlen(#chunk_data_buf))
+			(
+				sprintf(#hex_char, "%02X ", str_getchar(#chunk_data_buf, ch_offset, 'cu'));
+				ch_offset +=1;
+				gfx_printf("%s", #hex_char);
+				(ch_offset % 16) == 12 ? (gfx_x = xs(x); gfx_y +=gfx_texth; );
+				//#dum =  strcat(#hex_section, #hex_char);
+			);*/
+			//gfx_printf("Chunk:%s", #hex_section);	
+			//gfx_x = xs(x); gfx_y +=gfx_texth; 
+			
+			strcmp(#chunk_header, "bext") == 0 ? (bext_found =1):(bext_found =0);
+		);
+		bext_found == 0 ? bext_time_offset =0;
+		bext_found == 1 ?
+		(
+			strcpy_substr(#bext_Description, #chunk_data_buf, 0, 256);
+			strcpy_substr(#bext_Originator, #chunk_data_buf, 256, 32);
+			strcpy_substr(#bext_OriginatorReference, #chunk_data_buf, (256+32), 32);
+			strcpy_substr(#bext_OriginationDate, #chunk_data_buf, (256+32+32), 10);
+			strcpy_substr(#bext_OriginationTime, #chunk_data_buf, (256+32+32+10), 8); // left these "open" to show the obvious structure
+			strcpy_substr(#bext_TimeRefLow, #chunk_data_buf, (256+32+32+10+8), 4);    // SMPTE codes and LUFS data follow these
+			strcpy_substr(#bext_TimeRefHigh, #chunk_data_buf, (256+32+32+10+8+4), 4); // see EBU Tech 3285 v2 etc for more details.
+			strcpy_substr(#bext_VersionNum, #chunk_data_buf, (256+32+32+10+8+4+4), 2); // 
+			// I stopped here, but the full set of bext metadata can be retrieved -PM me for further details/help -planetnine
+
+			bext_TimeRefLow = str_getchar(#bext_TimeRefLow, 0, 'iu'); // unsigned integer
+			bext_TimeRefHigh = str_getchar(#bext_TimeRefHigh, 0, 'iu'); // unsigned integer
+			bext_VersionNum = str_getchar(#bext_VersionNum, 0, 'su'); // unsigned short integer
+			bext_time_offset = ((bext_TimeRefHigh * 4294967295) + bext_TimeRefLow)/GetMediaSourceSampleRate(GetMediaItemTake_Source(bwf_take)); // combine high & low bytes & sample rate
+			format_timestr_pos(bext_time_offset, #bext_time_offset_buf, ecp_format); // format time offset to ecp format
+		);
+		fclose(opchn); // close file
+		#lastfilenamebuf = #filenamebuf; // prevents multiple request for fopen
+	);
+	/*
+	gfx_printf("[%d]FN:%s %s[%d] %s Ch:%s [%d] fo:%d", opchn, #filename_buf, #riff_header, file_size, #wave_header, #chunk_header, chunk_size, fo); //bugfix line
+	gfx_x = xs(x); gfx_y +=gfx_texth;
+	gfx_printf("OD:%s OT:%s TRL:%d TRH:%d VN:%d TO:%f", #bext_OriginationDate, #bext_OriginationTime, bext_TimeRefLow, bext_TimeRefHigh, bext_VersionNum, time_offset);
+	*/
+
+);
+
+
+
+
+function check_valid_header()
+(
+	#valid_header = "_*#*#*#*";
+	valid_header = 0;
+	strlen(#tfr_name) >=72 ? // check if name long enough for a header...
+	(
+		//EEL: strcpy_substr(#str,"srcstr",offs,ml));
+		strcpy_substr(#header, #tfr_name, -72, 8); // 54 data + 4 ext + 8 header
+		//EEL: strcmp("str","str2");
+		strcmp(#header, #valid_header) == 0 ? // compare header with valid header
+		(
+			valid_header = 1;
+		);
+	);
+);
+
+
+function hex_vers_guid(g_take)
+(
+	#take_guid = ""; #temp_take_guid = ""; #hex_section = "";
+  GetSetMediaItemTakeInfo_String(g_take, "GUID", #active_take_guid, 0);
+	
+	g_offset = 0;
+	//str_setlen(#take_guid, strlen(#active_take_guid)*2);
+	while (g_offset < strlen(#active_take_guid))
+	(
+		sprintf(#hex_char, "%02X", str_getchar(#active_take_guid, g_offset, 'cu'));
+		g_offset +=1;
+		#dum =  strcat(#hex_section, #hex_char);
+	);
+	#dum = strcat(#temp_take_guid, #hex_section);
+	// now reorder bytes and delimit with "-"
+
+	strcat(#take_guid, "{");
+	strcpy_substr(#str, #temp_take_guid, 6, 2); //byte 04
+	strcat(#take_guid, #str);
+	strcpy_substr(#str, #temp_take_guid, 4, 2); //byte 03
+	strcat(#take_guid, #str);
+	strcpy_substr(#str, #temp_take_guid, 2, 2); //byte 02
+	strcat(#take_guid, #str);
+	strcpy_substr(#str, #temp_take_guid, 0, 2); //byte 01
+	strcat(#take_guid, #str);
+	strcat(#take_guid, "-");
+	
+	strcpy_substr(#str, #temp_take_guid, 10, 2); //byte 06
+	strcat(#take_guid, #str);
+	strcpy_substr(#str, #temp_take_guid, 8, 2); //byte 05
+	strcat(#take_guid, #str);
+	strcat(#take_guid, "-");
+	
+	strcpy_substr(#str, #temp_take_guid, 14, 2); //byte 08
+	strcat(#take_guid, #str);
+	strcpy_substr(#str, #temp_take_guid, 12, 2); //byte 07
+	strcat(#take_guid, #str);
+	strcat(#take_guid, "-");
+	
+	strcpy_substr(#str, #temp_take_guid, 16, 4); //bytes 09&10
+	strcat(#take_guid, #str);
+	strcat(#take_guid, "-");
+	
+	strcpy_substr(#str, #temp_take_guid, 20, 12); //bytes 11 to 16
+	strcat(#take_guid, #str);
+	strcat(#take_guid, "}");
+	
+);
+
+
+function store_header(item_mkr_idx, s_item, s_take, lock_value, new_offset, bext_offs_value)
+(
+	#header = "";
+	#temp_name = "";
+	
+	EnumProjectMarkers3(0, item_mkr_idx, is_region, item_mkr_idx_pos, rgn_end, #tfr_name, item_mkr_idx_num, actual_colour);
+	check_valid_header();
+	valid_header ?
+	(
+		// delete old header before creating new one...
+		strcpy_substr(old_colour_def_col, #tfr_name, -63, 1); // 1 chars mkr orig colour def toggle
+		strcpy_substr(#old_hdr_old_colour_buf ,#tfr_name, -60, 6); // 6 chars mkr orig colour
+		matchi("%6X", #old_hdr_old_colour_buf, old_hdr_old_colour);
+		
+		//EnumProjectMarkers3(0, m_item_mkr_i[item_mkr_count], is_region, m_item_mkr_pos[item_mkr_count], rgn_end, #tfr_name, m_item_mkr_num[item_mkr_count],0)
+		strcpy_substr(#temp_name, #tfr_name, 0, strlen(#tfr_name)-72); // 
+		#tfr_name = #temp_name; // set name to everything left of the data header, ie remove header.
+		SetProjectMarker4(0, item_mkr_idx_num, 0, item_mkr_idx_pos, 0, #tfr_name, 0, 0); // store to marker name without header
+	):(
+		actual_colour == 0 ? (old_colour_def_col =1):(old_colour_def_col =0); // default colour returns 0, not 0x1000000 (black)
+		actual_colour > 0xFFFFFF ? (actual_colour -=0x1000000); // take 0x1000000 from colour value
+		old_hdr_old_colour = actual_colour; // set ohoc to actual marker colour
+	);
+	new_offset ? (stored_offset = src_offset(item_mkr_idx_pos, s_item, s_take); ):(stored_offset = ret_stored_offset); // get new offset from mkr position or use prev stored offset
+	stored_mkr_item = s_item;
+	stored_mkr_take = s_take;
+	hex_vers_guid(s_take); // create hex version of take GUID
+	strlen(#take_guid) !=38 ? (#take_guid = #dummy_guid );
+	valid_guid ==0 ? (#take_guid = #dummy_guid );
+	
+	GetMediaItemInfo_value(s_item, "D_LENGTH") == 0 ? (#take_guid = #dummy_guid; valid_guid = 0; );
+	PCM_Source_GetSectionInfo(GetMediaItemTake_Source(s_take), d_offset, d_source_length, d_reverse); // to obtain source_length
+	d_source_length == 0 ? (valid_take = 0; #take_guid = #dummy_guid;):(valid_take = 1);
+	
+	#new_name = ""; #temp_name = ""; #hex_section = "";
+	str_setlen(#new_name, strlen(#tfr_name)+12);
+	sprintf(#new_name, "%s_*#*#*#*0%d%d%d", #tfr_name, old_colour_def_col, bext_offs_value, lock_value); 
+								// sets header and 1 spare chars plus default colour flag, bext offset & lock status
+
+	sprintf(#old_hdr_old_colour, "%06X", old_hdr_old_colour); // convert old_hdr_old_colour to 6char hex string
+	
+	
+	str_setchar(#temp_name, 0, stored_offset, 'd'); // should extend #temp_name by leader to 8
+	offset = 0; //strlen(#temp_name)-24;
+	while (offset < strlen(#temp_name))
+	(
+		sprintf(#hex_char, "%02x", str_getchar(#temp_name, offset, 'cu'));
+		offset +=1;
+		//EEL: strcat(#str,"srcstr");
+		#dum = strcat(#hex_section, #hex_char);
+	);
+	#dum = strcat(#new_name, #old_hdr_old_colour); // append old colour hex string
+	#dum = strcat(#new_name, #hex_section);        // append offset hex string
+	#dum = strcat(#new_name, #take_guid);          // append 38-char GUID
+	//gfx_x = xs(x); gfx_y +=gfx_texth; // new line
+	//gfx_printf("hex section: [%s] ", #hex_section);
+
+	// SetProjectMarker4(ReaProject* proj, int markrgnindexnumber, bool isrgn, pos, rgnend, "name", int color, int flags)
+	lock_value==1 ? (apply_col = mkr_lkd_col):(apply_col = mkr_unl_col);
+	SetProjectMarker4(0, item_mkr_idx_num, 0, item_mkr_idx_pos, 0, #new_name, apply_col |0x1000000, 0); // This stores the data in the marker name
+);
+
+
+function read_mkr_header(item_mkr_idx)
+(
+	valid_item = 0;
+	valid_take = 0;
+	//gfx_x = xs(x); gfx_y +=gfx_texth; // new line
+	//gfx_printf("highighted marker: M%d ", item_mkr_num);
+	//gfx_x = xs(x); gfx_y +=gfx_texth; // new line
+	//gfx_printf("name: ''%s''", #item_mkr_name);
+	EnumProjectMarkers3(0, item_mkr_idx, is_region, item_mkr_idx_pos, rgn_end, #tfr_name, item_mkr_idx_num, mkr_col);
+	check_valid_header();
+	valid_header ?
+	(
+		offset = -64;
+		byte1 = str_getchar(#tfr_name, offset, 0);
+		byte2 = str_getchar(#tfr_name, offset+1, 0);
+		byte3 = str_getchar(#tfr_name, offset+2, 0);
+		byte4 = str_getchar(#tfr_name, offset+3, 0); // <== This one locked status
+		
+		byte2 == 49 ? (def_col_used = 1):(def_col_used = 0);
+		byte3 == 49 ? (bext_offs_used = 1):(bext_offs_used = 0);
+		byte4 == 49 ? (mkr_locked_status = 1; ):( mkr_locked_status = 0; ); // check syntax
+
+		strcpy_substr(#old_colour_buf , #tfr_name, offset+4, 6); // 6 chars mkr orig colour
+		matchi("%6X", #old_colour_buf, old_colour);
+		
+		
+		offset = -54; // 54 chars (8 bytes) from end of #new_name
+		while (offset < -38) // end of #new_name
+		(
+			strcpy_substr(#hex_char, #tfr_name, offset, 2); // reads hex tuple from 
+			
+			matchi("%x", #hex_char, hex_val); // converts hex tuple as dec to hel_val
+			str_setchar(#temp_double_data, ((offset/2) + 27), hex_val, 'cu'); // places byte into #temp_double_data string
+			offset +=2 // next tuple
+		);
+		
+		ret_stored_offset = str_getchar(#temp_double_data, -8, 'd'); // reads 8 bytes as double-precision value -offset
+
+		strcpy_substr(#ret_take_guid, #tfr_name, offset, 38); // reads GUID from #tfr_name
+
+		derived_take = GetMediaItemTakeByGUID(0, #ret_take_guid); // derive take from GUID
+		derived_item = GetMediaItemTake_Item(derived_take); // derive item from take
+		derived_take == 0 ?
+		(
+			valid_take = 0;
+			mkr_locked_status = 0;
+			valid_guid = 0; //tell store to use dummy guid
+			store_header(item_mkr_idx, derived_item, derived_take, 0, 0, bext_offs_used); // stores unlocked
+			EnumProjectMarkers3(0, item_mkr_idx, is_region, item_mkr_idx_pos, rgn_end, #tfr_name, item_mkr_idx_num, 0); //loads up stored config into #tfr_name :)
+		):(
+			valid_take = 1;
+			valid_guid = 1; // use real guid
+		);
+		
+		valid_take ?
+		(
+			der_take_take_num = GetMediaItemTakeInfo_Value(derived_take, "IP_TAKENUMBER"); // get take-number
+			der_item_cur_take= GetMediaItemInfo_value(derived_item, "I_CURTAKE"); // get item's current take
+			der_take_take_num == der_item_cur_take ? (curr_take = 1):(curr_take = 0); // check if take's take-number is current take
+			mkr_ret_tl_pos = tl_pos(ret_stored_offset, derived_item, derived_take); // converts to timeline position.
+		);
+		derived_item == 0 ? (valid_item = 0 ):( valid_item = 1);
+	);
+);
+	
+function remove_header(item_mkr_idx)
+(
+	EnumProjectMarkers3(0, item_mkr_idx, is_region, item_mkr_idx_pos, rgn_end, #tfr_name, item_mkr_idx_num, 0);
+	check_valid_header();
+	valid_header ?
+	(
+		strcpy_substr(old_colour_def_col, #tfr_name, -63, 1); // 1 chars mkr orig colour def toggle
+		strcpy_substr(#old_hdr_old_colour_buf, #tfr_name, -60, 6); // 6 chars mkr orig colour
+		matchi("%6X", #old_hdr_old_colour_buf, old_hdr_old_col);
+		
+		strcpy_substr(#temp_name, #tfr_name, 0, strlen(#tfr_name)-72); // 38GUID + 16offset data + 6old colour + 4 ext + 8 header
+		#tfr_name = #temp_name; // set name to everything left of the data header, ie remove header.
+		SetProjectMarker4(0, item_mkr_idx_num, 0, item_mkr_idx_pos, 0, #tfr_name, old_hdr_old_col |0x1000000, 0); // write stripped name to mkr in old colour
+		old_colour_def_col ? // if byte2 (old_colour_def_col) =1 return mkr colout to default
+		(
+			saved_ecp = GetCursorPosition(); // save current ecp
+			SetEditCurPos2(0, item_mkr_idx_pos, 1, 0);  // set ecp to mkr_pos
+			Main_OnCommandEx(41897, 0, 0); // Markers: Set marker near cursor to default colour;
+			SetEditCurPos2(0, saved_ecp, 1, 0);  // restore ecp to saved position
+		);
+	);
+);
+
+
+
+
+function get_left_clk_cap(item, take)
+(
+	mouse_cap == 1 ?  // Left click capture
+	(
+		mouse_state == 0 && gui_zone == 1 ? // GUI on/off toggle
+		(
+			mouse_state = 1;
+			gui_toggle == 0 ?
+			(
+				gui_toggle = 1;
+			):(
+				gui_toggle = 0;
+			);
+		);
+		
+		mouse_state == 0 && mkrrenum_zone == 1 ? // marker renum toggle
+		(
+			mouse_state = 1;
+			mkrrenum_toggle == 0 ?
+			(
+				mkrrenum_toggle = 1;
+			):(
+				mkrrenum_toggle = 0;
+			);
+		);
+	
+		mouse_state == 0 && mkrrenum_go_zone == 1 ?
+		(
+			mouse_state = 1;
+			Undo_BeginBlock();
+			renum_i =0;
+			renum_count =0;
+			// EEL: int EnumProjectMarkers(int idx, bool &isrgnOut, &posOut, &rgnendOut, #nameOut, int &markrgnindexnumberOut)
+			while (EnumProjectMarkers3(0, renum_i, renum_is_region, renum_pos, renum_rgn_end, #renum_name, renum_markrgn_num, renum_colour) > 0) 
+			(
+				renum_is_region == 0  ?  // process line or not?
+				(
+					SetProjectMarkerByIndex2(0, renum_i, renum_is_region, renum_pos, renum_rgn_end, marker_renum_start+(renum_count*marker_renum_incr), #renum_name, renum_colour, 0);
+					renum_count +=1;
+				);
+			renum_i +=1;
+			);
+			Undo_EndBlock("Renumber markers",-1);
+			mkrrenum_toggle = 0; 
+			mkrrenum_go_zone = 0
+		);
+		
+		mouse_state == 0 && help_zone == 1 ? // help page on/off toggle
+		(
+			mouse_state = 1;
+			help_toggle == 0 ?
+			(
+				help_toggle = 1;
+			):(
+				help_toggle = 0;
+			);
+		);
+		
+		mouse_state == 0 && mkr_zone == 4 ?
+		(
+			Undo_BeginBlock();
+			mouse_state = 1;
+			read_mkr_header(msov_i); // get header info...
+			get_bwf_data(derived_item, derived_take); // get bwf data
+			bext_found ? // in file
+			(
+				bext_offs_used ? // in marker name data header
+				(
+					store_header(msov_i, derived_item, derived_take, mkr_locked_status, 0, 0); // bext_offs_used set to no
+				):(
+					store_header(msov_i, derived_item, derived_take, mkr_locked_status, 0, 1); // bext_offs_used set to yes
+				);
+			);
+			Undo_EndBlock("Toggle Mkr BWF offset view",-1);
+		);
+		
+		mouse_state == 0 && mkr_zone == 2 ?
+		(
+			Undo_BeginBlock();
+			mouse_state = 1;
+			read_mkr_header(msov_i); // get header info...
+			sx = gfx_x; sy = gfx_y;
+			gfx_printf("VH:%d MLS:%d TfrN:%s ", valid_header, mkr_locked_status, #tfr_name);
+			valid_header ==1 && mkr_locked_status !=1 ? remove_header(msov_i); // header, but no locked marker present
+			valid_header ==0 ? (valid_guid = 1; store_header(msov_i, item, take, 0, 1, 0); );// no header, create one
+			Undo_EndBlock("Toggle item Mkr status",-1);
+		);
+		
+		mouse_state == 0 && mkr_zone == 3 ?
+		(
+			Undo_BeginBlock();
+			mouse_state = 1;
+			read_mkr_header(msov_i); // get header info...
+			
+			valid_header ?
+			(
+				mkr_locked_status ==1 ? 
+				(
+					lock =0; store_header(msov_i, item, take, lock, 0, bext_offs_used); // unlock
+				):(
+					lock =1; valid_guid = 1; store_header(msov_i, item, take, lock, 1, bext_offs_used); // lock on item, take and make new offset
+				);
+			):(
+				lock =1; valid_guid = 1; store_header(msov_i, item, take, lock, 1, 0); // lock on item, take and make new offset, set bext_offs_used to "no"
+			);
+			Undo_EndBlock("Toggle Mkr lock status",-1);
+		);
+		
+	);
+	
+	mouse_cap == 2 ?  // right-click -show selected item.
+	(
+		mouse_state == 0 && mkr_zone >0 ?
+		(
+			Undo_BeginBlock();
+			mouse_state =1;
+			read_mkr_header(msov_i); // read marker header for info
+			valid_header ?
+			(
+				right_click_down = 1; //vanilla right-click
+				EnumProjectMarkers3(0, msov_i, isrgn, posOut, rgnendOut, #nameOut, markrgnindexnumberOut, hold_mkr_col);
+				SetProjectMarkerByIndex2(0, msov_i, isrgn, posOut, rgnendOut, markrgnindexnumberOut, #nameOut, mkr_hig_col|0x1000000, 0);
+				Main_OnCommandEx(NamedCommandLookup("_SWS_SAVEALLSELITEMS1"), 0, 0); // SWS: save item selection
+				SelectAllMediaItems(0, 0); // unselects all media items
+				d_item_col = GetMediaItemInfo_Value(derived_item, "I_CUSTOMCOLOR"); // save existing item colour
+				SetMediaItemInfo_Value(derived_item, "I_CUSTOMCOLOR", 0x00DD00|0x1000000); //set item to lurid grn
+				SetMediaItemSelected(derived_item, 1); // selects only item pointer associated with the marker item
+			);
+		);
+	);
+	
+	mouse_cap == 10 ?  // Shift=right-click -zoom out project & show selected item.
+	(
+		mouse_state == 0 && mkr_zone >0 ?
+		(
+			Undo_BeginBlock();
+			mouse_state =1;
+			read_mkr_header(msov_i); // read marker header for info
+			//#item_mkr_name = #tfr_name;
+			valid_header ?
+			(
+				right_click_down = 2; // Ctrl-right-click
+				EnumProjectMarkers3(0, msov_i, isrgn, posOut, rgnendOut, #nameOut, markrgnindexnumberOut, hold_mkr_col);
+				SetProjectMarkerByIndex2(0, msov_i, isrgn, posOut, rgnendOut, markrgnindexnumberOut, #nameOut, mkr_hig_col|0x1000000, 0);
+				Main_OnCommandEx(NamedCommandLookup("_SWS_SAVEALLSELITEMS1"), 0, 0); // SWS: save item selection
+				Main_OnCommandEx(40295, 0, 0); // View: zoom out project
+				SelectAllMediaItems(0, 0); // unselects all media items
+				d_item_col = GetMediaItemInfo_Value(derived_item, "I_CUSTOMCOLOR"); // save existing item colour
+				SetMediaItemSelected(derived_item, 1); // selects only item pointer associated with the marker item
+				SetMediaItemInfo_Value(derived_item, "I_CUSTOMCOLOR", 0x00FF00|0x1000000); //set item to lurid grn
+
+			);
+		);
+	);
+	mouse_state == 0 && right_click_down == 1 ? // vanilla right-click release
+	(
+		right_click_down = 0;
+		SetMediaItemInfo_Value(derived_item, "I_CUSTOMCOLOR", d_item_col); //set item to prev colour
+		Main_OnCommandEx(NamedCommandLookup("_SWS_RESTALLSELITEMS1"), 0, 0); // SWS: Restore item selection
+		hold_mkr_col == 0 ?
+		(
+			SetProjectMarkerByIndex2(0, msov_i, isrgn, posOut, rgnendOut, markrgnindexnumberOut, #nameOut, def_mkr_col |0x1000000, 0);
+		):(
+			SetProjectMarkerByIndex2(0, msov_i, isrgn, posOut, rgnendOut, markrgnindexnumberOut, #nameOut, hold_mkr_col, 0);
+		);
+		Undo_EndBlock("Show item Mkr association",0);
+	);
+	mouse_state == 0 && right_click_down == 2 ? // Shift-right-click release
+	(
+		right_click_down = 0;
+		Main_OnCommandEx(40848, 0, 0); // View: Restore previous zoom/scroll position
+		SetMediaItemInfo_Value(derived_item, "I_CUSTOMCOLOR", d_item_col); //set item to prev colour
+		Main_OnCommandEx(NamedCommandLookup("_SWS_RESTALLSELITEMS1"), 0, 0); // SWS: Restore item selection
+		hold_mkr_col == 0 ?
+		(
+			SetProjectMarkerByIndex2(0, msov_i, isrgn, posOut, rgnendOut, markrgnindexnumberOut, #nameOut, def_mkr_col |0x1000000, 0);
+		):(
+			SetProjectMarkerByIndex2(0, msov_i, isrgn, posOut, rgnendOut, markrgnindexnumberOut, #nameOut, hold_mkr_col, 0);
+		);
+		Undo_EndBlock("Show item Mkr association",0);
+	);
+	
+	
+	mouse_cap == 17 ?  // Alt-click -return to *project* marker
+	(
+		mouse_state == 0 && mkr_zone >1 ?
+		(
+			Undo_BeginBlock();
+			mouse_state = 1;
+			lock_toggle =0;
+			remove_header(msov_i);
+			Undo_EndBlock("Item to proj Mkr",-1);
+		);
+		
+	);
+	
+	mouse_cap == 9 ?  // Shift-click -lock on existing stored item/take & offset
+	(
+		mouse_state == 0 && mkr_zone >1 && mkr_zone <4 ?
+		(
+			mouse_state = 1;
+			read_mkr_header(msov_i); // get header info...
+			valid_header ?
+			(
+				Undo_BeginBlock();
+				mkr_locked_status ==0 ? (lock =1;):(lock =0); //toggle locked status.
+				store_header(msov_i, derived_item, derived_take, lock, 0, bext_offs_used); // lock on existing stored item and stored offset
+				Undo_EndBlock("Toggle item Mkr lock status",-1);
+			);
+		);
+	);
+	
+	mouse_cap == 13 ?  // shift-control-click (for new take, old offset)
+	(
+		mouse_state == 0 && mkr_zone > 1 && mkr_zone < 4 ?
+		(
+			mouse_state = 1;
+			read_mkr_header(msov_i); // get header info...
+			valid_header ?
+			(
+				Undo_BeginBlock();
+				mkr_locked_status ==0 ? (lock =1;):(lock =0); //toggle locked status.
+				store_header(msov_i, item, take, lock, 0, bext_offs_used); // lock on selected item/take and stored offset
+				Undo_EndBlock("Toggle item Mkr lock status",-1);
+			);
+		);
+	);
+	
+	mouse_cap == 64 ?  // middle-click (for reset of numerical values)
+	(
+		mouse_state == 0 && mkrrenum_start_zone == 1 ?
+		(
+			mouse_state = 1;
+			marker_renum_start =1; // reset marker renum start value
+		);
+	
+		mouse_state == 0 && mkrrenum_incr_zone == 1 ?
+		(
+			mouse_state = 1;
+			marker_renum_incr =1; // reset marker renum increment value
+		);
+	);
+	
+	mouse_cap == 0 ? (mouse_state = 0; );
+);
+
+function list_markers(x, y, item, take)
+(
+	gfx_y = y; gfx_x = xs(x);
+	
+	i=0;
+	item_mkr_count = 0;
+	msov_i = -1;
+	
+	gfx_y = y; gfx_x = xs(x);
+	gui_zone ? (gfx_a = 1.0; gfx_r = 1; gfx_g = 1; gfx_b = 0; ):(gfx_a = 0.9; gfx_r = 1; gfx_g = 0.6; gfx_b = 0.6; );
+	gui_toggle ? (gfx_printf("[GUI on]")):(gfx_printf("[GUI off]"));
+	
+	gfx_x=xs(x+50);
+	mkrrenum_zone? (gfx_a = 1.0; gfx_r = 1; gfx_g = 1; gfx_b = 0; ):(gfx_a = 0.9; gfx_r = 1; gfx_g = 0.6; gfx_b = 0.6; );
+	gfx_printf("Mkr");
+	
+	gfx_a = 0.9; gfx_r = 1; gfx_g = 0.6; gfx_b = 0.6; // set pinky-white colour
+
+	gfx_x=xs(x+100);
+	gfx_printf("    Marker Name");
+	
+	gfx_x=xs(x+300);
+	gfx_printf("   TL Pos");
+	
+	gfx_x=xs(x+380);
+	gfx_printf("   Src Pos");
+	
+	gfx_x=xs(x+470);
+	gfx_printf("type/lock");
+	
+	//gfx_y += gfx_texth; gfx_x = xs(x);
+	
+	gui_toggle ==0 ? (
+		gfx_y += 2*gfx_texth; gfx_x = xs(x);
+		help_zone ? (gfx_a = 1.0; gfx_r = 1; gfx_g = 1; gfx_b = 0; ):(gfx_a = 0.9; gfx_r = 1; gfx_g = 0.6; gfx_b = 0.6; );
+		help_toggle ? (gfx_printf("[Help on]")):(gfx_printf("[Help off]"));
+	);
+	help_toggle && !gui_toggle ? show_help_page(xs(x), gfx_y+ 2*gfx_texth);
+	
+	gui_zone = 0; // determine if mouse over GUI zone
+	mkrrenum_zone = 0; // determine if mouse over marker renum zone
+	mkr_zone = 0; // determine if mouse over marker zone
+	help_zone = 0;
+
+	// EEL: int EnumProjectMarkers(int idx, bool &isrgnOut, &posOut, &rgnendOut, #nameOut, int &markrgnindexnumberOut)
+	while (EnumProjectMarkers3(0, i, is_region, mkr_pos, rgn_end, #name, markrgn_num,0) > 0) 
+	(
+		((is_region == 0 && mdf_toggle == 1) || (is_region == 1 && rdf_toggle == 1)) ?  // display line or not?
+		(
+			gfx_x=xs(x); gfx_y +=gfx_texth;
+			
+			mouse_x >= xs(x) && mouse_x < xs(x+50) && mouse_y >= y && mouse_y <y + gfx_texth  ? 
+			(	// mouse over GUI zone ...
+				gui_zone = 1;
+			);
+			
+			mouse_x >= xs(x+50) && mouse_x < xs(x+100) && mouse_y >= y && mouse_y <y + gfx_texth  ? 
+			(	// mouse over GUI zone ...
+				mkrrenum_zone = 1;
+			);
+			
+			mouse_x >= xs(x) && mouse_x < xs(x+500) && mouse_y >= y+ 2*gfx_texth && mouse_y <y + 4*gfx_texth && gui_toggle == 0  ? 
+			(	// mouse over help zone ...
+				help_zone = 1;
+			);
+			
+			mouse_x >= xs(x) && mouse_x < xs(x+380) && mouse_y >= gfx_y && mouse_y < gfx_y + gfx_texth  ? 
+			(	// mouse over zone1 -marker...
+				mkr_zone = 1;
+				msov_i = i;
+			);
+				
+			mouse_x >= xs(x+380) && mouse_x < xs(x+475) && mouse_y >= gfx_y && mouse_y < gfx_y + gfx_texth  ? 
+			(	// mouse over zone1 -marker...
+				mkr_zone = 4;
+				msov_i = i;
+			);
+				
+			mouse_x >= xs(x+475) && mouse_x < xs(x+495) && mouse_y >= gfx_y && mouse_y < gfx_y + gfx_texth  ? 
+			(	// mouse over zone1 -marker...
+				mkr_zone = 2;
+				msov_i = i;
+			);
+				
+			mouse_x >= xs(x+495) && mouse_x < xs(x+515) && mouse_y >= gfx_y && mouse_y < gfx_y + gfx_texth  ? 
+			(	// mouse over zone1 -marker...
+				mkr_zone = 3;
+				msov_i = i;
+			);
+
+			read_mkr_header(i);
+			
+			gui_toggle ? (
+				item_start = GetMediaItemInfo_value(item, "D_POSITION");
+				item_end = item_start + GetMediaItemInfo_value(item, "D_LENGTH");
+
+				gfx_a = 0.3; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to gry
+				
+				//i == 0 ? mkr_row_start = gfx_y;
+				gfx_printf("(%d)", i);
+				gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to wht
+			
+				gfx_x=xs(x+40);		  
+				ienc_toggle ? // item enclosed switched on?
+				(
+					gfx_a = 0.5; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to white
+					mkr_pos > item_start && mkr_pos < item_end ? (gfx_printf("╫") ):
+					mkr_pos == item_start ? (gfx_printf("╥") ):
+					mkr_pos == item_end ? (gfx_printf("╨") );
+				);
+				
+				derived_item == item && derived_take == take && valid_header ? (gfx_a = 1.0):(gfx_a = 0.7);
+				gfx_x=xs(x+50);
+				mkr_zone >0 && msov_i == i ? (gfx_r=0.5; gfx_g=0.5; gfx_b=1.0; ):(gfx_r = 1; gfx_g = 0; gfx_b = 0; ); //msov blu/dim red
+				gfx_printf("M%d", markrgn_num);
+
+				gfx_x=xs(x+100);
+				mkr_zone >0 && msov_i == i ? (gfx_r=0.5; gfx_g=0.5; gfx_b=1.0; ):(gfx_r = 1; gfx_g = 1; gfx_b = 1; ); //msov blu/wht
+				valid_header ?( mkr_zone >0 && msov_i == i ? (gfx_r=0.5; gfx_g=0.5; gfx_b=1.0; ):(gfx_r=0.8; gfx_g=1.0; gfx_b=0.8; ););
+				strlen(#name) <= 28 ? // print #-cropped name, trimmed to 30 chars max...
+				(
+					gfx_printf("''%.28s''", #name);
+				):(
+					gfx_printf("''%.28s...''", #name);
+				);
+				
+				gfx_x=xs(x+300);
+				format_timestr_pos(mkr_pos, #mkr_pos_buf, ecp_format);
+				gfx_printf(" %12s", #mkr_pos_buf);
+				
+				gfx_a = 0.7; // revert to alpha =0.8
+				gfx_x=xs(x+380);
+			);
+			
+			valid_header && valid_take ?
+			(
+				gui_toggle ? (
+					src_time_pos = get_source_time(mkr_pos, derived_item, derived_take);
+					format_timestr_pos(src_time_pos, #src_time_pos_buf, ecp_format);
+					GetMediaSourceType(GetMediaItemTake_Source(derived_take), #typebuf);
+					GetMediaSourceFileName(GetMediaItemTake_Source(derived_take), #filenamebuf); // store file name to #filenamebuf
+					
+					strcmp(#typebuf, "WAVE") ==0 ? (
+						get_bwf_data(derived_item, derived_take); //if wav, check for bext chunk
+						bext_found ? (
+							gfx_r = 0; gfx_g = 1; gfx_b = 0; // grn
+							bext_time_offset ==0 ? (gfx_printf("□")):(gfx_printf("■"));
+							format_timestr_pos(src_time_pos + bext_time_offset, #bext_src_time_pos_buf, ecp_format);
+						):(
+							gfx_r = 1; gfx_g = 1; gfx_b = 0; // yel
+							gfx_printf("□");
+						);
+					):(
+					gfx_printf("  "); // space if not wav
+					);
+					bext_found ==1 && bext_offs_used ==1 ? (
+						gfx_r = 1; gfx_g = 0.7; gfx_b = 0; // org
+						gfx_printf("%12s", #bext_src_time_pos_buf); // source time
+					):(
+						gfx_r = 1; gfx_g = 1; gfx_b = 0; // yel
+						gfx_printf("%12s", #src_time_pos_buf); // source time
+					);
+					
+					item_mkr_count +=1;
+					gfx_r = 1; gfx_g = 0.5; gfx_b = 0; // org
+					mkr_locked_status == 1 ? (gfx_r = 1; gfx_g = 0; gfx_b = 0; ); // red for locked
+
+					gfx_x=xs(x+480);
+					mkr_zone ==2 && msov_i == i ? (gfx_a = 1;):(gfx_a = 0.7;); //msov bright "item mkr" symbol
+					gfx_printf("╪ ");
+
+					gfx_x=xs(x+500);
+					gfx_a = 0.7;
+					mkr_zone ==3 && msov_i == i ? (gfx_a = 1;):(gfx_a = 0.7;); //msov bright "locked/unlocked" symbols
+					
+					mkr_locked_status == 1 ? (gfx_printf("θ "); ):(gfx_printf("ύ "); ); // locked/unlocked symbols
+					valid_guid == 0 ? (gfx_printf("!! "); ); // invalid take
+				);
+				
+				(mkr_locked_status ==1 && oob(mkr_pos, derived_item, derived_take) ==1) ? // marker locked but oob?
+				(
+					gui_toggle ? (gfx_a=1; gfx_printf("* "));  // oob symbol
+					/// gfx_printf("[bie] ");
+					parent_track = GetMediaItem_Track(derived_item);
+					//gfx_printf(" pt: %d ", parent_track);
+					chcnt = 0;
+					while (poss_trf_item = GetTrackMediaItem(parent_track, chcnt)) // loop through items in parent track
+					(
+						oob(mkr_pos, poss_trf_item, GetActiveTake(poss_trf_item)) ==0 ? // mkr within potential item?
+						(
+							//gfx_printf("♥wib ");
+							GetMediaSourceFileName(GetMediaItemTake_Source(GetActiveTake(poss_trf_item)), #poss_trf_item_src);
+							GetMediaSourceFileName(GetMediaItemTake_Source(derived_take), #split_item_src);
+							strcmp(#poss_trf_item_src, #split_item_src) ==0 ? // check sources match, yes?
+							(
+								//gfx_printf("♥src ");
+								src_offset(mkr_ret_tl_pos, derived_item, derived_take) ==  src_offset(mkr_ret_tl_pos, poss_trf_item, GetActiveTake(poss_trf_item)) ?
+								( // check mkr offset to source of stored take and potential take are identical ie same source and same source to timeline offset.
+									time_delay_flag ==0 ? (
+										time_delay_flag = 1;
+										time_precise(start_time);
+									);
+									(time_precise() - start_time) >= delay_time ? // delay for "transfer association" undo, *delay_time in init*
+									(
+										Undo_BeginBlock();
+										time_delay_flag = 0;
+										store_header(i, poss_trf_item, GetActiveTake(poss_trf_item), 1, 0, bext_offs_used); // store new item & take to data header
+										//gfx_printf("♥ofs %d ", GetActiveTake(poss_trf_item)); // and offsets for mkr position match
+										#tfr_name = #new_name;
+										Undo_EndBlock("mkr transfer association", 8);
+									);
+								);
+							);
+						);
+						chcnt +=1;
+					);
+					//gfx_printf("n: %d",chcnt-1);
+				):(
+					gfx_a=0; gfx_printf("  "); 
+				);
+				//gfx_printf("[%d][M%d] [V%d%d][I:%d][T:%d][O:%f][P:%f]", item_mkr_count, m_item_mkr_num[item_mkr_count], valid_item, valid_take, ret_mkr_item, ret_mkr_take, ret_stored_offset, mkr_ret_tl_pos); // marker name         , m_item_mkr_name_array[item_mkr_count]
+				mkr_locked_status ==1 ? SetProjectMarker4(0, item_mkr_idx_num, 0, mkr_ret_tl_pos, 0, #tfr_name, 0, 0); // **move cursor to new position**
+			):(
+				gui_toggle ? (
+					gfx_x=xs(x+480);
+					gfx_r = 1; gfx_g = 1; gfx_b = 0; // yel
+					mkr_zone ==2 && msov_i == i ? (gfx_a = 1;):(gfx_a = 0.7); //msov bright
+					gfx_printf("□");
+					
+					mkr_zone ==3 && msov_i == i ? (gfx_a = 1;):(gfx_a = 0.7); //msov bright
+					gfx_x=xs(x+500);
+					gfx_printf("□");
+				);
+			);
+			//gfx_r = 1; gfx_g = 1; gfx_b = 1; // wht
+			//gfx_printf("gfx_y: %0.1f texth: %0.1f  mouse_y: %0.1f", gfx_y, gfx_y+gfx_texth, mouse_y); // bugfix line
+		);
+		last_item_mkr_count = item_mkr_count;
+		last_item_mkr_count > total_slots ? (last_item_mkr_count = total_slots); // cap on slots *was* governed limited by string array set up (see init to increase)
+		
+		i+=1;
+		
+	);
+	
+	gui_toggle && mkrrenum_toggle ?
+	(
+		gfx_x = xs(x); 
+		gfx_y += gfx_texth; gfx_y +=gfx_texth; gfx_y +=gfx_texth;
+		gfx_a = 0.9; gfx_r = 1; gfx_g = 0.6; gfx_b = 0.6; // set pinky-white colour
+		gfx_printf("Renumber markers...            ");
+		gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // wht
+		gfx_printf("Starting at: ");
+		mkrrenum_start_zone ? (gfx_a = 1.0; gfx_r = 1; gfx_g = 1; gfx_b = 0; ):(gfx_a = 0.7; gfx_r = 1; gfx_g = 0.0; gfx_b = 0.0; ); // HL yel/dim red
+		gfx_printf("M%d     ", marker_renum_start);
+		gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // wht
+		gfx_printf("increment: ");
+		mkrrenum_incr_zone ? (gfx_a = 1.0; gfx_r = 1; gfx_g = 1; gfx_b = 0; ):(gfx_a = 0.7; gfx_r = 1; gfx_g = 0.0; gfx_b = 0.0; ); // HL yel/dim red
+		gfx_printf("%d     ", marker_renum_incr);
+		
+		mkrrenum_go_zone ? (gfx_a = 1.0; gfx_r = 1; gfx_g = 1; gfx_b = 0; ):(gfx_a = 0.9; gfx_r = 1; gfx_g = 0.6; gfx_b = 0.6; ); // HL yel/pinky-white
+		gfx_printf("[GO] ");
+		
+		
+		mkrrenum_start_zone = 0;
+		mkrrenum_incr_zone = 0;
+		mkrrenum_go_zone = 0;
+		mouse_x >= xs(x+170) && mouse_x < xs(x+270) && mouse_y >= gfx_y && mouse_y <gfx_y + gfx_texth  ? 
+		(	// mouse over mkrrenum_start_zone ...
+			mkrrenum_start_zone = 1;
+		);
+			
+		mouse_x >= xs(x+270) && mouse_x < xs(x+360) && mouse_y >= gfx_y && mouse_y <gfx_y + gfx_texth  ? 
+		(	// mouse over mkrrenum_incr_zone ...
+			mkrrenum_incr_zone = 1;
+		);
+			
+		mouse_x >= xs(x+365) && mouse_x < xs(x+400) && mouse_y >= gfx_y && mouse_y <gfx_y + gfx_texth  ? 
+		(	// mouse over mkrrenum_go_zone  ...
+			mkrrenum_go_zone = 1;
+		);
+			
+
+	);
+	
+	gui_toggle && !mkrrenum_toggle ? (
+	
+		gfx_x = xs(x); gfx_y += gfx_texth;
+
+		gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1;
+		
+		//gfx_printf("SWS cmd IDs, S:%d R:%d",SWS_SaveAllSelItems, SWS_RestAllSelItems);
+		//gfx_printf("mkr_zone: %d msov_i: %d ms:%d col:%d M:%d Mpos: %03f", mkr_zone, msov_i, mouse_state, hold_mkr_col, item_mkr_num, item_mkr_pos); // bugfix line
+
+		gfx_x = xs(x); gfx_y +=gfx_texth;
+		//gfx_printf("Used slots: %d of %d",last_item_mkr_count, total_slots);
+		//gfx_x = xs(x); gfx_y +=gfx_texth;
+	
+		item ?
+		(
+			GetSetMediaTrackInfo_String(GetMediaItem_Track(item), "P_NAME", #d_track_name, 0);
+			GetSetMediaItemTakeInfo_String(derived_take, "P_NAME", #d_take_name, 0);	
+			gfx_a = 0.9; gfx_r = 1; gfx_g = 0.6; gfx_b = 0.6; // set pinky-white colour
+			gfx_printf("Selected item: ");
+			gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // wht
+			gfx_printf("[%d], %d of %d items ", item, GetMediaItemInfo_Value(item, "IP_ITEMNUMBER")+1, CountTrackMediaItems(GetMediaItem_Track(item)));
+			gfx_printf("in Track: %d ", GetMediaTrackInfo_Value(GetMediaItem_Track(item), "IP_TRACKNUMBER"));
+			strlen(#d_track_name) >35 ? (gfx_printf("[''%.35s...'']", #d_track_name)):(gfx_printf("[''%s'']", #d_track_name));
+			gfx_x = xs(x); gfx_y +=gfx_texth;
+			gfx_printf("Active take:     [%d], %d of %d takes, ", take, GetMediaItemTakeInfo_value(take, "IP_TAKENUMBER")+1, CountTakes(item));
+			GetTakeName(#take_name, take);
+			strlen(#take_name) >45 ? (gfx_printf("[''%.45s...'']", #take_name)):(gfx_printf("[''%s'']", #take_name)); 
+			
+			gfx_x = xs(x); gfx_y +=gfx_texth;
+			source_type = GetMediaSourceType(GetMediaItemTake_Source(take), #typebuf); // source type, WAVE, MIDI, etc
+			PCM_Source_GetSectionInfo(GetMediaItemTake_Source(take), dum_offset, source_length, dum_reverse); // to obtain source_length
+			format_timestr_pos(source_length, #src_len_buf, ecp_format); // source_length value is stored to #src_len_buf as (h:)mm:ss.sss
+			
+			sample_rate = GetMediaSourceSampleRate(GetMediaItemTake_Source(take));
+			take_playrate = GetMediaItemTakeInfo_value(take, "D_PLAYRATE");
+
+			gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // yel
+			gfx_printf("Source: "); // print source type...
+			gfx_a = 1; // brighter text
+			gfx_printf("[%s]", #typebuf);
+			(sample_rate != 0) ? ( // print sample rate if not ==0
+				gfx_a = 0.7; 
+				gfx_printf("  SRate: ");
+				gfx_a = 1; // brighter text
+				gfx_printf("[%.1f]", sample_rate/1000);
+				gfx_a = 0.7; 
+				gfx_printf("kHz");
+			);
+			gfx_printf("   Length: "); // print source length...
+			gfx_a = 1; // brighter text
+			gfx_printf("[%s]", #src_len_buf);
+
+			gfx_a = 0.7;
+			gfx_printf("   take pb rate: "); 
+			gfx_a = 1; // brighter text
+			gfx_printf("[%0.3f]", take_playrate);
+			gfx_a = 0.7;
+			
+			get_take_filename(take);
+			strcmp(#filenameonly, "") !=0 ? (
+				gfx_x = xs(x); 
+				gfx_y +=gfx_texth; 
+				gfx_printf("Source filename: ");
+				gfx_a = 1; // set brighter text 
+				gfx_printf("[''%s'']", #filenameonly);
+				gfx_a = 0.7;
+			);
+		):(
+			gfx_printf("No item selected");
+		);
+		
+		gfx_x = xs(x);
+		gfx_y +=gfx_texth;
+		
+		msov_i >=0 && mkr_zone > 0 ? 
+		(
+			EnumProjectMarkers3(0, msov_i, isrgn, posOut, rgnendOut, #tfr_name, markrgnindexnumberOut, some_mkr_col);
+			format_timestr_pos(posOut, #posOut_buf, ecp_format);
+			read_mkr_header(msov_i);
+			mkr_locked_status ? (#msov_lmsg = "Locked to src offset:"):(#msov_lmsg = "Unlocked, src offset at:");
+			
+			format_timestr_pos(ret_stored_offset, #ret_stored_offset_buf, ecp_format);
+
+			valid_header ?
+			(
+				derived_take == take ? ( gfx_printf("                             ↕   ↕   ↕   ↕   ↕   ↕   ↕   ↕   ↕   ↕   ↕   ↕   ↕   ↕   ↕   ↕   ↕") );
+				gfx_x = xs(x);
+				gfx_y +=gfx_texth;
+				gfx_a = 0.9; gfx_r = 1; gfx_g = 0.6; gfx_b = 0.6; // set pinky-white colour
+				gfx_printf("Item marker: ");
+				gfx_r = 1; gfx_g = 0; gfx_b = 0;
+				gfx_printf("M%d", markrgnindexnumberOut);
+				gfx_a = 0.7; gfx_r = 0.8; gfx_g = 1; gfx_b = 0.8; // grn-wht
+				gfx_printf(", ");
+				def_col_used ? (
+					gfx_printf("[□] "); // def_col_used flag, 0x000000 now stores black, not default
+				):(
+					strcpy_substr(#RR, #old_colour_buf, 4, 2); matchi("%2X", #RR, rr);
+					strcpy_substr(#GG, #old_colour_buf, 2, 2); matchi("%2X", #GG, gg); // extract colour component values
+					strcpy_substr(#BB, #old_colour_buf, 0, 2); matchi("%2X", #BB, bb);
+					gfx_printf("[");
+					gfx_a = 1; gfx_r = rr/255; gfx_g = gg/255; gfx_b = bb/255;  //set colour
+					gfx_printf("■");
+					gfx_a = 0.7; gfx_r = 0.8; gfx_g = 1; gfx_b = 0.8; // resume grn-wht
+					gfx_printf("] ");
+				);
+				strlen(#tfr_name) >40 ? (gfx_printf("[''%.40s...''] ", #tfr_name)):(gfx_printf("[''%s''] ", #tfr_name));
+				gfx_printf("TL pos: %s ", #posOut_buf);
+				gfx_x = xs(x); gfx_y +=gfx_texth;
+				gfx_printf("%s %s", #msov_lmsg, #ret_stored_offset_buf);
+				gfx_printf("   and...  ");
+				//gfx_printf(" enc col: [%d][%s] ", old_colour, #old_colour_buf);
+				gfx_x = xs(x); gfx_y +=gfx_texth;
+				GetSetMediaTrackInfo_String(GetMediaItem_Track(derived_item), "P_NAME", #d_track_name, 0);
+				GetSetMediaItemTakeInfo_String(derived_take, "P_NAME", #d_take_name, 0);
+				gfx_printf("Item: [%d], %d of %d on track:%d ", derived_item, GetMediaItemInfo_Value(derived_item, "IP_ITEMNUMBER")+1, CountTrackMediaItems(GetMediaItem_Track(derived_item)), GetMediaTrackInfo_Value(GetMediaItem_Track(derived_item), "IP_TRACKNUMBER"));
+				strlen(#d_track_name) >50 ? (gfx_printf("[''%.50s...''], ", #d_track_name)):(gfx_printf("[''%s''], ", #d_track_name));
+				
+				gfx_x = xs(x); gfx_y +=gfx_texth;
+				gfx_printf("Take:[%d], %d of %d ", derived_take, GetMediaItemTakeInfo_value(derived_take, "IP_TAKENUMBER")+1, CountTakes(derived_item));
+				strlen(#d_take_name) > 60 ? (gfx_printf("[''%.60s...''].", #d_take_name)):(gfx_printf("[''%s''].", #d_take_name));
+				
+				gfx_x = xs(x); gfx_y +=gfx_texth;
+				source_type = GetMediaSourceType(GetMediaItemTake_Source(derived_take), #typebuf); // source type, WAVE, MIDI, etc
+				PCM_Source_GetSectionInfo(GetMediaItemTake_Source(derived_take), dum_offset, source_length, dum_reverse); // to obtain source_length
+				format_timestr_pos(source_length, #src_len_buf, ecp_format); // source_length value is stored to #src_len_buf as (h:)mm:ss.sss
+				
+				sample_rate = GetMediaSourceSampleRate(GetMediaItemTake_Source(derived_take));
+				take_playrate = GetMediaItemTakeInfo_value(derived_take, "D_PLAYRATE");
+
+				gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // yel
+				gfx_printf("Source: "); // print source type...
+				gfx_a = 1; // brighter text
+				gfx_printf(#typebuf);
+				(sample_rate != 0) ? ( // print sample rate if not ==0
+					gfx_a = 0.7; 
+					gfx_printf("  SRate: ");
+					gfx_a = 1; // brighter text
+					gfx_printf("%.1f", sample_rate/1000);
+					gfx_a = 0.7; 
+					gfx_printf("kHz");
+				);
+				gfx_a = 0.7; 
+				gfx_printf("   Length: "); // print source length...
+				gfx_a = 1; // brighter text
+				gfx_printf(#src_len_buf);
+				gfx_a = 0.7; 
+
+				gfx_a = 0.7;
+				gfx_printf("   take pb rate: "); 
+				gfx_a = 1; // brighter text
+				gfx_printf("%0.3f", take_playrate);
+
+
+				gfx_x = xs(x); gfx_y +=gfx_texth;
+
+				
+				src_time_pos = get_source_time(posOut, derived_item, derived_take);
+				format_timestr_pos(src_time_pos, #src_time_pos_buf, ecp_format);
+				rpt_num = get_repeat_num(posOut, derived_item, derived_take);
+				
+				GetMediaSourceFileName(GetMediaItemTake_Source(derived_take), #filenamebuf); // store file name to #filenamebuf
+				get_bwf_data(derived_item, derived_take); //get BWF metadata
+				//strcmp(#filenamebuf, #lastfilenamebuf) !=0 ? (get_bwf_data(derived_item, derived_take)); //get BWF metadata
+				
+				gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // yel
+				gfx_printf("Source time:       ");
+				bext_offs_used ? (
+					gfx_r = 1; gfx_g = 0.4; gfx_b = 0; // org-yel
+					format_timestr_pos(src_time_pos + bext_time_offset, #src_time_pos_buf, ecp_format); // add bext timecode to source time...
+				):(
+					gfx_r = 1; gfx_g = 1; gfx_b = 0; //yel
+				);
+				gfx_a = 1;
+				gfx_printf("%s ", #src_time_pos_buf);
+				gfx_r = 1; gfx_g = 1; gfx_b = 0; // yel
+				rpt_num != 0 ? (gfx_printf("(r:%d) ", rpt_num) ); // is a src time repeat?
+				oob(posOut, derived_item, derived_take) ? (gfx_printf("[bie]  ")); // is bie?
+				
+				bext_found ?
+				(
+					gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // yel
+					bext_offs_used ? (gfx_printf("  -using BWF timecode: ")):(gfx_printf("  BWF timecode: "););
+					gfx_a = 1;
+					bext_offs_used ? (gfx_r = 1; gfx_g = 0.4; gfx_b = 0;):(gfx_r = 1; gfx_g = 1; gfx_b = 0;); //org-yel
+					gfx_printf("%s ", #bext_time_offset_buf);
+
+					gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // yel
+					gfx_printf("  [bext v%d]", bext_VersionNum);
+					/*
+					gfx_x = xs(x); gfx_y +=gfx_texth;
+					gfx_printf("bext_time_offset: %f bTRH:%d, bTRL:%d", bext_time_offset, bext_TimeRefHigh, bext_TimeRefLow);
+					gfx_x = xs(x); gfx_y +=gfx_texth;
+					gfx_printf("filename_buf: %s", #filenamebuf);
+					gfx_x = xs(x); gfx_y +=gfx_texth;
+					*/
+				);
+				gfx_x = xs(x); gfx_y +=gfx_texth;
+				gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // set yellow colour
+				get_take_filename(derived_take);				
+				gfx_printf("Source filename: ");
+				gfx_a = 1; 
+				gfx_printf(#filenameonly);
+
+				gfx_x = xs(x); gfx_y +=gfx_texth;
+				gfx_a = 0.7; 
+				gfx_printf("Source path:       ");
+				gfx_a = 1; // set brighter text (alpha value)
+				gfx_printf(#pathbuf);
+				gfx_a = 0.7; 
+			):(
+				gfx_x = xs(x); gfx_y +=gfx_texth;
+				gfx_a = 0.9; gfx_r = 1; gfx_g = 0.6; gfx_b = 0.6; // set pinky-white colour
+				gfx_printf("Project marker: ");
+				gfx_a = 0.7; gfx_r = 1; gfx_g = 0; gfx_b = 0; // red
+				gfx_printf("M%d", markrgnindexnumberOut);
+				gfx_r = 1; gfx_g = 1; gfx_b = 1; // wht
+				gfx_printf(", ");
+				some_mkr_col?(
+					sprintf(#some_mkr_colour_buf, "%7X", some_mkr_col);
+					strcpy_substr(#RR, #some_mkr_colour_buf, 5, 2); matchi("%2X", #RR, rr);
+					strcpy_substr(#GG, #some_mkr_colour_buf, 3, 2); matchi("%2X", #GG, gg); // extract colour component values (ignoring 0x1000000)
+					strcpy_substr(#BB, #some_mkr_colour_buf, 1, 2); matchi("%2X", #BB, bb);
+					gfx_printf("[");
+					gfx_a = 1; gfx_r = rr/255; gfx_g = gg/255; gfx_b = bb/255;  //set colour
+					gfx_printf("■");
+					gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 1; // resume wht
+					gfx_printf("] ");
+				):(
+					gfx_printf("[□] "); // some_mkr_colour = 0x000000, default colour
+				);
+				
+				strlen(#tfr_name) > 50 ?(gfx_printf("[''%.50s...'']", #tfr_name)):(gfx_printf("[''%s'']", #tfr_name));
+				gfx_printf(" at: %s ", #posOut_buf);
+			);	
+			gfx_x = xs(x); gfx_y +=gfx_texth;
+		);
+		gfx_x = xs(x); gfx_y +=gfx_texth; // new line
+	);
+);
+
+			
+			
+function main() local(sel_item, active_take)
+( 
+  // get first selected item's pointer (at index 0) - returns 0 if nothing is selected
+  // pointer is an integer value (and >0)
+  sel_item = GetSelectedMediaItem(0, 0);
+  
+  // get active take's pointer from selected item  - returns 0 if there are no takes in item
+  // pointer is an integer value (and >0)
+  active_take = GetActiveTake(sel_item);
+  
+  	// set font size (and window, x-placement, etc)
+	//	time_precise(new_time);
+	//	((new_time - old_time) >dt) && (block_state == 1) ? (Undo_EndBlock("Nudge mkr/rgn/TS",-1); block_state = 0; );
+  	
+	
+	
+	mouse_wheel != 0 ? get_mousewheel(mouse_wheel); // re-size font(/window)
+
+	list_markers(10, 10, sel_item, active_take); // list markers, etc
+	
+	get_left_clk_cap(sel_item, active_take); // check mouse clicks
+  
+
+  // when returning from the last function -> update GUI window
+  gfx_update(); 
+  
+  // "main" function is running in a loop -> it jumps back to the start of the "main" function here
+  gfx_getchar() >= 0 ? defer("main();");  
+  
+);
+			
+			
+			
+			
+			
+			// this function is called first
+function init()
+(
+	// initialize GUI: gfx_init(window title, width, height)
+	version_num = "PL9: Item Marker Tool (beta07)";
+	font_name = "Arial";
+	font_size = 16;
+	h_pixppt = 40; v_pixppt = 35; // for 640w x 490h +10pix pads @16pt
+	gfx_init(version_num, hw_sz(font_size), vw_sz(font_size)); 
+	
+	// set font at index 1: gfx_setfont(index, font name, size in pixels)
+	gfx_setfont(1,font_name, font_size); 
+	//gfx_setfont(1,"Arial", 16);
+	tab_page = 1; // start page is tab 1
+	mdf_toggle = 1; tdf_toggle = 1; rdf_toggle = 0; // markers on, time-sel on, regions off.
+	ecp_format = 0; ecp_count = 3; // ecp format is h:mm:ss.ms, no beat-formats.
+	last_inc_mkr_count = 0; // used to test change of: inc_mkr_count for appropriate screen size change
+	bla=1; blr=0.5; blg=0.5; blb=1; // global mouseover colour
+	mdf_toggle = 1;
+	dt = 2.0; // delay time, nudge grouping undo block
+	time_precise(start_time); // init start time for "split item association transfer" delay
+	delay_time = 1.0; // delay time, split item association transfer
+	mkr_highlight = -1; // invalid mkr i
+	
+	#dummy_guid = "{########-####-####-####-############}";
+	#quantise_msg = "nothing yet actioned...";
+	
+	def_mkr_col = 0x000082; // dull red
+	def_item_mkr_col = 0x00AA00;
+	mkr_lkd_col = 0x0000FF; // red
+	mkr_unl_col = 0x007FFF; // org
+	mkr_hig_col = 0x00FF00; // lurid grn
+
+	gui_toggle = 1;
+	ienc_toggle = 1;
+	marker_renum_start = 1; // default mkr renum start at 1
+	marker_renum_incr = 1; // default mkr renum increment
+	
+	
+);
+
+
+
+//// Call the functions ////
+init();
+main();

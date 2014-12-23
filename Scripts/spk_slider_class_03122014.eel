@@ -1,0 +1,277 @@
+///////////////////////
+// Scaling functions //
+///////////////////////
+
+function scale_x_to_slider_val(min_val, max_val, x_coord, x1, x2) local (scaled_x)
+(
+  scaled_x = min_val + (max_val - min_val) * (x_coord - x1) / (x2 - x1);
+  scaled_x > max_val ? scaled_x = max_val;
+  scaled_x < min_val ? scaled_x = min_val;
+  scaled_x;
+);
+
+function scale_slider_val_to_x(min_val, max_val, slider_val, x1, x2) local (x)
+(
+  x = x1 + (slider_val - min_val) * (x2 - x1) / (max_val - min_val);
+);
+
+
+/////////////////////
+// SLIDER FUNCTION //
+/////////////////////
+
+// slider(x1, y1, w, h, val, min_val, max_val, slider_label, slider_id)
+// 
+// x1: start x position in window
+// y1: start y position in window
+// w:  slider width
+// h:  slider height 
+
+// val: slider value (=function return value)
+// min_val: slider min value
+// max_val: slider max value
+
+// slider_id: each slider should have a unique int value (0,1,2,3... etc.)
+
+function slider(x1, y1, w, h, val, min_val, max_val, slider_label, slider_id) local (s_w, s_h)
+(
+  this.x1 = x1;
+  this.y1 = y1;
+  
+  this.w = w;
+  this.h = h;
+  
+  this.x2 = this.x1 + this.w;
+  this.y2 = this.y1 + this.h;
+
+  this.val = max(min(val, max_val), min_val);
+  this.min_val = min_val;
+  this.max_val = max_val;
+
+  // Slider colors
+  this.a = 0.6;
+  gfx_r = 0.2;
+  gfx_g = 0.7;
+  gfx_b = 0.7;
+  
+  !fr.m.on_frame && !fr.m.clicked_on_frame ? fr.last_slider_id = -1;
+  
+  (mouse_x >= this.x1 && mouse_x <= this.x2 && mouse_y >= this.y1 && mouse_y <= this.y2)
+  || this.drag_started == 1 ? (
+    !mouse_cap ? fr.last_slider_id = slider_id;
+    fr.last_slider_id == slider_id ? this.a = 0.7;
+    fr.m.clicked_on_frame ? (
+      fr.m.drag_started = 1;
+      this.drag_started = 1;
+      //fr.clicked_on_slider = 1;
+      ////mouse_x > this.x2 ? m_x = this.x2;
+      ////mouse_x < this.x1 ? m_x = this.x1;
+
+      slider_id == fr.last_slider_id ? (
+        //          scale_x_to_slider_val(min_val, max_val, x_coord, x1, x2)
+        this.val = scale_x_to_slider_val(this.min_val, this.max_val, gui.m.x, this.x1, this.x2);
+      );
+
+    ) : (
+      fr.m.drag_started = 0;
+      this.drag_started = 0;
+    );
+  );// : fr.clicked_on_slider = 0;
+
+  this.x_coord = scale_slider_val_to_x(this.min_val, this.max_val, this.val, this.x1, this.x2);
+  //this.x_coord < this.x1 ? x_coord = this.x1;
+  //this.x_coord > this.x2 ? x_coord = this.x2;
+  
+  
+  // Draw slider
+  // change alpha (0.5-1.0)
+  //gfx_a = 0.5+0.5*this.x_coord/this.w;
+  
+  // don't change alpha
+  gfx_a = this.a;
+  
+  gfx_rect(this.x1, this.y1, this.x_coord-this.x1, this.h);
+  
+  // Draw slider label (if "slider_label" is not an empty string)
+  slider_label != "" ? (
+    gfx_x = this.x1+4;
+    gfx_y = this.y1 + 0.5*(this.y2-this.y1) - 0.5*gfx_texth;
+    
+    gfx_a = 1;
+    gfx_r = gfx_g = gfx_b = 1;
+    gfx_printf(slider_label);
+  );
+  
+  gfx_r = 0.9;
+  gfx_g = 0.9;
+  gfx_b = 0.9;
+
+  //gfx_a = 0.2;
+  gfx_a = this.a-0.5;
+  gfx_rect(this.x1, this.y1, this.x2-this.x1, this.h);
+
+  // Show slider value
+  gfx_measurestr(sprintf(slider_val_str, "%0.1f", this.val), s_w, s_h);
+  gfx_a = 1;
+  gfx_x = this.x_coord - 0.5 * s_w;
+  gfx_y = this.y1 - gfx_texth;
+  gfx_printf(slider_val_str);
+  this.val; // return
+);
+
+
+/////////////////////////////////
+// Get/set "Frame" states etc. //
+/////////////////////////////////
+
+function fr.get_set_states(fr_obj*)
+(
+  // Mouse button states, mouse position etc.
+  //this.m.x = mouse_x; // mouse x pos in active area
+  //this.m.y = mouse_y; // mouse y pos in active area
+  mouse_cap == 1 ? (
+    this.m.btn.left == 0 ? (
+      this.m.click_x = gui.m.x; // store click pos x
+      this.m.click_y = gui.m.y; // store click pos y
+    );
+    this.m.btn.left = 1;
+  ) : this.m.btn.left = 0;
+
+  // Is mouse on active area ?
+  this.m.on_frame = (gui.m.x >= this.x1 && gui.m.x <= this.x2 && gui.m.y >= this.y1 && gui.m.y <= this.y2);
+  // Is mouse clicked on active area ?
+  this.m.clicked_on_frame = this.m.btn.left && (this.m.click_x >= this.x1 && this.m.click_x <= this.x2 && this.m.click_y >= this.y1 && this.m.click_y <= this.y2);
+);
+
+
+
+
+/////////////////////////////////////////////////////////////
+// Main function (slider function(s) are called from here) //
+/////////////////////////////////////////////////////////////
+
+function main() //local (sl1, sl2)
+(
+
+  /* (These variables are already set in "init" function)
+  
+  //fr.debug = 1; // if true -> show fr.xxxx states 
+  
+  // Top left corner of active (drawing)area:
+  //fr.x1 = 20;
+  //fr.y1 = 20;
+  
+  */
+  gui.m.x = mouse_x;
+  gui.m.y = mouse_y;
+  
+  // Set Frame (i.e. "active area") end x and end y (bottom right corner)
+  fr.x2 = gfx_w - 50;
+  fr.y2 = gfx_h - 50;
+  // Frame w and h 
+  fr.w = fr.x2 - fr.x1; // active area width
+  fr.h = fr.y2 - fr.y1; // active area height
+  
+  
+  // Pass "fr." namespace to "fr.get_set_states" function
+  fr.get_set_states(fr);
+  
+  ///////////////////////////
+  // "Init" and draw sliders //
+  ///////////////////////////
+  
+  // Slider function: slider(x1, y1, w, h, val, min_val, max_val, slider_label_text, slider_id))
+  sl1 = s1.slider(fr.x1, fr.y1, fr.w, 20, s1.val, -1, 1, "Slider 1", 0);
+  sl2 = s2.slider(fr.x1, s1.y2 + 20, 150, 15, s2.val, -1000, 1000, "Fixed width", 1);
+  
+  // initial value for slider "s3" (This would be better to set in "init" function)
+  !s3.init ?  (
+    s3.val = 50;
+    s3.init = 1;
+  );
+  //                         "s2.y2" is "Fixed width" -slider's "y2" position
+  sl3 = s3.slider(200, max(s2.y2+10, fr.y2*0.9), 150, 15, s3.val, 0, 100, "'relative y pos'", 2);
+
+
+  /////////////////////////////////////
+  // Debug - Show fr.xxxx states etc.//
+  /////////////////////////////////////
+  
+  fr.debug ? (
+    gfx_a = 0.8;
+    gfx_x = fr.x1;
+    gfx_y = s2.y2+20;
+    gfx_printf(sprintf(#, "fr.debug: %d", fr.debug));
+    gfx_x = fr.x1;
+    gfx_y += gfx_texth;
+    gfx_printf(sprintf(#, "fr.x1: %d", fr.x1));
+    gfx_x = fr.x1;
+    gfx_y += gfx_texth;
+    gfx_printf(sprintf(#, "fr.y1: %d", fr.y1));
+    gfx_x = fr.x1;
+    gfx_y += gfx_texth;
+    gfx_printf(sprintf(#, "fr.w: %d", fr.w));
+    gfx_x = fr.x1;
+    gfx_y += gfx_texth;
+    gfx_printf(sprintf(#, "fr.h: %d", fr.h));
+    gfx_x = fr.x1;
+    gfx_y += 2*gfx_texth;   
+
+    gfx_printf(sprintf(#, "gui.m.x: %d", gui.m.x));
+    gfx_x = fr.x1;
+    gfx_y += gfx_texth;
+    gfx_printf(sprintf(#, "gui.m.y: %d", gui.m.y));
+    gfx_x = fr.x1;
+    gfx_y += 2*gfx_texth;   
+    
+    gfx_printf(sprintf(#, "fr.last_slider_id: %d", fr.last_slider_id));
+    gfx_x = fr.x1;
+    gfx_y += gfx_texth;
+    gfx_printf(sprintf(#, "fr.m.btn.left: %d", fr.m.btn.left));
+    gfx_x = fr.x1;
+    gfx_y += gfx_texth;
+    gfx_printf(sprintf(#, "fr.m.on_frame: %d", fr.m.on_frame));
+    gfx_x = fr.x1;
+    gfx_y += 2*gfx_texth;
+    gfx_printf(sprintf(#, "fr.m.click_x: %d", fr.m.click_x));
+    gfx_x = fr.x1;
+    gfx_y += gfx_texth;
+    gfx_printf(sprintf(#, "fr.m.click_y: %d", fr.m.click_y));
+    gfx_x = fr.x1;
+    gfx_y += gfx_texth;
+    gfx_printf(sprintf(#, "fr.m.clicked_on_frame: %d", fr.m.clicked_on_frame));
+  );
+  
+  char = gfx_getchar();
+
+  // Esc to exit
+  char == 27 ? (
+    gfx_quit();
+  );
+  
+  char >= 0 ? (
+    defer("main();");
+  );
+  gfx_update();
+);
+
+
+///////////
+// init  //
+///////////
+
+function init()
+(
+  gfx_init("",420,400);
+
+  // Initial values for "Frame" (i.e. active area)
+  fr.debug = 1;
+  fr.x1 = 50;
+  fr.y1 = 50;
+  fr.last_slider_id = -1;
+  
+  gfx_setfont(1, "Arial", 14);
+  main();
+);
+
+init();

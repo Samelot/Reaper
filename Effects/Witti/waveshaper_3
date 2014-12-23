@@ -1,0 +1,46 @@
+slider1:0<0,100,0.1>Shape (%)
+slider2:0<-30,0,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@slider
+shape=max(min(slider1,100),0.0001);
+inv_atan_shape=1/atan(shape);
+
+output=10^(slider2/20);
+
+@sample
+in0 = min(max(spl0,-1),1);
+in1 = min(max(spl1,-1),1);
+
+spl0 = inv_atan_shape * atan(in0*shape);
+spl1 = inv_atan_shape * atan(in1*shape);
+
+spl0 *= output;
+spl1 *= output;
+
+@gfx 0 420
+gfxSize = min(gfx_w,gfx_h);
+
+gfx_r=gfx_g=gfx_b=0; gfx_a=1;
+gfx_x=gfx_y=0;
+gfx_rectto(gfx_w,gfx_h);
+
+gfx_r=gfx_g=gfx_b=0.8; gfx_a=1;
+gfx_x=gfxSize/2; gfx_y=0;
+gfx_lineto(gfxSize/2,gfxSize,0);
+gfx_x=0; gfx_y=gfxSize/2;
+gfx_lineto(gfxSize,gfxSize/2,0);
+
+gfx_r=0.5; gfx_g=1; gfx_b=0; gfx_a=1;
+gfx_x=0; gfx_y=gfxSize;
+x = -1;
+while(
+y = -(inv_atan_shape * atan(x*shape));
+gfx_lineto(x*gfxSize/2+gfxSize/2,y*gfxSize/2+gfxSize/2,1);
+(x+=0.1) <= 1;
+);
+gfx_lineto(gfxSize,0,1);

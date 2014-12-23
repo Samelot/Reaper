@@ -1,0 +1,30 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+desc: buffer save/restore
+
+slider1:0<0,100,1>slot
+slider2:0<-180,6,1>src->buf mix (dB)
+slider3:-180<-180,6,1>buf->buf mix (dB)
+slider4:-6<-180,6,1>buf->dst mix (dB)
+slider5:-6<-180,6,1>src->dst mix (dB)
+
+@slider
+srcbufmix=2^(slider2/6);
+bufbufmix=2^(slider3/6);
+bufdstmix=2^(slider4/6);
+srcdstmix=2^(slider5/6);
+
+@block
+bpos=slider1*samplesblock;
+
+@sample
+os0=gmem[bpos*2];
+os1=gmem[bpos*2+1];
+
+gmem[bpos*2]=spl0*srcbufmix+os0*bufbufmix;
+gmem[bpos*2+1]=spl1*srcbufmix+os1*bufbufmix;
+
+spl0=spl0*srcdstmix+os0*bufdstmix;
+spl1=spl1*srcdstmix+os1*bufdstmix;
+
+bpos+=2;

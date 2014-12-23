@@ -1,0 +1,11 @@
+
+item = GetSelectedMediaItem(0, 0);
+parent_track = GetMediaItem_Track(item);
+// Main_OnCommand(action_unselect_tracks, 0);
+// SetTrackSelected(parent_track, 1);
+
+// ShowConsoleMsg(sprintf(#, "%i", parent_track));
+
+folder_state = GetMediaTrackInfo_Value(parent_track, "I_FOLDERDEPTH");
+ShowConsoleMsg(sprintf(#, "%i", folder_state));
+

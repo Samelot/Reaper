@@ -1,0 +1,29 @@
+/*
+Use the same routing for the plugins,
+you have chosen in the track IO window.
+*/
+
+desc: VCA slave. Read info...
+
+slider1:50<0,300,1>transition time (ms)
+slider2:1<0,31,1{1+2,3+4,5+6,7+8,9+10,11+12,13+14,15+16,17+18,19+20,21+22,23+24,25+26,27+28,29+30,31+32,33+34,35+36,37+38,39+40,41+42,43+44,45+46,47+48,49+50,51+52,53+54,55+56,57+58,59+60,61+62,63+64}>vca in
+
+@slider
+sc = exp(-1.0 / (slider1*0.001*srate));
+channel = slider2*2;
+in = channel;
+in2 = in+1;
+
+@init
+lv=0.0;
+lv2=0.0;
+curgain=0.0;
+curgain2=0.0;
+reflevel = 10^(30/20);
+
+@sample
+curgain = curgain * sc + min(abs(spl(in)),8.0)*(1-sc)*reflevel;
+curgain2 = curgain2 * sc + min(abs(spl(in2)),8.0)*(1-sc)*reflevel;
+
+spl0=spl0*curgain;
+spl1=spl1*curgain2;

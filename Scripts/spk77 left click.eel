@@ -1,0 +1,27 @@
+Undo_BeginBlock2(0);
+last_touched_track = GetLastTouchedTrack();
+
+i = 0;
+cur_depth = 0;
+is_child_track = 0;
+tr_c = CountTracks(0);
+
+while(is_child_track == 0 && i < tr_c) (
+track = GetTrack(0, i);
+depth_change = GetMediaTrackInfo_Value(track, "I_FOLDERDEPTH");
+cur_depth += depth_change;
+track == last_touched_track && depth_change <= 0 && cur_depth >= 0 ? is_child_track = 1;
+cur_depth == 0 && depth_change == 0 ? is_child_track = 0;
+i += 1;
+);
+
+PreventUIRefresh(1);
+is_child_track == 1 ? (
+Main_OnCommand(NamedCommandLookup("_SWS_SELPARENTS 2"), 0);
+Main_OnCommand(NamedCommandLookup("_SWS_SELCHILDRE N"), 0); // sel only children tracks
+Main_OnCommand(NamedCommandLookup("_XENAKIOS_SELIT EMSUNDEDCURSELTX"), 0);
+) : SetOnlyTrackSelected(last_touched_track);
+PreventUIRefresh(-1);
+
+Undo_EndBlock2(0, "Select items under edit cursor (in a folder)", -1);
+

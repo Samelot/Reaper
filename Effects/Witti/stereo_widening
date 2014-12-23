@@ -1,0 +1,25 @@
+/*
+width < 1: decrease in stereo width
+width = 1: no change
+width > 1: increase in stereo width
+width = 0: mono
+*/
+
+desc: Read info...
+
+slider1:1<0,10,0.01>width
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@slider
+coef_s=slider1*0.5;
+
+@sample
+mono=(spl0+spl1)*0.5;
+stereo=(spl1-spl0)*coef_s;
+
+spl0=mono-stereo;
+spl1=mono+stereo;

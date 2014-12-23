@@ -1,0 +1,83 @@
+desc: simple scope
+
+
+in_pin:left input
+in_pin:right input
+
+@init
+gfx_clear=0; // set clearing to "black". red would be 255, green 255*256, etc.
+histlen=65536;
+
+
+@sample
+splpos[]=spl0;
+splpos[1]=spl1;
+splpos+=2;
+splpos >= histlen?splpos=0;
+
+@gfx 400 300
+
+
+0 ? loop(30,
+  gfx_x=rand(gfx_w); gfx_y=rand(gfx_h);
+  gfx_r=rand(100)/100; gfx_g=rand(100)/100; gfx_b=rand(100)/100; gfx_a=rand(50)/100;
+  gfx_rectto(rand(gfx_w),rand(gfx_h));
+);
+
+// test of mouse stuff (will trace the cursor when clicked+dragged)
+mouse_cap ? (
+  gfx_a=0.5;
+  gfx_r=1;
+  gfx_g=gfx_b=0;
+  gfx_x=mouse_x-20;
+  gfx_y=mouse_y;
+  gfx_lineto(gfx_x+40,gfx_y,0);
+  gfx_x=mouse_x; gfx_y-=20;
+  gfx_lineto(gfx_x,gfx_y+40,0);
+);
+
+gfx_a=1; // alpha 1.0
+
+gfx_x=0;
+gfx_y=0;
+gfx_r=gfx_g=gfx_b=0;
+
+gfx_r=gfx_g=gfx_b=1;
+
+isplpos=splpos;
+chan=0;
+loop(2,
+i=0;
+
+rdpos=isplpos-samplesblock*2;
+rdpos<0? rdpos+=histlen;
+rdpos+=chan;
+
+gfx_x=0;
+offs= gfx_h*0.25+ chan*gfx_h*0.5;
+loop(samplesblock,
+  val = rdpos[]*gfx_h*0.25+offs;
+  (rdpos+=2) >= histlen ? rdpos-=histlen;
+  i == 0 ? (gfx_y=val) : (
+    gfx_lineto(i*(gfx_w)/samplesblock,val,1);
+  );
+  i+=1;
+);
+chan+=1;
+);
+
+
+gfx_x=0;
+gfx_y=gfx_h-gfx_texth;
+gfx_drawnumber(0,0);
+gfx_drawchar($'s');
+gfx_drawchar($'p');
+gfx_drawchar($'l');
+
+gfx_x=gfx_w/2;
+gfx_drawnumber(samplesblock/2,0);
+gfx_drawchar($'s');
+gfx_drawchar($'p');
+gfx_drawchar($'l');
+
+

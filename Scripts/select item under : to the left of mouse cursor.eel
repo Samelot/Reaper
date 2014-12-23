@@ -1,0 +1,21 @@
+//select item under / to the left of mouse cursor, if exists
+Undo_BeginBlock();
+Main_OnCommandEx(40289, 0, 0); // unselect all items
+Main_OnCommandEx(41110, 0, 0); //select track under mouse
+Main_OnCommandEx(40514, 0, 0); // set edit cursor to mouse position, no snap
+Track = GetSelectedTrack(0, 0);
+Position = GetCursorPositionEx(0);
+ItemCount = GetTrackNumMediaItems(Track);
+i = (ItemCount - 1);
+
+while (ItemCount > 0) (
+  item = GetTrackMediaItem(Track, i);
+  iStart = GetMediaItemInfo_Value(item, "D_POSITION");
+  iStart <= Position ? (
+    SetMediaItemInfo_Value(item, "B_UISEL", 1);
+    ItemCount = 0
+  );
+  i-=1;
+  i < 0 ? ItemCount = 0
+);
+Undo_EndBlock("Select item under/left-of mouse cursor", -1);

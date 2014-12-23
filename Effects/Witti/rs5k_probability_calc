@@ -1,0 +1,19 @@
+desc: For reasampleomatic
+
+slider1:1<1,20,1>rs5k instances
+slider2:1<1,20,1>round-robins
+slider3:0,probability
+slider4:0<0,1,1{remove played notes from FX chain MIDI stream,this is the last sample}>check
+
+in_pin:none
+out_pin:none
+
+@block
+rs5k=slider1;
+rr=slider2;
+slider2>slider1 ? slider2=slider1;
+slider2<slider1 ? slider4=0:slider4=1;
+sliderchange(slider4);
+p=100 / ( rs5k - rr + 1);
+slider3=p;
+sliderchange(slider3);

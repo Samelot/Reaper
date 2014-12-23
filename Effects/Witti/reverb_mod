@@ -1,0 +1,557 @@
+// LOSER reverb (hall)
+// Liteon shelvingfilter
+// Reaper phaser
+
+desc: Read info...
+
+slider1:0<-60,0,0.1>Dry (dB)
+slider2:-6<-60,0,0.1>Wet (dB)
+slider3:1<0,3,0.001>Reverb-----------------Length (s)
+slider4:0<0,100,1>Pre-Delay (ms)
+
+slider12:0<0,100,0.01>Filter----------LowShelf (Scale)
+slider13:0<-24,12,0.1>Gain (dB)
+slider14:100<0,100,0.01>HighShelf (Scale)
+slider15:0<-24,12,0.1>Gain (dB)
+
+slider21:0.1<0,0.3,0.01>Phaser-------------------Rate (hz)
+slider22:440<40,20000,10>Range Min (hz)
+slider23:1600<40,20000,10>Range Max (hz)
+slider24:-6<-30,-1,0.1>Feedback (dB)
+slider25:2<0,6,1{two,three,four,five,six,seven,eight}>Pole
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+tmp1 = tmp2 = 0;
+
+SPN=0;
+yl_ls=x1l_ls=x2l_ls=y1l_ls=y2l_ls=yr_ls=x1r_ls=x2r_ls=y1r_ls=y2r_ls=0;
+yl_hs=x1l_hs=x2l_hs=y1l_hs=y2l_hs=yr_hs=x1r_hs=x2r_hs=y1r_hs=y2r_hs=0;
+
+@slider
+l0 = slider4/1000*srate + 1;
+
+l1 = 3;
+l2 = 13;
+l3 = 31;
+l4 = 103;
+l5 = 331;
+l6 = 853;
+l7 = 1709;
+l8 = 1117;
+l9 = 631;
+l10 = 887;
+l11 = 1213;
+l12 = 1553;
+
+Rl0 = slider4/1000*srate + 1;
+
+Rl1 = 3;
+Rl2 = 11;
+Rl3 = 37;
+Rl4 = 113;
+Rl5 = l5+37;
+Rl6 = l6-37;
+Rl7 = l7+37;
+Rl8 = l8-37;
+Rl9 = l9+37;
+Rl10 = l10-37;
+Rl11 = l11+37;
+Rl12 = l12-37;
+
+b0 = 0;
+b1 = b0+l0;
+b2 = b1+l1;
+b3 = b2+l2;
+b4 = b3+l3;
+b5 = b4+l4;
+b6 = b5+l5;
+b7 = b6+l6;
+b8 = b7+l7;
+b9 = b8+l8;
+b10 = b9+l9;
+b11 = b10+l10;
+b12 = b11+l11;
+
+Rb0 = b12+l12;
+Rb1 = Rb0+Rl0;
+Rb2 = Rb1+Rl1;
+Rb3 = Rb2+Rl2;
+Rb4 = Rb3+Rl3;
+Rb5 = Rb4+Rl4;
+Rb6 = Rb5+Rl5;
+Rb7 = Rb6+Rl6;
+Rb8 = Rb7+Rl7;
+Rb9 = Rb8+Rl8;
+Rb10 = Rb9+Rl9;
+Rb11 = Rb10+Rl10;
+Rb12 = Rb11+Rl11;
+
+g1 = g2 = g3 = g4 = 0.62;
+g5 = 0.62;
+g7 = 0.62;
+g9 = 0.62;
+g11 = 0.62;
+
+ff = exp( log(0.001) / ( slider3*srate / (l5+l6+l7+l8) ) );
+d = exp( -2*$pi*18000/srate );
+
+dry = slider1 <= -60.0 ? 0.0 : 10 ^ (slider1 / 20);
+wet = slider2 <= -60.0 ? 0.0 : 10 ^ (slider2 / 20);
+
+//*** LS
+sx = 16+slider12*1.20103;
+cf = floor(exp(sx*log(1.059))*8.17742);
+freq1 = cf;
+cf /= srate;
+boost = slider13;
+
+sa = tan($pi*(cf-0.25));
+asq = sa*sa;
+A = 10^(boost/20.0);
+(boost < 6.0) && (boost > -6.0) ? (
+F = sqrt(A);
+) : (
+(A > 1.0) ? (
+F = A/sqrt(2.0);
+) : (
+F = A*sqrt(2.0);
+);
+);
+F2 = F*F;
+tmp = A*A - F2;
+abs(tmp) <= SPN ? (
+gammad = 1.0;
+) : (
+gammad = ((F2-1.0)/tmp)^(0.25);
+);
+gamman = sqrt(A)*gammad;
+gamma2 = gamman*gamman;
+gam2p1 = 1.0 + gamma2;
+siggam2 = 2.0*sqrt(2.0)/2.0*gamman;
+ta0 = gam2p1 + siggam2;
+ta1 = -2.0*(1.0 - gamma2);
+ta2 = gam2p1 - siggam2;
+gamma2 = gammad*gammad;
+gam2p1 = 1.0 + gamma2;
+siggam2 = 2.0*sqrt(2.0)/2.0*gammad;
+tb0 = gam2p1 + siggam2;
+tb1 = -2.0*(1.0 - gamma2);
+tb2 = gam2p1 - siggam2;
+
+aa1 = sa*ta1;
+a0 = ta0 + aa1 + asq*ta2;
+a1 = 2.0*sa*(ta0+ta2)+(1.0+asq)*ta1;
+a2 = asq*ta0 + aa1 + ta2;
+
+ab1 = sa*tb1;
+b0A = tb0 + ab1 + asq*tb2;
+b1A = 2.0*sa*(tb0+tb2)+(1.0+asq)*tb1;
+b2A = asq*tb0 + ab1 + tb2;
+
+recipb0 = 1.0/b0A;
+a0 *= recipb0;
+a1 *= recipb0;
+a2 *= recipb0;
+b1A *= recipb0;
+b2A *= recipb0;
+
+a0_ls = a0;  
+a1_ls = a1;
+a2_ls = a2;
+b1_ls = -b1A;
+b2_ls = -b2A;
+
+//*** HS
+sx = 16+slider14*1.20103;
+cf = floor(exp(sx*log(1.059))*8.17742);
+freq2 = cf;
+cf /= srate;
+boost = -slider15;
+
+sa = tan($pi*(cf-0.25));
+asq = sa*sa;
+A = 10^(boost/20.0);
+(boost < 6.0) && (boost > -6.0) ? (
+F = sqrt(A);
+) : (
+(A > 1.0) ? (
+F = A/sqrt(2.0);
+) : (
+F = A*sqrt(2.0);
+);
+);
+F2 = F*F;
+tmp = A*A - F2;
+abs(tmp) <= SPN ? (
+gammad = 1.0;
+) : (
+gammad = ((F2-1.0)/tmp)^(0.25);
+);
+gamman = sqrt(A)*gammad;
+gamma2 = gamman*gamman;
+gam2p1 = 1.0 + gamma2;
+siggam2 = 2.0*sqrt(2.0)/2.0*gamman;
+ta0 = gam2p1 + siggam2;
+ta1 = -2.0*(1.0 - gamma2);
+ta2 = gam2p1 - siggam2;
+gamma2 = gammad*gammad;
+gam2p1 = 1.0 + gamma2;
+siggam2 = 2.0*sqrt(2.0)/2.0*gammad;
+tb0 = gam2p1 + siggam2;
+tb1 = -2.0*(1.0 - gamma2);
+tb2 = gam2p1 - siggam2;
+
+aa1 = sa*ta1;
+a0 = ta0 + aa1 + asq*ta2;
+a1 = 2.0*sa*(ta0+ta2)+(1.0+asq)*ta1;
+a2 = asq*ta0 + aa1 + ta2;
+
+ab1 = sa*tb1;
+b0A = tb0 + ab1 + asq*tb2;
+b1A = 2.0*sa*(tb0+tb2)+(1.0+asq)*tb1;
+b2A = asq*tb0 + ab1 + tb2;
+
+recipb0 = 1.0/b0A;
+a0 *= recipb0;
+a1 *= recipb0;
+a2 *= recipb0;
+b1A *= recipb0;
+b2A *= recipb0;
+
+gain = 10^(boost/20.0);
+a0_hs = a0/gain;
+a1_hs = a1/gain; 
+a2_hs = a2/gain; 
+b1_hs = -b1A;
+b2_hs = -b2A;
+
+feedback= slider24 <= -30.0 ? 0.0 : 10 ^ (slider24 / 20);
+lfoPhase=0;
+dmin=slider22 * 2 / srate;
+dmax=slider23 * 2 / srate;
+dsc=abs(dmax-dmin) * 0.5;
+dmin=min(dmin,dmax);
+lfoInc = 2 * $pi * slider21 / srate;
+
+@sample
+
+/* LEFT CHANNEL */
+
+in = spl0;
+
+in0=in;out0=b0[p0];b0[p0]=in0;p0=(p0+1)%l0;
+in1=out0;out1=b1[p1]-g1*in1;b1[p1]=in1+g1*out1;p1=(p1+1)%l1;
+in2=out1;out2=b2[p2]-g2*in2;b2[p2]=in2+g2*out2;p2=(p2+1)%l2;
+in3=out2;out3=b3[p3]-g3*in3;b3[p3]=in3+g3*out3;p3=(p3+1)%l3;
+in4=out3;out4=b4[p4]-g4*in4;b4[p4]=in4+g4*out4;p4=(p4+1)%l4;
+
+tmp1 = out4 + out12 * ff;
+tmp2 = out4 + out8  * ff;
+
+tmp1 = t1 = tmp1 + d * (t1-tmp1);
+tmp2 = t2 = tmp2 + d * (t2-tmp2);
+
+in5=tmp1;out5=b5[p5]-g5*in5;b5[p5]=in5+g5*out5;p5=(p5+1)%l5;
+in6=out5;out6=b6[p6];b6[p6]=in6;p6=(p6+1)%l6;
+in7=out6;out7=b7[p7]-g7*in7;b7[p7]=in7+g7*out7;p7=(p7+1)%l7;
+in8=out7;out8=b8[p8];b8[p8]=in8;p8=(p8+1)%l8;
+
+in9 =tmp2;out9 =b9 [p9 ]-g9 *in9;b9 [p9 ]=in9 +g9 *out9;p9 =(p9 +1)%l9;
+in10=out9;out10=b10[p10];b10[p10]=in10;p10=(p10+1)%l10;
+in11=out10;out11=b11[p11]-g11*in11;b11[p11]=in11+g11*out11;p11=(p11+1)%l11;
+in12=out11;out12=b12[p12];b12[p12]=in12;p12=(p12+1)%l12;
+
+out = out5 + out7 + out9 + out11;
+
+/* RIGHT CHANNEL */
+
+Rin = spl1;
+
+Rin0=Rin;Rout0=Rb0[Rp0];Rb0[Rp0]=Rin0;Rp0=(Rp0+1)%Rl0;
+Rin1=Rout0;Rout1=Rb1[Rp1]-g1*Rin1;Rb1[Rp1]=Rin1+g1*Rout1;Rp1=(Rp1+1)%Rl1;
+Rin2=Rout1;Rout2=Rb2[Rp2]-g2*Rin2;Rb2[Rp2]=Rin2+g2*Rout2;Rp2=(Rp2+1)%Rl2;
+Rin3=Rout2;Rout3=Rb3[Rp3]-g3*Rin3;Rb3[Rp3]=Rin3+g3*Rout3;Rp3=(Rp3+1)%Rl3;
+Rin4=Rout3;Rout4=Rb4[Rp4]-g4*Rin4;Rb4[Rp4]=Rin4+g4*Rout4;Rp4=(Rp4+1)%Rl4;
+
+Rtmp1 = Rout4 + Rout12 * ff;
+Rtmp2 = Rout4 + Rout8  * ff;
+
+Rtmp1 = Rt1 = Rtmp1 + d * (Rt1-Rtmp1);
+Rtmp2 = Rt2 = Rtmp2 + d * (Rt2-Rtmp2);
+
+Rin5=Rtmp1;Rout5=Rb5[Rp5]-g5*Rin5;Rb5[Rp5]=Rin5+g5*Rout5;Rp5=(Rp5+1)%Rl5;
+Rin6=Rout5;Rout6=Rb6[Rp6];Rb6[Rp6]=Rin6;Rp6=(Rp6+1)%Rl6;
+Rin7=Rout6;Rout7=Rb7[Rp7]-g7*Rin7;Rb7[Rp7]=Rin7+g7*Rout7;Rp7=(Rp7+1)%Rl7;
+Rin8=Rout7;Rout8=Rb8[Rp8];Rb8[Rp8]=Rin8;Rp8=(Rp8+1)%Rl8;
+
+Rin9 =Rtmp2;Rout9 =Rb9 [Rp9 ]-g9 *Rin9;Rb9 [Rp9 ]=Rin9 +g9 *Rout9;Rp9 =(Rp9 +1)%Rl9;
+Rin10=Rout9;Rout10=Rb10[Rp10];Rb10[Rp10]=Rin10;Rp10=(Rp10+1)%Rl10;
+Rin11=Rout10;Rout11=Rb11[Rp11]-g11*Rin11;Rb11[Rp11]=Rin11+g11*Rout11;Rp11=(Rp11+1)%Rl11;
+Rin12=Rout11;Rout12=Rb12[Rp12];Rb12[Rp12]=Rin12;Rp12=(Rp12+1)%Rl12;
+
+Rout = Rout5 + Rout7 + Rout9 + Rout11;
+
+//LS
+xl_ls = out;
+xr_ls = Rout;
+
+yl_ls = a0_ls*xl_ls + a1_ls*x1l_ls + a2_ls*x2l_ls + b1_ls*y1l_ls + b2_ls*y2l_ls;
+x2l_ls = x1l_ls;
+x1l_ls = xl_ls;
+y2l_ls = y1l_ls;
+y1l_ls = yl_ls;
+
+yr_ls = a0_ls*xr_ls + a1_ls*x1r_ls + a2_ls*x2r_ls + b1_ls*y1r_ls + b2_ls*y2r_ls;
+x2r_ls = x1r_ls;
+x1r_ls = xr_ls;
+y2r_ls = y1r_ls;
+y1r_ls = yr_ls;
+
+//HS
+xl_hs = yl_ls;
+xr_hs = yr_ls;
+
+yl_hs = a0_hs*xl_hs + a1_hs*x1l_hs + a2_hs*x2l_hs + b1_hs*y1l_hs + b2_hs*y2l_hs;
+x2l_hs = x1l_hs;
+x1l_hs = xl_hs;
+y2l_hs = y1l_hs;
+y1l_hs = yl_hs;
+
+yr_hs = a0_hs*xr_hs + a1_hs*x1r_hs + a2_hs*x2r_hs + b1_hs*y1r_hs + b2_hs*y2r_hs;
+x2r_hs = x1r_hs;
+x1r_hs = xr_hs;
+y2r_hs = y1r_hs;
+y1r_hs = yr_hs;
+
+dd = dmin + dsc * (sin(lfoPhase) + 1);
+lfoPhase += lfoInc;
+lfoPhase >= 2*$pi ? lfoPhase -= 2*$pi;
+
+coef=(1-dd)/(1+dd);
+
+slider25 == 0 ? (
+x1=yl_hs + ly2 * feedback;
+ly1 = coef * (ly1 + x1) - lx1;
+lx1 = x1;
+ly2 = coef * (ly2 + ly1) - lx2;
+lx2 = ly1;
+spl0 = ly2*wet + in*dry;
+
+rx=yr_hs + ry2 * feedback;
+ry1 = coef * (ry1 + rx) - rx1;
+rx1 = rx;
+ry2 = coef * (ry2 + ry1) - rx2;
+rx2 = ry1;
+spl1 = ry2*wet + Rin*dry;
+);
+
+slider25 == 1 ? (
+x1=yl_hs + ly3 * feedback;
+ly1 = coef * (ly1 + x1) - lx1;
+lx1 = x1;
+ly2 = coef * (ly2 + ly1) - lx2;
+lx2 = ly1;
+ly3 = coef * (ly3 + ly2) - lx3;
+lx3 = ly2;
+spl0 = ly3*wet + in*dry;
+
+rx=yr_hs + ry3 * feedback;
+ry1 = coef * (ry1 + rx) - rx1;
+rx1 = rx;
+ry2 = coef * (ry2 + ry1) - rx2;
+rx2 = ry1;
+ry3 = coef * (ry3 + ry2) - rx3;
+rx3 = ry2;
+spl1 = ry3*wet + Rin*dry;
+);
+
+slider25 == 2 ? (
+x1=yl_hs + ly4 * feedback;
+ly1 = coef * (ly1 + x1) - lx1;
+lx1 = x1;
+ly2 = coef * (ly2 + ly1) - lx2;
+lx2 = ly1;
+ly3 = coef * (ly3 + ly2) - lx3;
+lx3 = ly2;
+ly4 = coef * (ly4 + ly3) - lx4;
+lx4 = ly3;
+spl0 = ly4*wet + in*dry;
+
+rx=yr_hs + ry4 * feedback;
+ry1 = coef * (ry1 + rx) - rx1;
+rx1 = rx;
+ry2 = coef * (ry2 + ry1) - rx2;
+rx2 = ry1;
+ry3 = coef * (ry3 + ry2) - rx3;
+rx3 = ry2;
+ry4 = coef * (ry4 + ry3) - rx4;
+rx4 = ry3;
+spl1 = ry4*wet + Rin*dry;
+);
+
+slider25 == 3 ? (
+x1=yl_hs + ly5 * feedback;
+ly1 = coef * (ly1 + x1) - lx1;
+lx1 = x1;
+ly2 = coef * (ly2 + ly1) - lx2;
+lx2 = ly1;
+ly3 = coef * (ly3 + ly2) - lx3;
+lx3 = ly2;
+ly4 = coef * (ly4 + ly3) - lx4;
+lx4 = ly3;
+ly5 = coef * (ly5 + ly4) - lx5;
+lx5 = ly4;
+spl0 = ly5*wet + in*dry;
+
+rx=yr_hs + ry5 * feedback;
+ry1 = coef * (ry1 + rx) - rx1;
+rx1 = rx;
+ry2 = coef * (ry2 + ry1) - rx2;
+rx2 = ry1;
+ry3 = coef * (ry3 + ry2) - rx3;
+rx3 = ry2;
+ry4 = coef * (ry4 + ry3) - rx4;
+rx4 = ry3;
+ry5 = coef * (ry5 + ry4) - rx5;
+rx5 = ry4;
+spl1 = ry5*wet + Rin*dry;
+);
+
+slider25 == 4 ? (
+x1=yl_hs + ly6 * feedback;
+ly1 = coef * (ly1 + x1) - lx1;
+lx1 = x1;
+ly2 = coef * (ly2 + ly1) - lx2;
+lx2 = ly1;
+ly3 = coef * (ly3 + ly2) - lx3;
+lx3 = ly2;
+ly4 = coef * (ly4 + ly3) - lx4;
+lx4 = ly3;
+ly5 = coef * (ly5 + ly4) - lx5;
+lx5 = ly4;
+ly6 = coef * (ly6 + ly5) - lx6;
+lx6 = ly5;
+spl0 = ly6*wet + in*dry;
+
+rx=yr_hs + ry6 * feedback;
+ry1 = coef * (ry1 + rx) - rx1;
+rx1 = rx;
+ry2 = coef * (ry2 + ry1) - rx2;
+rx2 = ry1;
+ry3 = coef * (ry3 + ry2) - rx3;
+rx3 = ry2;
+ry4 = coef * (ry4 + ry3) - rx4;
+rx4 = ry3;
+ry5 = coef * (ry5 + ry4) - rx5;
+rx5 = ry4;
+ry6 = coef * (ry6 + ry5) - rx6;
+rx6 = ry5;
+spl1 = ry6*wet + Rin*dry;
+);
+
+slider25 == 5 ? (
+x1=yl_hs + ly7 * feedback;
+ly1 = coef * (ly1 + x1) - lx1;
+lx1 = x1;
+ly2 = coef * (ly2 + ly1) - lx2;
+lx2 = ly1;
+ly3 = coef * (ly3 + ly2) - lx3;
+lx3 = ly2;
+ly4 = coef * (ly4 + ly3) - lx4;
+lx4 = ly3;
+ly5 = coef * (ly5 + ly4) - lx5;
+lx5 = ly4;
+ly6 = coef * (ly6 + ly5) - lx6;
+lx6 = ly5;
+ly7 = coef * (ly7 + ly6) - lx7;
+lx7 = ly6;
+spl0 = ly7*wet + in*dry;
+
+rx=yr_hs + ry7 * feedback;
+ry1 = coef * (ry1 + rx) - rx1;
+rx1 = rx;
+ry2 = coef * (ry2 + ry1) - rx2;
+rx2 = ry1;
+ry3 = coef * (ry3 + ry2) - rx3;
+rx3 = ry2;
+ry4 = coef * (ry4 + ry3) - rx4;
+rx4 = ry3;
+ry5 = coef * (ry5 + ry4) - rx5;
+rx5 = ry4;
+ry6 = coef * (ry6 + ry5) - rx6;
+rx6 = ry5;
+ry7 = coef * (ry7 + ry6) - rx7;
+rx7 = ry6;
+spl1 = ry7*wet + Rin*dry;
+);
+
+slider25 == 6 ? (
+x1=yl_hs + ly8 * feedback;
+ly1 = coef * (ly1 + x1) - lx1;
+lx1 = x1;
+ly2 = coef * (ly2 + ly1) - lx2;
+lx2 = ly1;
+ly3 = coef * (ly3 + ly2) - lx3;
+lx3 = ly2;
+ly4 = coef * (ly4 + ly3) - lx4;
+lx4 = ly3;
+ly5 = coef * (ly5 + ly4) - lx5;
+lx5 = ly4;
+ly6 = coef * (ly6 + ly5) - lx6;
+lx6 = ly5;
+ly7 = coef * (ly7 + ly6) - lx7;
+lx7 = ly6;
+ly8 = coef * (ly8 + ly7) - lx8;
+lx8 = ly7;
+spl0 = ly8*wet + in*dry;
+
+rx=yr_hs + ry8 * feedback;
+ry1 = coef * (ry1 + rx) - rx1;
+rx1 = rx;
+ry2 = coef * (ry2 + ry1) - rx2;
+rx2 = ry1;
+ry3 = coef * (ry3 + ry2) - rx3;
+rx3 = ry2;
+ry4 = coef * (ry4 + ry3) - rx4;
+rx4 = ry3;
+ry5 = coef * (ry5 + ry4) - rx5;
+rx5 = ry4;
+ry6 = coef * (ry6 + ry5) - rx6;
+rx6 = ry5;
+ry7 = coef * (ry7 + ry6) - rx7;
+rx7 = ry6;
+ry8 = coef * (ry8 + ry7) - rx8;
+rx8 = ry7;
+spl1 = ry8*wet + Rin*dry;
+);
+
+@gfx 0 32
+gfx_x=gfx_y=5;
+gfx_lineto(gfx_x, gfx_y,0);
+gfx_r=gfx_b=0;
+gfx_g=gfx_a=1;
+gfx_drawchar($'L');
+gfx_drawchar($'S');
+gfx_drawchar($' ');
+gfx_drawchar($'=');
+gfx_drawchar($' ');
+gfx_drawnumber(freq1,0);
+gfx_drawchar($' ');
+gfx_drawchar($'H');
+gfx_drawchar($'z');
+gfx_y += 15;
+gfx_x = 5;
+gfx_drawchar($'H');
+gfx_drawchar($'S');
+gfx_drawchar($' ');
+gfx_drawchar($'=');
+gfx_drawchar($' ');
+gfx_drawnumber(freq2,0);
+gfx_drawchar($' ');
+gfx_drawchar($'H');
+gfx_drawchar($'z');

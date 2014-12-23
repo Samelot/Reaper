@@ -1,0 +1,471 @@
+desc: compscope_src -> compressor -> compscope
+
+@init
+
+N_QUIET = 0.5*srate;
+N_FAST = 0.004*srate;
+N_MED = 0.5*srate;
+N_SLOW = 2.0*srate;
+
+DONE = -1;
+INIT = -2;
+READY = -3;
+
+buf = 0;
+pos = DONE;
+previn = 0.0;
+
+nbuf = N_FAST+3*(N_QUIET+N_MED)+3*(N_QUIET+N_SLOW);
+
+gfx_clear = 256*256*256-1;
+
+@sample
+
+xin = 0.5*(spl0+spl1);
+
+(pos == DONE) ? (
+  ((previn < -0.5 && xin > 0.5) || (previn > 0.5 && xin < -0.5)) ? ( 
+    pos = INIT;  // start signal seen
+    memset(buf, 0, nbuf);
+  );
+  previn = xin;
+) : 
+(pos == INIT && abs(xin) < 0.01) ? (  // initial silence
+  pos = READY;
+) : 
+(pos == READY && xin < -0.5) ? (  // first analysis sample seen
+  pos = 0;
+);
+
+(pos >= 0) ? (
+  
+  (pos >= nbuf || play_state != 0) ? (
+    pos = DONE;
+  ) : (
+    buf[pos] = xin;
+    pos += 1;
+  );
+);
+
+@gfx 200 620
+
+gf_h = gfx_h-16;
+
+gfx_a = 1;
+
+gfx_r = gfx_g = gfx_b = 0.93125;
+gfx_x = 0;
+gfx_y = gf_h/12;
+gfx_lineto(gfx_w-1, gf_h/12, 0);
+gfx_x = 0;
+gfx_y = gf_h/4;
+gfx_lineto(gfx_w-1, gf_h/4, 0);
+
+gfx_x = 0;
+gfx_y = 5*gf_h/12;
+gfx_lineto(gfx_w-1, 5*gf_h/12, 0);
+gfx_x = 0;
+gfx_y = 7*gf_h/12;
+gfx_lineto(gfx_w-1, 7*gf_h/12, 0);
+
+gfx_x = 0;
+gfx_y = 3*gf_h/4;
+gfx_lineto(gfx_w-1, 3*gf_h/4, 0);
+gfx_x = 0;
+gfx_y = 11*gf_h/12;
+gfx_lineto(gfx_w-1, 11*gf_h/12, 0);
+
+gfx_x = gfx_w/4;
+gfx_y = 0;
+gfx_lineto(gfx_w/4, gf_h-1, 0);
+gfx_x = 3*gfx_w/4;
+gfx_y = 0;
+gfx_lineto(3*gfx_w/4, gf_h-1, 0);
+
+gfx_r = gfx_g = gfx_b = 0.6875;
+gfx_x = 0;
+gfx_y = gf_h/6;
+gfx_lineto(gfx_w-1, gf_h/6, 0);
+gfx_x = 0;
+gfx_y = gf_h/2;
+gfx_lineto(gfx_w-1, gf_h/2, 0);
+gfx_x = 0;
+gfx_y = 5*gf_h/6;
+gfx_lineto(gfx_w-1, 5*gf_h/6, 0);
+gfx_x = gfx_w/2;
+gfx_y = 0;
+gfx_lineto(gfx_w/2, gf_h-1, 0);
+
+gfx_r = gfx_g = gfx_b = 0;
+
+gfx_x = gfx_w-1;
+gfx_y = 0;
+gfx_lineto(0, gf_h/3, 1);
+gfx_lineto(gfx_w-1, gf_h/3, 0);
+
+gfx_x = 0;
+gfx_y = 2*gf_h/3;
+gfx_lineto(gfx_w-1, 2*gf_h/3, 0);
+gfx_lineto(gfx_w/2, gf_h/3, 1);
+gfx_lineto(0, 2*gf_h/3, 1);
+
+gfx_x = 0;
+gfx_y = gf_h-1;
+gfx_lineto(gfx_w-1, gf_h-1, 0);
+gfx_lineto(gfx_w/2, 2*gf_h/3, 1);
+gfx_lineto(0, gf_h-1, 0);
+
+gfx_x = 4;
+gfx_y = 4;
+gfx_drawchar($'w');
+gfx_drawchar($'a'); 
+gfx_drawchar($'v');
+gfx_drawchar($'e'); 
+gfx_drawchar($'s'); 
+gfx_drawchar($'h'); 
+gfx_drawchar($'a'); 
+gfx_drawchar($'p'); 
+gfx_drawchar($'e'); 
+
+gfx_x = 4;
+gfx_y = gf_h/3+4;
+gfx_drawchar($'f');
+gfx_drawchar($'a');
+gfx_drawchar($'s');
+gfx_drawchar($'t');
+gfx_drawchar($' '); 
+gfx_drawchar($'r'); 
+gfx_drawchar($'e'); 
+gfx_drawchar($'s'); 
+gfx_drawchar($'p'); 
+gfx_drawchar($'o'); 
+gfx_drawchar($'n'); 
+gfx_drawchar($'s'); 
+gfx_drawchar($'e'); 
+
+gfx_x = 4;
+gfx_y = 2*gf_h/3+4;
+gfx_drawchar($'s');
+gfx_drawchar($'l');
+gfx_drawchar($'o');
+gfx_drawchar($'w'); 
+gfx_drawchar($' '); 
+gfx_drawchar($'r'); 
+gfx_drawchar($'e'); 
+gfx_drawchar($'s'); 
+gfx_drawchar($'p'); 
+gfx_drawchar($'o'); 
+gfx_drawchar($'n'); 
+gfx_drawchar($'s'); 
+gfx_drawchar($'e'); 
+
+gfx_r = gfx_g = gfx_b = 0.6875;
+
+gfx_x = gfx_w/4-12;
+gfx_y = gf_h/3-12;
+gfx_drawchar($'+');
+gfx_drawchar($'0');
+
+gfx_x = gfx_w/2-12;
+gfx_y = gf_h/3-12;
+gfx_drawchar($'-');
+gfx_drawchar($'o');
+gfx_drawchar($'o');
+gfx_drawchar($' ');
+gfx_drawchar($'d');
+gfx_drawchar($'B');
+
+gfx_x = 3*gfx_w/4-12;
+gfx_y = gf_h/3-12;
+gfx_drawchar($'+');
+gfx_drawchar($'0');
+
+gfx_x = gfx_w/4-12;
+gfx_y = 2*gf_h/3-12;
+gfx_drawchar($'0');
+gfx_drawchar($'.');
+gfx_drawchar($'1');
+gfx_drawchar($'2');
+gfx_drawchar($'5');
+
+gfx_x = gfx_w/2-12;
+gfx_drawchar($'0');
+gfx_drawchar($'.');
+gfx_drawchar($'2');
+gfx_drawchar($'5');
+gfx_drawchar($' ');
+gfx_drawchar($'s');
+gfx_drawchar($'e');
+gfx_drawchar($'c');
+
+gfx_x = 3*gfx_w/4-12;
+gfx_drawchar($'0');
+gfx_drawchar($'.');
+gfx_drawchar($'3');
+gfx_drawchar($'7');
+gfx_drawchar($'5');
+
+gfx_x = gfx_w/4-12;
+gfx_y = gf_h-12;
+gfx_drawchar($'0');
+gfx_drawchar($'.');
+gfx_drawchar($'5');
+
+gfx_x = gfx_w/2-12;
+gfx_drawchar($'1');
+gfx_drawchar($'.');
+gfx_drawchar($'0');
+gfx_drawchar($' ');
+gfx_drawchar($'s');
+gfx_drawchar($'e');
+gfx_drawchar($'c');
+
+gfx_x = 3*gfx_w/4-12;
+gfx_drawchar($'1');
+gfx_drawchar($'.');
+gfx_drawchar($'5');
+
+gfx_x = gfx_w-16;
+gfx_y = gf_h/12+4;
+gfx_drawchar($'+');
+gfx_drawchar($'0');
+
+gfx_x = gfx_w-48;
+gfx_y = gf_h/6+4;
+gfx_drawchar($'-');
+gfx_drawchar($'o');
+gfx_drawchar($'o');
+gfx_drawchar($' ');
+gfx_drawchar($'d');
+gfx_drawchar($'B');
+
+gfx_x = gfx_w-16;
+gfx_y = gf_h/4+4;
+gfx_drawchar($'+');
+gfx_drawchar($'0');
+
+gfx_x = gfx_w-16;
+gfx_y = gf_h/3+4;
+gfx_drawchar($'+');
+gfx_drawchar($'6');
+
+gfx_x = gfx_w-16;
+gfx_y = 5*gf_h/12+4;
+gfx_drawchar($'+');
+gfx_drawchar($'3');
+
+gfx_x = gfx_w-40;
+gfx_y = gf_h/2+4;
+gfx_drawchar($'+');
+gfx_drawchar($'0');
+gfx_drawchar($' ');
+gfx_drawchar($'d');
+gfx_drawchar($'B');
+
+gfx_x = gfx_w-16;
+gfx_y = 7*gf_h/12+4;
+gfx_drawchar($'-');
+gfx_drawchar($'6');
+
+gfx_x = gfx_w-16;
+gfx_y = 2*gf_h/3+4;
+gfx_drawchar($'+');
+gfx_drawchar($'6');
+
+gfx_x = gfx_w-16;
+gfx_y = 3*gf_h/4+4;
+gfx_drawchar($'+');
+gfx_drawchar($'3');
+
+gfx_x = gfx_w-40;
+gfx_y = 5*gf_h/6+4;
+gfx_drawchar($'+');
+gfx_drawchar($'0');
+gfx_drawchar($' ');
+gfx_drawchar($'d');
+gfx_drawchar($'B');
+
+gfx_x = gfx_w-16;
+gfx_y = 11*gf_h/12+4;
+gfx_drawchar($'-');
+gfx_drawchar($'6');
+
+gfx_y = gfx_h-10;
+gfx_r = 1;
+gfx_g = 0;
+gfx_b = 0;
+gfx_x = gfx_w/4-12;
+gfx_drawchar($'2');
+gfx_drawchar($'5');
+gfx_drawchar($'0');
+gfx_drawchar($' ');
+gfx_drawchar($'H');
+gfx_drawchar($'z');
+
+gfx_r = 0;
+gfx_g = 1;
+gfx_b = 0;
+gfx_x = gfx_w/2-12;
+gfx_drawchar($'7');
+gfx_drawchar($'5');
+gfx_drawchar($'0');
+gfx_drawchar($' ');
+gfx_drawchar($'H');
+gfx_drawchar($'z');
+
+gfx_r = 0;
+gfx_g = 0;
+gfx_b = 1;
+gfx_x = 3*gfx_w/4-12;
+gfx_drawchar($'2');
+gfx_drawchar($'5');
+gfx_drawchar($'0');
+gfx_drawchar($'0');
+gfx_drawchar($' ');
+gfx_drawchar($'H');
+gfx_drawchar($'z');
+
+(1) ? (
+
+  gfx_r = 1;
+  gfx_g = 0;
+  gfx_b = 0;
+
+  pxpers = gfx_w/N_FAST;
+  gfx_x = 0;
+  gfx_y = gf_h/6*(1.0-0.5*buf[0]);
+  i = 1;
+  loop(N_FAST-1, 
+    x = i*pxpers;
+    y = gf_h/6*(1.0-0.5*buf[i]);
+    gfx_lineto(x, y, 1);
+    i += 1;
+  );
+
+  pxpers = gfx_w/N_MED;
+
+  gfx_r = 1;
+  gfx_g = 0;
+  gfx_b = 0;
+
+  gfx_x = 0;
+  gfx_y = 2*gf_h/3;
+  idx = N_FAST+N_QUIET+1;
+  i = 0;
+  x = 1;
+  loop(gfx_w, 
+    y = 0.0;
+    while(y = max(y, abs(buf[idx]));
+      i += 1;
+      idx += 1;
+      i*pxpers < x);
+    y = gf_h*(2.0/3.0-y/6.0);
+    gfx_lineto(x, y, 1);
+    x += 1;
+  );
+
+  gfx_r = 0;
+  gfx_g = 1;
+  gfx_b = 0;
+    
+  gfx_x = 0;
+  gfx_y = 2*gf_h/3;
+  idx = N_FAST+N_QUIET+N_MED+N_QUIET+1;
+  i = 0;
+  x = 1;
+  loop(gfx_w, 
+    y = 0.0;
+    while(y = max(y, abs(buf[idx]));
+      i += 1;
+      idx += 1;
+      i*pxpers < x);
+    y = gf_h*(2.0/3.0-y/6.0);
+    gfx_lineto(x, y, 1);
+    x += 1;
+  );
+    
+  gfx_r = 0;
+  gfx_g = 0;
+  gfx_b = 1;
+    
+  gfx_x = 0;
+  gfx_y = 2*gf_h/3;
+  idx = N_FAST+2*(N_QUIET+N_MED)+N_QUIET+1;
+  i = 0;
+  x = 1;
+  loop(gfx_w, 
+    y = 0.0;
+    while(y = max(y, abs(buf[idx]));
+      i += 1;
+      idx += 1;
+      i*pxpers < x);
+    y = gf_h*(2.0/3.0-y/6.0);
+    gfx_lineto(x, y, 1);
+    x += 1;
+  );
+
+  pxpers = gfx_w/N_SLOW;
+
+  gfx_r = 1;
+  gfx_g = 0;
+  gfx_b = 0;
+
+  gfx_x = 0;
+  gfx_y = gf_h;
+  idx = N_FAST+3*(N_QUIET+N_MED)+N_QUIET+1;
+  i = 0;
+  x = 1;
+  loop(gfx_w, 
+    y = 0.0;
+    while(y = max(y, abs(buf[idx]));
+      i += 1;
+      idx += 1;
+      i*pxpers < x);
+    y = gf_h*(1.0-y/6.0);
+    gfx_lineto(x, y, 1);
+    x += 1;
+  );
+
+  gfx_r = 0;
+  gfx_g = 1;
+  gfx_b = 0;
+
+  gfx_x = 0;
+  gfx_y = gf_h;
+  idx = N_FAST+3*(N_QUIET+N_MED)+N_QUIET+N_SLOW+N_QUIET+1;
+  i = 0;
+  x = 1;
+  loop(gfx_w, 
+    y = 0.0;
+    while(y = max(y, abs(buf[idx]));
+      i += 1;
+      idx += 1;
+      i*pxpers < x);
+    y = gf_h*(1.0-y/6.0);
+    gfx_lineto(x, y, 1);
+    x += 1;
+  );
+
+  gfx_r = 0;
+  gfx_g = 0;
+  gfx_b = 1;
+
+  gfx_x = 0;
+  gfx_y = gf_h;
+  idx = N_FAST+3*(N_QUIET+N_MED)+2*(N_QUIET+N_SLOW)+N_QUIET+1;
+  i = 0;
+  x = 1;
+  loop(gfx_w, 
+    y = 0.0;
+    while(y = max(y, abs(buf[idx]));
+      i += 1;
+      idx += 1;
+      i*pxpers < x);
+    y = gf_h*(1.0-y/6.0);
+    gfx_lineto(x, y, 1);
+    x += 1;
+  );
+
+);
+
+

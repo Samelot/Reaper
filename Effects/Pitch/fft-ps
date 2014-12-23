@@ -1,0 +1,124 @@
+desc: New FFT pitch-experimenter
+slider1:10<6,12,1>FFT size (bits)
+slider2:0<-1,1,0.01>slide amt (linear)
+slider3:0<-48,48,1>shift amt (scale semitones)
+slider4:1<0,1,0.01>width around peak
+slider5:0<-120,6,1>passthru mix
+
+@init 
+fftsize=-1;
+
+@slider
+  fftsize != (0|(2^slider1)) ? (
+    fftsize=(2^slider1)|0;
+    bpos=0; 
+    curblock=0;
+    lastblock=curblock+65536*2;
+    window=lastblock+65536*2;
+    hist=window+32768;
+    invfsize=1/fftsize;
+    hfftsize=fftsize*0.5;
+    tmp=0;
+    tsc=3.14159/hfftsize;
+    memset(curblock,0,fftsize*4);
+    memset(lastblock,0,fftsize*4);
+    memset(hist,0,fftsize*2);
+    loop(hfftsize,
+      window[tmp]=0.42-0.50*cos(tmp*tsc)+0.08*cos(2*tmp*tsc);
+      tmp+=1;
+    );
+  );
+  slideramt=(slider2*hfftsize)|0;
+  shiftamt=2^(slider3/12);
+  ptmix=2^(slider5/6);
+
+@sample
+
+bpos >= fftsize ? (
+
+  t=curblock;
+  curblock=lastblock;
+  lastblock=t;
+
+  fft(curblock,fftsize);
+  fft_permute(curblock,fftsize);
+  i=0;
+  swidth=slider4*hfftsize;
+  peakpos=fftsize*0.25;
+  slider4 < 1.0 ? (
+     peakval=0.0;
+     loop(hfftsize*0.25,
+        u=curblock[i]; v=curblock[i+1];
+        cval=(u*u+v*v);
+        cval > peakval ? (peakval=cval; peakpos=i*0.5; );
+        i+=2;
+        peakval*=1.01;
+     );
+  );
+  i=0;
+  cbout=curblock+fftsize*2;
+  memset(cbout,0,fftsize*2);
+  endpos=fftsize*2-2;
+  loop(hfftsize, 
+    i2=endpos-i;
+
+    abs(i*0.5 - peakpos)>swidth ? (
+      cbout[i]+=curblock[i]*invfsize*ptmix;
+      cbout[i+1]+=curblock[i+1]*invfsize*ptmix;
+
+      cbout[i2]+=curblock[i2]*invfsize*ptmix;
+      cbout[i2+1]+=curblock[i2+1]*invfsize*ptmix; 
+     ) : (
+    opos=((i*0.5+slideramt)*shiftamt)|0;
+    opos >= 0 && opos < hfftsize ? (
+      opos+=opos;
+
+     0?(
+      cbout[opos]+=curblock[i]*invfsize;
+      cbout[opos+1]+=curblock[i+1]*invfsize;
+
+      cbout[endpos-opos]+=curblock[i2]*invfsize;
+      cbout[endpos-opos+1]+=curblock[i2+1]*invfsize; 
+      ):(
+      u=curblock[i]; v=curblock[i+1];
+      u2=cbout[opos]; v2=cbout[opos+1];
+      phase1=(atan2(u,v)+atan2(u2,v2))*0.5;
+      mag1=sqrt(u2*u2+v2*v2)+sqrt(u*u+v*v);
+      mag1*=invfsize;
+      cbout[opos]=sin(phase1)*mag1;
+      cbout[opos+1]=cos(phase1)*mag1;
+
+      u=curblock[i2]; v=curblock[i2+1];
+      u2=cbout[endpos-opos]; v2=cbout[endpos-opos+1];
+      phase1=(atan2(u,v)+atan2(u2,v2));
+      mag1=sqrt(u2*u2+v2*v2)+sqrt(u*u+v*v);
+      mag1*=invfsize;
+      cbout[endpos-opos]=sin(phase1)*mag1;
+      cbout[endpos-opos+1]=cos(phase1)*mag1;
+   );
+    );
+    );
+    i+=2; 
+  );
+  fft_ipermute(cbout,fftsize);
+  ifft(cbout,fftsize);
+  bpos=0;
+);
+
+// make sample
+w=window[bpos*0.5];
+iw=1-w;
+
+lastblock[bpos]=hist[bpos];
+lastblock[bpos+1]=hist[bpos+1];
+lastblock[fftsize+bpos]=spl0;
+lastblock[fftsize+bpos+1]=spl1;
+
+hist[bpos]=spl0;
+hist[bpos+1]=spl1;
+
+spl0=(curblock[fftsize*2+bpos]*w + lastblock[fftsize*3+bpos]*iw);
+spl1=(curblock[fftsize*2+bpos+1]*w + lastblock[fftsize*3+bpos+1]*iw);
+
+
+bpos+=2;

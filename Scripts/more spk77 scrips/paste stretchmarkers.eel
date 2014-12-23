@@ -1,0 +1,44 @@
+// EEL script - Paste stretch markers (by spk77 27.6.2014)
+// save as "Paste stretch markers.eel" (for example)
+
+buffer = 65536;
+num_sm = 0;
+item_i = 0;
+ 
+function paste_stretch_markers()
+(
+  Undo_BeginBlock();
+  Main_OnCommand(41844, 0); // delete all stretchmarkers
+  CountSelectedMediaItems(0) > 0 && loop(CountSelectedMediaItems(0),
+      GetExtState(#retval, "stretchmarkers", "take");
+      match("%d", #retval, take) ? (
+        item = GetMediaItemTake_Item(take);
+        item_pos = GetMediaItemInfo_Value(item, "D_POSITION");
+
+        index = 0;
+        start_offs = GetMediaItemTakeInfo_Value(take, "D_STARTOFFS");
+        play_rate = GetMediaItemTakeInfo_Value(take, "D_PLAYRATE");
+        num_sm = GetTakeNumStretchMarkers(take);
+        loop(num_sm,
+          GetTakeStretchMarker(take, index, pos, src_pos);
+          buffer[index* 2] =  pos;
+          buffer[index*2+1] = src_pos;
+          index += 1;
+        );
+        
+        item = GetSelectedMediaItem(0, item_i);
+        (take = GetActiveTake(item)) ? (
+          index = 0;
+          loop(num_sm,
+            SetTakeStretchMarker(take, -1, buffer[index*2]/play_rate, (buffer[index*2+1]-start_offs)/play_rate);
+            index += 1;
+          );
+        );
+        UpdateArrange();
+      );
+    item_i += 1;
+  );
+  Undo_EndBlock("Paste (duplicate) stretch markers", -1);
+);
+
+paste_stretch_markers();

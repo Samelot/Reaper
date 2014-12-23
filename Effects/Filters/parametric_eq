@@ -1,0 +1,34 @@
+// Copyright (C) 2004 and on, Cockos Inc.
+// License: GPL
+
+desc:parametric equalizer
+
+slider1:4000<10,40000,40>band (Hz)
+slider2:0<-120,120,1>gain (dB)
+slider3:0.7<0.01,50,0.05>width
+
+@init
+c0=c1=c2=0;
+ldelay1=ldelay2=rdelay1=rdelay2=0;
+li1=li2=ri1=ri2=0;
+
+@slider
+
+arc=slider1*$pi/(srate*0.5);
+gain=(2 ^ (slider2/6));
+a=(sin(arc)*slider3) * (gain < 1 ? 1 : 0.25);
+tmp=1/(1+a);  
+
+c0=tmp*a*(gain-1);
+c1=tmp*2*cos(arc);
+c2=tmp*(a-1);
+
+@sample
+
+tmp=c0*(spl0-ldelay2) + c1*li1 + c2*li2;
+ldelay2=ldelay1; ldelay1=spl0; 
+li2=li1; spl0 += (li1=tmp);
+
+tmp=c0*(spl1-rdelay2) + c1*ri1 + c2*ri2;
+rdelay2=rdelay1; rdelay1=spl1; 
+ri2=ri1; spl1 += (ri1=tmp);

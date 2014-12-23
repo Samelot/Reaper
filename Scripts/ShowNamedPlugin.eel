@@ -1,0 +1,30 @@
+//by IXix (translated by Elan Hickler)
+
+function ShowNamedPlugin(sPluginName, pTrack, create) local(iSel iPlugin) (
+  /*
+  If named plugin not found and create is True, add it to track FX chain
+  If track FX chain is hidden, float the plugin.
+  If track FX chain is open, switch focus to the plugin if it isn't selected
+  */
+  iPlugin =  TrackFX_GetByName(pTrack, sPluginName, create);
+  iPlugin > -1 ? (
+    iSel = TrackFX_GetChainVisible(pTrack);
+    iSel == -1 ? (
+      TrackFX_GetOpen(pTrack, iPlugin) ?
+      TrackFX_Show(pTrack, iPlugin, 2):
+      TrackFX_Show(pTrack, iPlugin, 3);
+    ):
+    iSel == -2 ? TrackFX_Show(pTrack, iPlugin, 1):
+    iSel != iPlugin ? TrackFX_Show(pTrack, iPlugin, 1);
+  );
+);
+sPluginName = "stereowidth";
+pProject = 0;
+
+i = 0;
+loop(CountSelectedTracks(pProject),
+  pTrack = GetSelectedTrack(pProject, i);
+  ShowNamedPlugin(sPluginName, pTrack, 1);
+  i+=1;
+);
+IsTrackSelected(GetMasterTrack()) ? ShowNamedPlugin(sPluginName, GetMasterTrack(), 1);

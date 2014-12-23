@@ -1,0 +1,37 @@
+section = "babaG";
+key = "test";
+
+!HasExtState(section, key) ? (
+	user = GetUserInputs("No saved variable found", 1, "Save variable", #retvals_csv);
+	SetExtState(section, key, user[4], 0);
+) : (
+	message = sprintf(#, "%d", GetExtState(#retval, section, key));
+	user = ShowMessageBox(message, "Variable found", 4);
+
+	user == 6 ? (
+		user = GetUserInputs("Please input a var to be saved", 1, "Save variable", #retvals_csv);
+		SetExtState(section, key, user[4], 0);
+	);
+
+	user == 7 ? (
+		user = ShowMessageBox("Do you want to delete saved variable?", "Delete variable", 4);
+		user == 6 ? (
+			DeleteExtState(section, key, 0);
+		);
+	);	
+);
+
+// SetExtState("test","value","test2",1);
+// SetExtState("test15","value","oinko",0);
+
+
+// GetExtState(#foo,"test","value");
+// GetExtState(#foo2,"test15","value");
+
+// MB(#foo,#foo2,0);
+// GetExtState(#retval, section, key);
+// ShowConsoleMsg(sprintf(#, "%d", #retval));
+
+// SetExtState(section, key, "5", 0);
+// GetExtState(#retval, section, key);
+// ShowConsoleMsg(#retval);

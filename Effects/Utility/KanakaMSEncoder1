@@ -1,0 +1,32 @@
+desc:Basic M/S Encoder
+// ok so if you do // then it's a comment. the desc: line is the description
+
+// you can have one or more slider lines, these are controls the user can fudge with
+
+// the first number is the default value, the numbers in the <> are min val,
+// max val, and step.
+
+@init
+// this is stuff that happens once (or if the samplerate changes, etc)
+
+@slider
+// this happens when a slider changes
+
+// so we'll set our multiplier to be used later
+// so realistically this happens once or when the user changes shit.
+// we store our volume multiplier in 'vol', for use per-sample. 
+// in theory the sample code below could have this directly...
+
+@block
+// this happens per-block, not really that important for this app
+
+@sample
+// this happens per-sample. spl0 is the left channel, spl1 is the right,
+// and if your track has more than 2 channels, spl2, spl3, etc..
+
+
+
+spl0orig=spl0;
+spl1orig=spl1;
+spl0 = (spl0orig+spl1orig) * 0.5;
+spl1 = (spl0orig-spl1orig) * 0.5;

@@ -1,0 +1,160 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+desc:MIDI drum sequencer
+
+slider1:-6<-120,6,1>volume (dB)
+slider2:/drum_patchsets:patchset_pacific1_adpcm.wav:Patch set
+slider3:1<0.1,4,0.05>pitch scaling
+slider4:16<1,64,1>max voices
+slider5:-24<-120,0,1>gain at 0 velocity (dB)
+slider6:60<0,127,1>base note
+slider7:0<0,16,1>channel (0=omni)
+slider8:0,meter
+
+@init
+max_voices=128; // allocate enough ram for 128 samples
+ext_noinit=1;
+
+voxlist=0; 
+voxsize=0;
+voxentsize=4; // cur position, start position, end position, volume
+
+sampleinfotab=voxentsize*max_voices; // list of samples with start/end pos
+
+lslider2=-1000;
+
+@slider
+voxmaxsize=min(max_voices,slider4);
+
+midichan=slider7;
+midibase=slider6;
+zerogain=2^(slider5/6);
+vol=2^(slider1/6);
+slider3=max(0.1,slider3);
+actsize=0|min(min(actsize,slider4),4096);
+
+tmp=slider2|0;
+lslider2 != tmp ? 
+(
+  lslider2=tmp;
+  pcm_buffer=sampleinfotab+128*2;
+  num_samples=0;
+  filehandle=file_open(slider2);
+  filehandle > 0 ? 
+  (
+    file_riff(filehandle,spl_nch,spl_srate);
+    spl_srate/=srate;
+    spl_nch==2 ?
+    (  
+      numsilent=0;
+      pairs=min(file_avail(filehandle),(8*1024*1024 - 65536*2))*0.5;
+      inspl=0;
+      pos=0;
+      sampleinfotab[num_samples*2]=pcm_buffer; 
+      loop(pairs,
+         file_var(filehandle,l);
+         file_var(filehandle,r);
+         quiet=max(abs(l),abs(r)) < 0.0001;
+         inspl || !quiet ?
+         (
+           pcm_buffer[0]=l;
+           pcm_buffer[1]=r;
+           inspl=1;
+           pos+=2;
+           pcm_buffer+=2;
+         );
+
+         inspl && quiet ? 
+         (
+           (numsilent += 1) >= 2048 ? (
+             // new sample time
+             pcm_buffer-=numsilent*2;
+             sampleinfotab[num_samples*2+1]=(pos-numsilent*2);
+             num_samples+=1;
+             sampleinfotab[num_samples*2]=pcm_buffer;
+             inspl=0;
+             pos=0;
+           );
+         ) : numsilent=0;
+       );
+       sampleinfotab[num_samples*2+1]=pos-numsilent*2;
+       num_samples+=1; 
+    );
+    file_close(filehandle);
+  );
+  actsize=0;
+);
+  slider8=num_samples;
+sliderchange(slider8);
+
+@block
+gpitchsc=2*slider3*spl_srate;
+
+spl_nch == 2 ? (
+
+while(
+  midirecv(pos,msg1,msg23) ? (
+    midisend(pos,msg1,msg23); // pass through MIDI
+
+
+  ws=((msg23&127)-midibase)|0;
+
+  ((midichan > 0 && msg1 == 9*16 + midichan-1) ||  // if MIDI noteon
+  (midichan==0 && msg1>=9*16 && msg1 < 10*16)) &&
+      ws >= 0 && ws < num_samples ? (
+    voxsize>=voxmaxsize ? (
+       voxsize=voxmaxsize-1;
+       memcpy(voxlist,voxlist+voxentsize,voxentsize*voxsize);
+    );
+    p=voxlist+voxentsize*voxsize;
+    p[1] = sampleinfotab[ws*2];
+    p[0] = p[1] -pos / gpitchsc;
+    p[2] = p[1]+sampleinfotab[ws*2+1];
+
+    vel = ((msg23 / 256.0)|0)/127.0;
+    p[3] = 1.0*vel + (zerogain*(1.0-vel));
+    voxsize+=1;
+
+  ); //was noteon
+
+  1;
+  )  // midi recv
+  : 0
+); // while
+
+);
+
+@sample
+
+spl_nch == 2 ? (
+
+s0=s1=0;
+
+
+a=voxlist;
+loop(voxsize,
+  cpos = a[0];
+  cpos >= a[1] ? (
+     // samples, yeah!
+    gain=a[3];
+    addr=cpos|0; 
+    addr-=addr&1;
+
+    s0+=addr[0]*gain;    // todo: interpolation
+    s1+=addr[1]*gain;   
+  
+  );
+
+  cpos += gpitchsc;
+  cpos >= a[2]-1 ? (
+    voxsize-=1;
+    memcpy(a,a+voxentsize,voxsize*voxentsize - a); 
+  ) : (
+    a[0]=cpos;
+    a+=voxentsize;
+  );
+);
+
+spl0+=s0*vol;
+spl1+=s1*vol;
+); // spl_nch == 2

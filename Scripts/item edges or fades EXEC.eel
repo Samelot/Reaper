@@ -1,0 +1,12 @@
+GetExtState(#foo,"test","value");
+// ShowConsoleMsg(#foo);
+
+match("edge", #foo) ? (
+
+	// Main_OnCommand(55021, 0);
+	Main_OnCommand(40513, 0);
+	Main_OnCommand(53308, 0); // 53308 SWS edge trim
+
+) : match("fade", #foo) ? (
+	Main_OnCommand(55046, 0);
+);

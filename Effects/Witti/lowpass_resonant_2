@@ -1,0 +1,51 @@
+slider1:20000<20,20000,1>Frequency (Hz)
+slider2:-3<-24,24,0.1>Resonance (dB)
+slider3:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+mX1 = 0;
+mX2 = 0;
+mY1 = 0;
+mY2 = 0;
+
+@slider
+cutoff = 2 * slider1 / srate;
+res = pow(10, 0.05 * - slider2);
+k = 0.5 * res * sin($pi * cutoff);
+c1 = 0.5 * (1 - k) / (1 + k);
+c2 = (0.5 + c1) * cos($pi * cutoff);
+c3 = (0.5 + c1 - c2) * 0.25;
+    
+mA0 = 2 * c3;
+mA1 = 2 * 2 * c3;
+mA2 = 2 * c3;
+mB1 = 2 * -c2;
+mB2 = 2 * c1;
+
+gain=10^(slider3/20);
+
+@sample
+inA=spl0;
+inB=spl1;
+
+outA = mA0*inA + mA1*mX1A + mA2*mX2A - mB1*mY1A - mB2*mY2A;
+
+mX2A = mX1A;
+mX1A = inA;
+mY2A = mY1A;
+mY1A = outA;
+
+outB = mA0*inB + mA1*mX1B + mA2*mX2B - mB1*mY1B - mB2*mY2B;
+
+mX2B = mX1B;
+mX1B = inB;
+mY2B = mY1B;
+mY1B = outB;
+
+spl0=outA*gain;
+spl1=outB*gain;

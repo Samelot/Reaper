@@ -1,0 +1,84 @@
+slider1:0<-60,24,0.1>volume
+slider2:0<-100,100,1>pan
+slider3:0<-6,6,0.5>pan law
+slider4:80<0,100,1>--sensitivity
+slider5:0.2<0.01,1.5,0.01>--release
+
+filename:0,tubes_biggfx/X.png
+filename:1,tubes_biggfx/L.png
+filename:2,tubes_biggfx/R.png
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+src_vol = tgt_vol = slider1 <= -60.0 ? 0.0 : 10 ^ (slider1 / 20);
+src_pan = tgt_pan = 0.01*slider2;
+
+@slider
+tgt_vol = slider1 <= -60.0 ? 0.0 : 10 ^ (slider1 / 20);
+tgt_pan = 0.01*slider2;
+panlaw = 10 ^ (slider3 / 20);
+pancomp = (panlaw > 1.0 ? 1.0/panlaw : panlaw);
+
+s = 1-slider4/101;
+r = exp(-1/(slider5*srate));
+
+@block
+d_vol = (tgt_vol-src_vol)/samplesblock;
+d_pan = (tgt_pan-src_pan)/samplesblock;
+tvol = src_vol;
+tpan = src_pan;
+src_vol = tgt_vol;
+src_pan = tgt_pan;
+
+@sample
+tvol += d_vol;
+tpan += d_pan;
+adj = tvol;
+panlaw != 1.0 ? (
+panlaw > 1.0 ? adj *= panlaw;
+panatt = abs(tpan);
+adj *= pancomp+(1.0-pancomp)*(2.0/(2.0-panatt)-1.0);  
+);
+adj0 = adj1 = adj;
+tpan < 0.0 ? adj1 *= 1.0+tpan;
+tpan > 0.0 ? adj0 *= 1.0-tpan;
+
+m0 = max(abs(spl0),abs(spl0))*adj0;
+m1 = max(abs(spl1),abs(spl1))*adj1;
+m0 ^= s;
+m1 ^= s;
+e0 = m0>=e0 ? m0 : m0 + r * (e0-m0);
+e1 = m1>=e1 ? m1 : m1 + r * (e1-m1);
+
+spl0 *= adj0;
+spl1 *= adj1;
+
+@gfx 434 325
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=0;
+gfx_y=0;
+gfx_blit(0,1,0);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=217;
+gfx_y=0;
+gfx_blit(0,1,0);
+
+gfx_a=min(e0,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=0;
+gfx_y=0;
+gfx_blit(1,1,0);
+
+gfx_a=min(e1,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=217;
+gfx_y=0;
+gfx_blit(2,1,0);

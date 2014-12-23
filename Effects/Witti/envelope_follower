@@ -1,0 +1,45 @@
+/*
+This simple peak follower will give track the peaks of a signal. It will rise rapidly when the input is rising,
+and then decay exponentially when the input drops.
+It can be used to drive VU meters, or used in an automatic gain control circuit.
+
+This is just a code snippet.
+*/
+
+desc: Outputs a signal on channel 3+4
+
+// halfLife = time in seconds for output to decay to half value after an impulse
+slider1:0.1<0,1,0.001>halfLife (sec)
+
+@init
+output = 0;
+
+@slider
+halfLife=slider1;
+scalar = pow( 0.5, 1/(halfLife * srate));
+
+@sample
+input=(abs(spl0)+abs(spl1))*0.5;
+
+input < 0 ? (
+input = -input;
+);
+
+input >= output ? (
+/* When we hit a peak, ride the peak to the top. */
+output = input;
+):(
+/* Exponential decay of output when signal is low. */
+output = output * scalar;
+/*
+When current gets close to 0.0, set current to 0.0 to prevent FP underflow
+which can cause a severe performance degradation due to a flood
+of interrupts.
+*/
+output < 0.000000000001 ? ( output = 0; );
+);
+
+spl0=spl0;
+spl1=spl1;
+spl2=output;
+spl3=output;

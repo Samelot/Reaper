@@ -1,0 +1,117 @@
+/*
+Insert on a track, open the track IO-window and send
+channel 3+4 to channel 1+2 of the destination track.
+
+(channel 5+6 to channel 1+2 of destination track, etc.)
+*/
+
+desc: Read info..
+
+slider1:0<-60,0,0.1>Main 1+2
+slider2:-60<-60,0,0.1>Send 3+4
+slider3:-60<-60,0,0.1>Send 5+6
+slider4:-60<-60,0,0.1>Send 7+8
+slider5:-60<-60,0,0.1>Send 9+10
+slider6:1<0,1,1{pre Main 1+2,post Main 1+2}>Mode
+slider8:0<-24,24,0.1>Sends Master
+slider9:0<-24,24,0.1>Overall Master
+
+@init
+src_vol1 = tgt_vol1 = slider1 <= -60.0 ? 0.0 : 10 ^ (slider1 / 20);
+src_vol2 = tgt_vol2 = slider2 <= -60.0 ? 0.0 : 10 ^ (slider2 / 20);
+src_vol3 = tgt_vol3 = slider3 <= -60.0 ? 0.0 : 10 ^ (slider3 / 20);
+src_vol4 = tgt_vol4 = slider4 <= -60.0 ? 0.0 : 10 ^ (slider4 / 20);
+src_vol5 = tgt_vol5 = slider5 <= -60.0 ? 0.0 : 10 ^ (slider5 / 20);
+src_vol6 = tgt_vol6 = 10 ^ (slider8 / 20);
+src_vol7 = tgt_vol7 = 10 ^ (slider9 / 20);
+
+@slider
+tgt_vol1 = slider1 <= -60.0 ? 0.0 : 10 ^ (slider1 / 20);
+tgt_vol2 = slider2 <= -60.0 ? 0.0 : 10 ^ (slider2 / 20);
+tgt_vol3 = slider3 <= -60.0 ? 0.0 : 10 ^ (slider3 / 20);
+tgt_vol4 = slider4 <= -60.0 ? 0.0 : 10 ^ (slider4 / 20);
+tgt_vol5 = slider5 <= -60.0 ? 0.0 : 10 ^ (slider5 / 20);
+tgt_vol6 = 10 ^ (slider8 / 20);
+tgt_vol7 = 10 ^ (slider9 / 20);
+
+@block
+d_vol1 = (tgt_vol1-src_vol1)/samplesblock;
+d_vol2 = (tgt_vol2-src_vol2)/samplesblock;
+d_vol3 = (tgt_vol3-src_vol3)/samplesblock;
+d_vol4 = (tgt_vol4-src_vol4)/samplesblock;
+d_vol5 = (tgt_vol5-src_vol5)/samplesblock;
+d_vol6 = (tgt_vol6-src_vol6)/samplesblock;
+d_vol7 = (tgt_vol7-src_vol7)/samplesblock;
+tvol1 = src_vol1;
+tvol2 = src_vol2;
+tvol3 = src_vol3;
+tvol4 = src_vol4;
+tvol5 = src_vol5;
+tvol6 = src_vol6;
+tvol7 = src_vol7;
+src_vol1 = tgt_vol1;
+src_vol2 = tgt_vol2;
+src_vol3 = tgt_vol3;
+src_vol4 = tgt_vol4;
+src_vol5 = tgt_vol5;
+src_vol6 = tgt_vol6;
+src_vol7 = tgt_vol7;
+
+@sample
+tvol1 += d_vol1;
+tvol2 += d_vol2;
+tvol3 += d_vol3;
+tvol4 += d_vol4;
+tvol5 += d_vol5;
+tvol6 += d_vol6;
+tvol7 += d_vol7;
+
+adj1 = tvol1;
+adj2 = tvol2;
+adj3 = tvol3;
+adj4 = tvol4;
+adj5 = tvol5;
+adj6 = tvol6;
+adj7 = tvol7;
+
+s0 = spl0;
+s1 = spl1;
+
+spl0 = (s0 * adj1) * adj7;
+spl1 = (s1 * adj1) * adj7;
+
+slider6 == 1 ? (
+spl2 = ((s0 * adj2 * adj6) * adj1) * adj7;
+spl3 = ((s1 * adj2 * adj6) * adj1) * adj7;
+);
+slider6 == 0 ? (
+spl2 = (s0 * adj2 * adj6) * adj7;
+spl3 = (s1 * adj2 * adj6) * adj7;
+);
+
+slider6 == 1 ? (
+spl4 = ((s0 * adj3 * adj6) * adj1) * adj7;
+spl5 = ((s1 * adj3 * adj6) * adj1) * adj7;
+);
+slider6 == 0 ? (
+spl4 = (s0 * adj3 * adj6) * adj7;
+spl5 = (s1 * adj3 * adj6) * adj7;
+);
+
+slider6 == 1 ? (
+spl6 = ((s0 * adj4 * adj6) * adj1) * adj7;
+spl7 = ((s1 * adj4 * adj6) * adj1) * adj7;
+);
+slider6 == 0 ? (
+spl6 = (s0 * adj4 * adj6) * adj7;
+spl7 = (s1 * adj4 * adj6) * adj7;
+);
+
+slider6 == 1 ? (
+spl8 = ((s0 * adj5 * adj6) * adj1) * adj7;
+spl9 = ((s1 * adj5 * adj6) * adj1) * adj7;
+);
+slider6 == 0 ? (
+spl8 = (s0 * adj5 * adj6) * adj7;
+spl9 = (s1 * adj5 * adj6) * adj7;
+);

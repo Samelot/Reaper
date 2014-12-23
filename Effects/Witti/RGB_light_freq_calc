@@ -1,0 +1,116 @@
+// Display RGB colors as a function of wavelength for visible light (380 to 780 nm).
+
+desc: Convert light frequency to RGB
+
+slider1:440<380,781,1>wavelength (nanometer)
+slider2:0,frequency (terahertz)
+
+in_pin:none
+out_pin:none
+
+@init
+Gamma = 0.80;
+IntensityMax = 255;
+
+c = 2.99792458 * 10^8; // m/sec ,speed of light
+
+@slider
+Wavelength=slider1;
+
+@block
+((Wavelength >= 380) && (Wavelength<440)) ?(
+Red = -(Wavelength - 440) / (440 - 380);
+Green = 0.0;
+Blue = 1.0;
+):(
+((Wavelength >= 440) && (Wavelength<490)) ?(
+Red = 0.0;
+Green = (Wavelength - 440) / (490 - 440);
+Blue = 1.0;
+):(
+((Wavelength >= 490) && (Wavelength<510)) ?(
+Red = 0.0;
+Green = 1.0;
+Blue = -(Wavelength - 510) / (510 - 490);
+):(
+((Wavelength >= 510) && (Wavelength<580)) ?(
+Red = (Wavelength - 510) / (580 - 510);
+Green = 1.0;
+Blue = 0.0;
+):(
+((Wavelength >= 580) && (Wavelength<645)) ?(
+Red = 1.0;
+Green = -(Wavelength - 645) / (645 - 580);
+Blue = 0.0;
+):(
+((Wavelength >= 645) && (Wavelength<781)) ?(
+Red = 1.0;
+Green = 0.0;
+Blue = 0.0;
+):(
+Red = 0.0;
+Green = 0.0;
+Blue = 0.0;
+);
+);
+);
+);
+);
+);
+
+((Wavelength >= 380) && (Wavelength<420)) ?(
+factor = 0.3 + 0.7*(Wavelength - 380) / (420 - 380);
+):(
+((Wavelength >= 420) && (Wavelength<701)) ?(
+factor = 1.0;
+):(
+((Wavelength >= 701) && (Wavelength<781)) ?(
+factor = 0.3 + 0.7*(780 - Wavelength) / (780 - 700);
+):(
+factor = 0.0;
+);
+);
+);
+
+rgb[0] = Red==0.0 ? 0 : floor(IntensityMax * pow(Red * factor, Gamma));
+rgb[1] = Green==0.0 ? 0 : floor(IntensityMax * pow(Green * factor, Gamma));
+rgb[2] = Blue==0.0 ? 0 : floor(IntensityMax * pow(Blue * factor, Gamma));
+
+r=rgb[0]/255;
+g=rgb[1]/255;
+b=rgb[2]/255;
+
+
+f=c/(Wavelength*100);
+slider2=floor(f)*0.1;
+sliderchange(slider2);
+
+@gfx
+gfx_a = 1;
+gfx_r=r;gfx_g=g;gfx_b=b;
+gfx_x=0;gfx_y=0;
+gfx_rectto(gfx_w,gfx_h);
+
+gfx_x=gfx_w-145;
+gfx_y=gfx_h-gfx_texth-2;
+gfx_r=gfx_g=gfx_b=0;
+gfx_a=1;
+gfx_rectto(gfx_w,gfx_h);
+
+gfx_x=gfx_w-143;
+gfx_y=gfx_h-gfx_texth;
+gfx_r=gfx_g=gfx_b=1;
+gfx_drawstr("R:");
+gfx_drawnumber(r*255,0);
+
+gfx_x=gfx_w-92;
+gfx_y=gfx_h-gfx_texth;
+gfx_r=gfx_g=gfx_b=1;
+gfx_drawstr("G:");
+gfx_drawnumber(g*255,0);
+
+gfx_x=gfx_w-41;
+gfx_y=gfx_h-gfx_texth;
+gfx_r=gfx_g=gfx_b=1;
+gfx_drawstr("B:");
+gfx_drawnumber(b*255,0);

@@ -1,0 +1,20 @@
+GetExtState(#foo,"test","value");
+// ShowConsoleMsg(#foo);
+
+match("edge_move", #foo) ? (
+	Main_OnCommand(40513, 0); // move edit cursor to mouse cursor	
+	Main_OnCommand(41205, 0); // move position of item to edit cursor
+) : match("2", #foo) ? (
+	Main_OnCommand(55303, 0); // cycle 1,2,3,4
+	Main_OnCommand(53930, 0); // FNG move items to edit cursor		
+) : match("3", #foo) ? (	
+	Main_OnCommand(40513, 0); // move edit cursor to mouse cursor
+	// Main_OnCommand(54327, 0); // save edit cursor pos, slot 5
+	Main_OnCommand(53930, 0); // FNG move items to edit cursor	
+) : match("4", #foo) ? (	
+	Main_OnCommand(40513, 0); // move edit cursor to mouse cursor
+	// Main_OnCommand(54327, 0); // save edit cursor pos, slot 5
+	Main_OnCommand(53310, 0); // Xenakios move item to edit cursor
+);
+
+

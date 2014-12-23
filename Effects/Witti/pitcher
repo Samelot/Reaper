@@ -1,0 +1,77 @@
+// based on a js chorus plugin
+
+desc: Mono (processes left channel only)
+
+slider1:1<0.0625,8,0.0625>(fraction of whole note) Sync
+slider2:50<10,1000,1>Length (ms)
+slider3:0.25<0.2,1,0.01>Pitch (factor)
+slider4:0<-60,12,0.1>Output (dB)
+
+in_pin:L in
+out_pin:L out
+out_pin:R out
+
+@init
+bpos=0;
+
+tmp=min(16,max(1,1));
+
+i=0;
+loop(tmp, 
+i[0]=(i+1)/tmp*$pi; 
+i+=1; 
+);
+
+bufofs=4096;
+
+src_len = tgt_len = slider2*srate*0.001;
+src_size = tgt_size = tgt_len/tmp * slider3;
+
+@slider
+tgt_len=slider2*srate*0.001;
+tgt_size=tgt_len/tmp * slider3;
+
+gain = slider4 <= -60.0 ? 0.0 : 10 ^ (slider4 / 20);
+
+@block
+rateadj=tempo/(240*slider1)*2*$pi/srate;
+
+d_len = (tgt_len-src_len)/samplesblock;
+tlen = src_len;
+src_len = tgt_len;
+d_size = (tgt_size-src_size)/samplesblock;
+tsize = src_size;
+src_size = tgt_size;
+
+@sample
+tlen += d_len;
+len = tlen;
+
+tsize += d_size;
+size = tsize;
+
+bpos >= len ? (
+bpos=0;
+);
+os0=spl0;
+
+spl0=0;
+vol=gain/tmp;
+i=0;
+
+loop(tmp,
+tpos = bpos - (0.5+0.49*sin( i[0] += rateadj)) * (i+1) * size;
+
+tpos < 0 ? tpos += len;
+tpos > len ? tpos -= len;
+
+frac=tpos-(0|tpos); 
+ntpos=tpos>=(len-1)?0:tpos+1;
+
+spl0 += (bufofs[tpos]*(1-frac) + bufofs[ntpos]*frac ) * vol;
+spl1 = spl0;
+i+=1;
+);
+
+bufofs[bpos]=os0;
+bpos+=1;

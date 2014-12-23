@@ -1,0 +1,29 @@
+// based on EEL script by spk77
+
+function select_notes_under_edit_cursor() local(take, note_count, break, index, start_pos)
+(
+  (take = MIDIEditor_GetTake(MIDIEditor_GetActive())) ? (
+    MIDI_CountEvts(take, note_count, 0, 0);
+    index = 0;
+	cursor_pos = GetCursorPosition();
+	break = 0;
+    while(break === 0 && index < note_count) (
+		MIDI_GetNote(take, index, sel, muted, start_pos, end_pos, chan, pitch, velOut);
+		selected = 0;
+		((MIDI_GetProjTimeFromPPQPos(take, start_pos) <= cursor_pos) &&
+		 (MIDI_GetProjTimeFromPPQPos(take, end_pos) > cursor_pos)) ? (
+			selected = 1;
+		);
+		//MIDI_SetNote(take, index, selected, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+		(sel !== selected) ? (
+			MIDI_SetNote(take, index, selected, muted, start_pos, end_pos, chan, pitch, velOut);
+		);
+			 
+      index += 1;
+    );
+	
+   Undo_OnStateChange("Select notes under edit cursor.");
+  );
+);
+
+select_notes_under_edit_cursor();

@@ -1,0 +1,43 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+
+desc:(digital) distortion
+
+slider1:20<0,50,1>gain (dB)
+slider2:6<1,10,1>hardness
+slider3:-12<-40,0,1>max volume (dB)
+slider4:0<0,2,1{Left,Right,Stereo}>channel mode
+
+@init
+@slider
+preamp=2^(slider1/6);
+soft=2^slider2;
+maxv=2 ^ (slider3/6);
+
+//maxv=0.5 * (soft+maxv - sqrt((soft+maxv)*(soft+maxv)-4*(maxv*(soft-1)-1)));
+
+@sample
+
+slider4 != 1 ? (
+spl0*=preamp;
+t=abs(spl0);
+t > maxv ? 
+(
+  s=sign(spl0);
+  diff=t-maxv;
+  spl0=s*(maxv + diff/(soft+diff));
+);
+
+);
+
+slider4 != 0 ? (
+spl1*=preamp;
+t=abs(spl1);
+t > maxv ? 
+(
+  s=sign(spl1);
+  diff=t-maxv;
+  spl1=s*(maxv + diff/(soft+diff));
+);
+
+);

@@ -1,0 +1,84 @@
+desc: Guitar distortion
+
+slider1:25<-10,60,0.1>Gain (dB)
+slider2:50<0,99,1>Percent (%)
+slider3:300<20,1000,1>HighPass (Hz)
+slider4:-17<-24,12,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+
+AMP_dB = 8.6858896380650365530225783783321;
+src_vol = tgt_vol = exp(slider4/AMP_DB);
+
+@slider
+
+gain=10^(slider1/20);
+k = 2*(slider2/100)/(1-(slider2/100));
+tgt_vol = exp(slider4/AMP_DB);
+
+f= 2*$pi * min(slider3, 0.49 * srate) / srate;
+
+w0 = f;
+cos_w0 = cos(w0);
+alpha = sin(w0) / (2*0.707);
+
+b1 = -1 - cos_w0;
+b0 = b2 = -0.5 * b1;
+a0 = 1 + alpha;
+a1 = -2 * cos_w0;
+a2 = 1 - alpha;
+
+a1 /= a0;
+a2 /= a0;
+b0 /= a0;
+b1 /= a0;
+b2 /= a0;
+
+@block
+
+d_vol = (tgt_vol-src_vol)/samplesblock;
+tvol = src_vol;
+src_vol = tgt_vol;
+
+@sample
+
+tvol += d_vol;
+adj = tvol;
+
+spl0*=gain;
+spl1*=gain;
+
+spl0 = (1+k)*spl0/(1+k*abs(spl0));
+spl1 = (1+k)*spl1/(1+k*abs(spl1));
+
+spl0=min(max(spl0,-1),.5);
+spl1=min(max(spl1,-1),.5);
+
+inA=spl0;
+inB=spl1;
+
+//Left
+x2A = x1A;
+x1A = x0A;
+x0A = inA;
+
+y2A = y1A;
+y1A = y0A;
+y0A = b0*x0A + b1*x1A + b2*x2A - a1*y1A - a2*y2A;
+
+//Right
+x2B = x1B;
+x1B = x0B;
+x0B = inB;
+
+y2B = y1B;
+y1B = y0B;
+y0B = b0*x0B + b1*x1B + b2*x2B - a1*y1B - a2*y2B;
+
+spl0 = y0A*adj;
+spl1 = y0B*adj;

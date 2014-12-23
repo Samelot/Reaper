@@ -1,0 +1,74 @@
+slider1:0<0,10,1{stereo,stereo reverse,mono L+R,mono M+S,mono L,mono R,mono L-R,mono L+R to left,mono L+R to right,L only,R only}>mode
+slider2:0<-60,24,0.1>volume
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+scale = log(10)*0.05; 
+
+@slider
+adj = slider2 <= -60.0 ? 0.0 : exp(slider2*scale);
+
+@sample
+slider1 == 0 ? (
+spl0=spl0*adj;
+spl1=spl1*adj;
+);
+
+slider1 == 1 ? (
+s0=spl0;
+s1=spl1;
+spl0=s1*adj;
+spl1=s0*adj;
+);
+
+slider1 == 2 ? (
+spl0=((spl0+spl1)/2)*adj;
+spl1=spl0;
+);
+
+slider1 == 3 ? (
+s0=(spl0+spl1)/2;
+s1=(spl0-spl1)/2;
+
+spl0=(s0+s1)*adj;
+spl1=spl0;
+);
+
+slider1 == 4 ? (
+spl0=spl0*adj;
+spl1=spl0;
+);
+
+slider1 == 5 ? (
+spl1=spl1*adj;
+spl0=spl1;
+);
+
+slider1 == 6 ? (
+spl0=(spl0-spl1)*adj;
+spl1=spl0;
+);
+
+slider1 == 7 ? (
+spl0=((spl0+spl1)/2)*adj;
+spl1=0;
+);
+
+slider1 == 8 ? (
+spl1=((spl0+spl1)/2)*adj;
+spl0=0;
+);
+
+slider1 == 9 ? (
+spl0=spl0*adj;
+spl1=0;
+);
+
+slider1 == 10 ? (
+spl1=spl1*adj;
+spl0=0;
+);

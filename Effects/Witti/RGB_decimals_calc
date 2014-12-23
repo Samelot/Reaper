@@ -1,0 +1,41 @@
+slider1:0<0,255,1>R
+slider2:0<0,255,1>G
+slider3:0<0,255,1>B
+slider4:0<0,1,1{RGB to Decimals,Decimals to RGB}>Mode
+slider5:0<0,16777215,1>decimal
+
+in_pin:none
+out_pin:none
+
+@slider
+slider5 = floor(slider5);
+
+@block
+slider4 == 0 ? (
+d=(slider1*256*256)+(slider2*256)+slider3;
+slider5=d;
+sliderchange(slider5);
+);
+
+slider4 == 1 ? (
+r=floor(slider5/ 65536);
+slider1=r;
+sliderchange(slider1);
+g=floor((slider5 - (65536 * r)) / 256);
+slider2=g;
+sliderchange(slider2);
+b=slider5 - (65536 * r + 256 * g);
+slider3=floor(b);
+sliderchange(slider3);
+);
+
+@gfx
+gfx_a = 1;
+
+gfx_r=slider1/255;
+gfx_g=slider2/255;
+gfx_b=slider3/255;
+
+gfx_x=0;
+gfx_y=0;
+gfx_rectto(gfx_w,gfx_h);

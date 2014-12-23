@@ -1,0 +1,41 @@
+slider1:0<-24,24,0.1>--input (dB)
+slider2:1<1,100,1>tube (%)
+slider3:0<-24,24,0.1>--wet (dB)
+slider4:0<-24,24,0.1>--dry (dB)
+slider5:100<0,100,1>mix (%)
+slider6:0<-24,24,0.1>output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+thresh = 1; // 'or' thresh = 10^(sliderx/20);
+
+@slider
+pregain = 10^(slider1/20);
+tube = (slider2+6.24)*0.1186;
+wetgain = 10^(slider3/20);
+drygain = 10^(slider4/20);
+mix = slider5/100;
+outgain = 10^(slider6/20);
+
+@sample
+inA =spl0*drygain;
+inB = spl1*drygain;
+
+inputA =spl0*pregain;
+inputB = spl1*pregain;
+
+wet0 = (((exp(inputA*tube) - exp(inputA*tube * -1.2)) / (exp(inputA*tube) + exp(inputA* tube * -1.0))) / tube)*wetgain;
+wet1 = (((exp(inputB*tube) - exp(inputB*tube * -1.2)) / (exp(inputB*tube) + exp(inputB* tube * -1.0))) / tube)*wetgain;
+
+wet0 = min(max(wet0,-thresh), thresh);
+wet1 = min(max(wet1,-thresh), thresh);
+
+spl0 = wet0*(mix)+inA*(1-mix);
+spl1 = wet1*(mix)+inB*(1-mix);
+
+spl0*=outgain;
+spl1*=outgain;

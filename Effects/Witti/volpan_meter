@@ -1,0 +1,225 @@
+slider1:0<-60,24,0.1>volume
+slider2:0<-100,100,1>pan
+slider3:0<-6,6,0.5>pan law
+slider4:0<0,4,1{lightbulbs,tubes 1,freaks,tubes 2,off}>mode
+slider5:80<0,100,1>-sensitivity
+slider6:0.2<0.01,1.5,0.01>-release
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+filename:0,volpan_metergfx/lightbulb1.png
+filename:1,volpan_metergfx/lightbulb2.png
+filename:2,volpan_metergfx/tube.png
+filename:3,volpan_metergfx/tubeR.png
+filename:4,volpan_metergfx/tubeA.png
+filename:5,volpan_metergfx/tubeE.png
+filename:6,volpan_metergfx/tubeP.png
+filename:7,volpan_metergfx/freak1.png
+filename:8,volpan_metergfx/freak2.png
+filename:9,volpan_metergfx/A.png
+filename:10,volpan_metergfx/B.png
+filename:11,volpan_metergfx/off.png
+
+@init
+src_vol = tgt_vol = slider1 <= -60.0 ? 0.0 : 10 ^ (slider1 / 20);
+src_pan = tgt_pan = 0.01*slider2;
+
+@slider
+tgt_vol = slider1 <= -60.0 ? 0.0 : 10 ^ (slider1 / 20);
+tgt_pan = 0.01*slider2;
+panlaw = 10 ^ (slider3 / 20);
+pancomp = (panlaw > 1.0 ? 1.0/panlaw : panlaw);
+
+s = 1-slider5/101;
+r = exp(-1/(slider6*srate));
+
+@block
+d_vol = (tgt_vol-src_vol)/samplesblock;
+d_pan = (tgt_pan-src_pan)/samplesblock;
+tvol = src_vol;
+tpan = src_pan;
+src_vol = tgt_vol;
+src_pan = tgt_pan;
+
+@sample
+tvol += d_vol;
+tpan += d_pan;
+adj = tvol;
+panlaw != 1.0 ? (
+panlaw > 1.0 ? adj *= panlaw;
+panatt = abs(tpan);
+adj *= pancomp+(1.0-pancomp)*(2.0/(2.0-panatt)-1.0);  
+);
+adj0 = adj1 = adj;
+tpan < 0.0 ? adj1 *= 1.0+tpan;
+tpan > 0.0 ? adj0 *= 1.0-tpan;
+
+(slider4==0) || (slider4==3)?(
+m0 = max(abs(spl0),abs(spl0))*adj0;
+m1 = max(abs(spl1),abs(spl1))*adj1;
+m0 ^= s;
+m1 ^= s;
+e0 = m0>=e0 ? m0 : m0 + r * (e0-m0);
+e1 = m1>=e1 ? m1 : m1 + r * (e1-m1);
+);
+
+(slider4==1) || (slider4==2) || (slider4==4)?(
+m = max(abs(spl0),abs(spl1))*adj;
+m ^= s;
+e = m>=e ? m : m + r * (e-m);
+);
+
+spl0 *= adj0;
+spl1 *= adj1;
+
+@gfx 425 156
+slider4==0?(
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=111;
+gfx_y=0;
+gfx_blit(0,1,0);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=211;
+gfx_y=0;
+gfx_blit(0,1,0);
+
+gfx_a=min(e0,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=111;
+gfx_y=0;
+gfx_blit(1,1,0);
+
+gfx_a=min(e1,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=211;
+gfx_y=0;
+gfx_blit(1,1,0);
+);
+
+slider4==1?(
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=79;
+gfx_y=27;
+gfx_blit(2,1,0);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=124;
+gfx_y=27;
+gfx_blit(2,1,0);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=169;
+gfx_y=27;
+gfx_blit(2,1,0);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=214;
+gfx_y=27;
+gfx_blit(2,1,0);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=259;
+gfx_y=27;
+gfx_blit(2,1,0);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=304;
+gfx_y=27;
+gfx_blit(2,1,0);
+
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=79;
+gfx_y=27;
+gfx_blit(3,1,0);
+
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=124;
+gfx_y=27;
+gfx_blit(5,1,0);
+
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=169;
+gfx_y=27;
+gfx_blit(4,1,0);
+
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=214;
+gfx_y=27;
+gfx_blit(6,1,0);
+
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=259;
+gfx_y=27;
+gfx_blit(5,1,0);
+
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=304;
+gfx_y=27;
+gfx_blit(3,1,0);
+);
+
+slider4==2?(
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=0;
+gfx_y=20;
+gfx_blit(7,1,0);
+
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=0;
+gfx_y=0;
+gfx_blit(8,1,0);
+);
+
+slider4==3?(
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=40;
+gfx_y=40;
+gfx_blit(9,1,0);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=220;
+gfx_y=40;
+gfx_blit(9,1,0);
+
+gfx_a=min(e0,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=40;
+gfx_y=40;
+gfx_blit(10,1,0);
+
+gfx_a=min(e1,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=220;
+gfx_y=40;
+gfx_blit(10,1,0);
+);
+
+slider4==4?(
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=0;
+gfx_y=20;
+gfx_blit(11,1,0);
+);

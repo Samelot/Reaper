@@ -1,0 +1,4 @@
+every 2nd = [u1, 1]
+every 2nd start at 1 = [1, u1]
+every 3rd = [u2, 1, u1]
+3. and 5. = [u2, 1, 3, u3]

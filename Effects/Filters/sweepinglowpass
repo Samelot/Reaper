@@ -1,0 +1,33 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+
+desc: sweeping resonant lowpass filter
+slider1:1000<20,20000>freq 1 (Hz)
+slider2:2000<20,20000>freq 2 (Hz)
+slider3:2<0.1,30,0.05>sweep time (s)
+slider4:0.8<0,1>resonance (0..1)
+
+@init
+  spos=0; israte2=2/srate; 
+
+@slider
+  //res_lp!=slider4 ? n3=n4=rn3=rn4=0;
+  res_lp=slider4;
+  fcenter=(slider1+slider2)*0.5; 
+  fsize=(slider1-slider2)*0.5; 
+  ssc=$pi*israte2 / slider3;
+
+@sample
+cut_lp = (fcenter + cos(spos*ssc)*fsize) * israte2; 
+
+spos=spos+1;
+
+fb_lp=res_lp+res_lp/(1-cut_lp);
+
+n3=n3+cut_lp*(spl0-n3+fb_lp*(n3-n4));
+n4=n4+cut_lp*(n3-n4);
+spl0=n4;
+
+rn3=rn3+cut_lp*(spl1-rn3+fb_lp*(rn3-rn4));
+rn4=rn4+cut_lp*(rn3-rn4);
+spl1=rn4;

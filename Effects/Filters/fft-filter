@@ -1,0 +1,88 @@
+desc: New FFT filter
+slider1:10<6,12,1>FFT size (bits)
+slider2:0.1<0,1,0.01>low
+slider3:0.3<0,1,0.01>high
+slider4:0<-120,120>adjust (dB)
+
+@init 
+fftsize=-1;
+
+@slider
+  fftsize != (0|(2^slider1)) ? (
+    fftsize=(2^slider1)|0;
+    bpos=0; 
+    curblock=0;
+    lastblock=65536;
+    window=120000;
+    hist=240000;
+    invfsize=1/fftsize;
+    hfftsize=fftsize*0.5;
+    tmp=0;
+    tsc=3.14159/hfftsize;
+    loop(hfftsize,
+      window[tmp]=0.42-0.50*cos(tmp*tsc)+0.08*cos(2*tmp*tsc);
+      tmp+=1;
+    );
+  );
+  adjust = 2 ^ (slider4/6) * invfsize;
+  lowband=hfftsize*slider2;
+  hiband=hfftsize*slider3;
+  lowband = min(max(lowband,0),hfftsize);
+  hiband = min(max(hiband,0),hfftsize);
+  lowband > hiband ? ( t=hiband; hiband=lowband; lowband=t; );
+  lowband *= 2;
+  hiband *= 2;
+  pdc_top_ch=2;
+  pdc_bot_ch=0;
+  pdc_delay=fftsize;
+
+@sample
+
+bpos >= fftsize ? (
+
+  t=curblock;
+  curblock=lastblock;
+  lastblock=t;
+
+  fft(curblock,fftsize);
+  fft_permute(curblock,fftsize);
+  i=0;
+  loop(hfftsize, 
+    i2=fftsize*2-i-2;
+    i >= lowband && i<= hiband ? 
+    (
+      curblock[i]*=adjust; 
+      curblock[i+1]*=adjust;
+      curblock[i2]*=adjust; 
+      curblock[i2+1]*=adjust;
+    ) : (
+      curblock[i] *= invfsize; 
+      curblock[i+1] *= invfsize; 
+      curblock[i2] *= invfsize; 
+      curblock[i2+1] *= invfsize; 
+    );
+    i+=2; 
+  );
+  fft_ipermute(curblock,fftsize);
+  ifft(curblock,fftsize);
+  bpos=0;
+);
+
+// make sample
+w=window[bpos*0.5];
+iw=1-w;
+
+os0=spl0;
+os1=spl1;
+
+spl0=(curblock[bpos]*w + lastblock[fftsize+bpos]*iw);
+spl1=(curblock[bpos+1]*w + lastblock[fftsize+bpos+1]*iw);
+
+lastblock[bpos]=hist[bpos];
+lastblock[bpos+1]=hist[bpos+1];
+lastblock[fftsize+bpos]=os0;
+lastblock[fftsize+bpos+1]=os1;
+
+hist[bpos]=os0;
+hist[bpos+1]=os1;
+bpos+=2;

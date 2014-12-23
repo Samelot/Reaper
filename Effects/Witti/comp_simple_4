@@ -1,0 +1,73 @@
+slider1:0<-30,0,0.1>Threshold (dB)
+slider2:2<1,20,0.1>Ratio
+slider3:3<1,50,1>Attack (ms)
+slider4:100<1,500,1>Release (ms)
+slider5:50<10,100,1>Env Decay (ms)
+slider6:0<-24,24,0.1>Output (dB)
+slider7:0<0,1,1{fixed,release (s)}>--Meter mode
+slider8:4<0,100,1>--Sensitivity
+slider9:0.01<0.01,8,0.01>--Release (s)
+
+filename:0,comp_simple_4gfx/lightbulb1.png
+filename:1,comp_simple_4gfx/lightbulb2.png
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+output = 1;
+transfer_A = 0;
+transfer_B = 1;
+gain = 1;
+
+@slider
+threshold=10^(slider1/20);
+
+transfer_A = (1/slider2)-1;
+transfer_B = output * pow(threshold,-transfer_A);
+
+attack = exp(-1/(slider3/1000*srate));
+release = exp(-1/(slider4/1000*srate));
+envelope_decay = exp(-1/(slider5/1000*srate));
+
+vol=10^(slider6/20);
+
+s = 1-slider8/101;
+r = exp(-1/(slider9*srate));
+
+@sample
+inL=spl0;
+inR=spl1;
+
+det = max(abs(inL),abs(inR));
+det += 0.000000000001;
+env = det >= env ? det : det+envelope_decay*(env-det);
+transfer_gain = env > threshold ? pow(env,transfer_A)*transfer_B:output;
+gain = transfer_gain < gain ? transfer_gain+attack *(gain-transfer_gain) : transfer_gain+release*(gain-transfer_gain);
+
+spl0 = inL * gain*vol;
+spl1 = inR * gain*vol;
+
+m = max(abs(gain),abs(gain));
+m ^= s;
+
+slider7 ? (
+e = m >= e ? m : m + r*(e-m);
+):(
+e = m;
+);
+
+@gfx 0 156
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=161;
+gfx_y=0;
+gfx_blit(0,1,0);
+
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=161;
+gfx_y=0;
+gfx_blit(1,1,0);

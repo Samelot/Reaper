@@ -1,0 +1,181 @@
+desc: Five compressors in series with ascending attack/release times
+
+slider1:0<-30,0,0.1>Threshold (dB)
+slider2:0<-24,24,0.1>Output (dB)
+slider3:0<0,1,1{Off,On}>Delta
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+output = 1;
+transfer_A = 0;
+transfer_B = 1;
+gainA = 1;
+gainB = 1;
+gainC = 1;
+gainD = 1;
+gainE = 1;
+envA=0;
+envB=0;
+envC=0;
+envD=0;
+envE=0;
+
+log2dB = 8.6858896380650365530225783783321;
+db2log = 0.11512925464970228420089957273422;
+gr_meterA=1;
+gr_meterB=1;
+gr_meterC=1;
+gr_meterD=1;
+gr_meterE=1;
+gr_meter_decay = exp(1/(1*srate));
+
+@slider
+thresh=slider1;
+threshold=exp(thresh * db2log);
+
+transfer_A = (1/1.4)-1;
+transfer_B = output * pow(threshold,-transfer_A);
+
+envelope_decay = exp(-1/(20/1000*srate));
+
+autogain = (abs(thresh) - (abs(thresh)/max(1,7)))/2;
+vol=slider2;
+volv=exp((vol+autogain) * db2log);
+
+delta=10^(30/20);
+
+@sample
+inL=spl0;
+inR=spl1;
+
+detA = max(abs(inL),abs(inR));
+detA += 0.000000000001;
+envA = detA >= envA ? detA : detA+envelope_decay*(envA-detA);
+transfer_gainA = envA > threshold ? pow(envA,transfer_A)*transfer_B:output;
+attackA = exp(-1/(1/1000*srate));
+releaseA = exp(-1/(10/1000*srate));
+gainA = transfer_gainA < gainA ? transfer_gainA+attackA *(gainA-transfer_gainA) : transfer_gainA+releaseA*(gainA-transfer_gainA);
+
+out0 = inL * gainA;
+out1 = inR * gainA;
+
+detB = max(abs(out0),abs(out1));
+envB = detB >= envB ? detB : detB+envelope_decay*(envB-detB);
+transfer_gainB = envB > threshold ? pow(envB,transfer_A)*transfer_B:output;
+attackB = exp(-1/(10/1000*srate));
+releaseB = exp(-1/(20/1000*srate));
+gainB = transfer_gainB < gainB ? transfer_gainB+attackB *(gainB-transfer_gainB) : transfer_gainB+releaseB*(gainB-transfer_gainB);
+
+out2 = out0 * gainB;
+out3 = out1 * gainB;
+
+detC = max(abs(out2),abs(out3));
+envC = detC >= envC ? detC : detC+envelope_decay*(envC-detC);
+transfer_gainC = envC > threshold ? pow(envC,transfer_A)*transfer_B:output;
+attackC = exp(-1/(20/1000*srate));
+releaseC = exp(-1/(40/1000*srate));
+gainC = transfer_gainC < gainC ? transfer_gainC+attackC *(gainC-transfer_gainC) : transfer_gainC+releaseC*(gainC-transfer_gainC);
+
+out4 = out2 * gainC;
+out5 = out3 * gainC;
+
+detD = max(abs(out4),abs(out5));
+envD = detD >= envD ? detD : detD+envelope_decay*(envD-detD);
+transfer_gainD = envD > threshold ? pow(envD,transfer_A)*transfer_B:output;
+attackD = exp(-1/(40/1000*srate));
+releaseD = exp(-1/(80/1000*srate));
+gainD = transfer_gainD < gainD ? transfer_gainD+attackD *(gainD-transfer_gainD) : transfer_gainD+releaseD*(gainD-transfer_gainD);
+
+out6 = out4 * gainD;
+out7 = out5 * gainD;
+
+detE = max(abs(out6),abs(out7));
+envE = detE >= envE ? detE : detE+envelope_decay*(envE-detE);
+transfer_gainE = envE > threshold ? pow(envE,transfer_A)*transfer_B:output;
+attackE = exp(-1/(80/1000*srate));
+releaseE = exp(-1/(160/1000*srate));
+gainE = transfer_gainE < gainE ? transfer_gainE+attackE *(gainE-transfer_gainE) : transfer_gainE+releaseE*(gainE-transfer_gainE);
+
+slider3 == 1 ? (
+spl0 = ((out6 * gainE)-out6)*delta;
+spl1 = ((out7 * gainE)-out7)*delta;
+):(
+spl0 = out6 * gainE * volv;
+spl1 = out7 * gainE * volv;
+);
+
+grA = log(gainA)*log2dB;
+grvA = exp(grA * db2log);
+grvA < gr_meterA ? gr_meterA=grvA : ( gr_meterA*=gr_meter_decay; gr_meterA>1?gr_meterA=1; );
+
+grB = log(gainB)*log2dB;
+grvB = exp(grB * db2log);
+grvB < gr_meterB ? gr_meterB=grvB : ( gr_meterB*=gr_meter_decay; gr_meterB>1?gr_meterB=1; );
+
+grC = log(gainC)*log2dB;
+grvC = exp(grC * db2log);
+grvC < gr_meterC ? gr_meterC=grvC : ( gr_meterC*=gr_meter_decay; gr_meterC>1?gr_meterC=1; );
+
+grD = log(gainD)*log2dB;
+grvD = exp(grD * db2log);
+grvD < gr_meterD ? gr_meterD=grvD : ( gr_meterD*=gr_meter_decay; gr_meterD>1?gr_meterD=1; );
+
+grE = log(gainE)*log2dB;
+grvE = exp(grE * db2log);
+grvE < gr_meterE ? gr_meterE=grvE : ( gr_meterE*=gr_meter_decay; gr_meterE>1?gr_meterE=1; );
+
+@gfx 0 54
+gr_meterA *= exp(1/30); gr_meterA>1?gr_meterA=1;
+gr_meterB *= exp(1/30); gr_meterB>1?gr_meterB=1;
+gr_meterC *= exp(1/30); gr_meterC>1?gr_meterC=1;
+gr_meterD *= exp(1/30); gr_meterD>1?gr_meterD=1;
+gr_meterE *= exp(1/30); gr_meterE>1?gr_meterE=1;
+gfx_r=1; gfx_g=gfx_b=0; gfx_a=0.8;
+
+meter_bot=10;
+meter_h=min(gfx_h,50);
+xscale=gfx_w*20/meter_bot;
+
+gfx_y=2;
+gfx_x=gfx_w + log10(gr_meterA)*xscale;
+gfx_rectto(gfx_w,meter_h-40);
+
+gfx_y=11;
+gfx_x=gfx_w + log10(gr_meterB)*xscale;
+gfx_rectto(gfx_w,meter_h-30);
+
+gfx_y=21;
+gfx_x=gfx_w + log10(gr_meterC)*xscale;
+gfx_rectto(gfx_w,meter_h-20);
+
+gfx_y=31;
+gfx_x=gfx_w + log10(gr_meterD)*xscale;
+gfx_rectto(gfx_w,meter_h-10);
+
+gfx_y=41;
+gfx_x=gfx_w + log10(gr_meterE)*xscale;
+gfx_rectto(gfx_w,meter_h);
+
+gfx_r=gfx_g=gfx_b=1.0; gfx_a=0.6;
+
+s2=sqrt(2)/2;
+g = s2;
+while(
+gfx_x=gfx_w + log10(g)*xscale;
+gfx_x >= 0 ? 
+(
+gfx_y=0;
+gfx_lineto(gfx_x,meter_h,0);
+gfx_y=meter_h-gfx_texth;
+gfx_x+=2;
+gfx_drawnumber(log10(g)*20,0);
+gfx_drawchar($'d');
+gfx_drawchar($'B');
+);
+g*=s2;
+gfx_x >=0;
+);

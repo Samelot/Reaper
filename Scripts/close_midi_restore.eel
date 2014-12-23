@@ -1,0 +1,11 @@
+function do_actions_from_main_and_midi_sections()
+(
+	restore_arrenge = 41187; // 53871
+	restore_yab = 53871;  
+	Main_OnCommand(restore_arrenge, 0);
+	Main_OnCommand(restore_yab, 0);
+
+
+);
+
+do_actions_from_main_and_midi_sections();

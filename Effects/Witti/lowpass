@@ -1,0 +1,31 @@
+slider1:7018<20,7018,1>Frequency (Hz)
+slider2:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@slider
+cut = (2*$pi*slider1/srate);
+gain = 10^(slider2/20);
+
+@sample
+inA=spl0;
+inB=spl1;
+
+buf1A = ((inA - buf1A) * cut) + buf1A;
+buf2A = ((buf1A - buf2A) * cut) + buf2A;
+buf3A = ((buf2A - buf3A) * cut) + buf3A;
+buf4A = ((buf3A - buf4A) * cut) + buf4A;
+lpoutA = buf4A;
+
+buf1B = ((inB - buf1B) * cut) + buf1B;
+buf2B = ((buf1B - buf2B) * cut) + buf2B;
+buf3B = ((buf2B - buf3B) * cut) + buf3B;
+buf4B = ((buf3B - buf4B) * cut) + buf4B;
+lpoutB = buf4B;
+
+spl0=lpoutA*gain;
+spl1=lpoutB*gain;
+

@@ -1,0 +1,38 @@
+slider1:100<0,200,0.01>percentage
+slider2:0<-166.1,6,0.01>decibel
+slider3:0<0,1,1{percentage to decibel,decibel to percentage}>mode
+
+slider5:0,percentage to velocity
+slider6:0,decibel to velocity
+//slider7:0, ???
+
+in_pin:none
+out_pin:none
+
+@init
+log2dB = 20/log(10);
+//log2dB = 8.6858896380650365530225783783321;
+db2log = log(10)/ 20;
+//db2log = 0.11512925464970228420089957273422;
+
+@block
+slider3 ? (
+slider1 = exp(slider2*dB2log)*100; // dB to %
+sliderchange(slider1);
+):(
+slider2 = log(slider1*0.01)*log2dB; // % to dB
+sliderchange(slider2);
+);
+
+//------------------------------------------------------------------
+
+slider5=floor(( ( (slider1*127) /100) *10)/10); // % to vel
+sliderchange(slider5);
+
+diff=0-slider2;
+vel=sqrt(127^2/10^(diff/20)); // dB to vel
+slider6=floor(vel*10)/10;
+sliderchange(slider6);
+
+//slider7=-20 * log(127^2 / slider5^2); // ???
+//sliderchange(slider7);

@@ -1,0 +1,166 @@
+slider1:0<-30,0,0.1>Threshold (dB)
+slider2:2<1,20,0.1>Ratio
+slider3:3<1,50,1>Attack (ms)
+slider4:100<1,500,1>Release (ms)
+slider5:50<10,100,1>Env Decay (ms)
+slider6:0<0,100,0.01>Hi-Pass (scale)
+slider7:1<0,1,1{Feed Forward,Feedback}>Mode
+slider8:0<0,1,1{Off,On}>Auto Make-up
+slider9:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+output = 1;
+transfer_A = 0;
+transfer_B = 1;
+gain = 1;
+env=0;
+automakeup = 0;
+
+log2dB = 8.6858896380650365530225783783321;
+db2log = 0.11512925464970228420089957273422;
+gr_meter=1;
+gr_meter_decay = exp(1/(1*srate));
+
+@slider
+tmpx = 16+slider6*1.20103;
+tmpy = floor(exp(tmpx*log(1.059))*8.17742);
+f= 2*$pi * min(tmpy, 0.49 * srate) / srate;
+q=0.707;
+w0 = f;
+cos_w0 = cos(w0);
+alpha = sin(w0) / (2*q);
+b1 = -1 - cos_w0;
+b0 = b2 = -0.5 * b1;
+a0 = 1 + alpha;
+a1 = -2 * cos_w0;
+a2 = 1 - alpha;
+a1 /= a0;
+a2 /= a0;
+b0 /= a0;
+b1 /= a0;
+b2 /= a0;
+
+thresh=slider1;
+threshold=exp(thresh * db2log);
+transfer_A = (1/slider2)-1;
+transfer_B = output * pow(threshold,-transfer_A);
+attack = exp(-1/(slider3/1000*srate));
+release = exp(-1/(slider4/1000*srate));
+envelope_decay = exp(-1/(slider5/1000*srate));
+
+automakeup = slider8;
+automakeup ? (
+autogain = (abs(thresh) - (abs(thresh)/max(1,slider2-1)))/2;
+) : (
+autogain = 0;
+);
+vol=slider9;
+volv=exp((vol+autogain) * db2log);
+
+@sample
+slider7==0?
+(
+inL=spl0;
+inR=spl1;
+);
+slider7==1?
+(
+inL=ospl0;
+inR=ospl1;
+);
+
+//Left
+x2A = x1A;
+x1A = x0A;
+x0A = inL;
+y2A = y1A;
+y1A = y0A;
+y0A = b0*x0A + b1*x1A + b2*x2A - a1*y1A - a2*y2A;
+
+//Right
+x2B = x1B;
+x1B = x0B;
+x0B = inR;
+y2B = y1B;
+y1B = y0B;
+y0B = b0*x0B + b1*x1B + b2*x2B - a1*y1B - a2*y2B;
+
+//Output
+out0=y0A;
+out1=y0B;
+
+det = max(abs(out0),abs(out1));
+det += 0.000000000001;
+env = det >= env ? det : det+envelope_decay*(env-det);
+transfer_gain = env > threshold ? pow(env,transfer_A)*transfer_B:output;
+gain = transfer_gain < gain ? transfer_gain+attack *(gain-transfer_gain) : transfer_gain+release*(gain-transfer_gain);
+
+slider7==0?
+(
+spl0 = inL * gain*volv;
+spl1 = inR * gain*volv;
+);
+slider7==1?
+(
+spl0 *= gain;
+spl1 *= gain;
+ospl0 = spl0;
+ospl1 = spl1;
+spl0*=volv;
+spl1*=volv;
+);
+
+gr = log(gain)*log2dB;
+grv = exp(gr * db2log);
+grv < gr_meter ? gr_meter=grv : ( gr_meter*=gr_meter_decay; gr_meter>1?gr_meter=1; );
+
+@gfx 0 45
+gr_meter *= exp(1/30); gr_meter>1?gr_meter=1;
+gfx_r=1; gfx_g=gfx_b=0; gfx_a=0.8;
+
+meter_bot=20;
+meter_h=min(gfx_h,32);
+xscale=gfx_w*20/meter_bot;
+
+gfx_y=0;
+gfx_x=gfx_w + log10(gr_meter)*xscale;
+gfx_rectto(gfx_w,meter_h);
+
+gfx_r=gfx_g=gfx_b=1.0; gfx_a=0.6;
+
+s2=sqrt(2)/2;
+g = s2;
+while(
+gfx_x=gfx_w + log10(g)*xscale;
+gfx_x >= 0 ? 
+(
+gfx_y=0;
+gfx_lineto(gfx_x,meter_h,0);
+gfx_y=meter_h-gfx_texth;
+gfx_x+=2;
+gfx_drawnumber(log10(g)*20,0);
+gfx_drawchar($'d');
+gfx_drawchar($'B');
+);
+g*=s2;
+gfx_x >=0;
+);
+
+//Filter
+gfx_x=2;gfx_y=35;
+gfx_lineto(gfx_x, gfx_y,0);
+gfx_r=gfx_b=0;
+gfx_g=gfx_a=1;
+gfx_drawchar($'F');
+gfx_drawchar($' ');
+gfx_drawchar($'=');
+gfx_drawchar($' ');
+gfx_drawnumber(tmpy,0);
+gfx_drawchar($' ');
+gfx_drawchar($'H');
+gfx_drawchar($'z');

@@ -1,0 +1,8 @@
+function do_actions_from_main_and_midi_sections()
+(
+	main_section_action1 = 5508; // 53872 == restore arrenge view, slot 1
+	
+	Main_OnCommand(main_section_action1, 0);
+);
+
+do_actions_from_main_and_midi_sections();

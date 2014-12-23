@@ -1,0 +1,34 @@
+desc: One pole LP and HP
+
+slider1:200<20,22000,1>Frequency (Hz)
+slider2:0<0,1,1{lowpass,highpass}>Mode
+slider3:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@slider
+x = 2*$pi*slider1/srate;
+p = (2-cos(x)) - sqrt((2-cos(x))^2 - 1);
+//p = (1 - 2*slider1/srate)^2;
+
+gain=10^(slider3/20);
+
+@sample
+inA=spl0;
+inB=spl1;
+
+slider2==1?
+(
+tmpA = (1-p)*inA + p*tmpA;
+tmpB = (1-p)*inB + p*tmpB;
+spl0=(inA-tmpA)*gain;
+spl1=(inB-tmpB)*gain;
+):(
+tmpA = (1-p)*inA + p*tmpA;
+tmpB = (1-p)*inB + p*tmpB;
+spl0=tmpA*gain;
+spl1=tmpB*gain;
+);

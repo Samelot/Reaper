@@ -1,0 +1,42 @@
+desc:fft noise generator
+
+slider1:-90<-120,0,6>volume (per  band)
+slider2:6<0,9,1{16,32,64,128,256,512,1024,2048,4096,8192,16384,32768}>FFT size
+
+@init
+
+@slider
+vol=10^(slider1/20);
+
+
+lfft=fftsize;
+a=(slider2|0);
+a<0?a=0:a>11?a=11;
+fftsize=2^(a+4);
+
+lfft!=fftsize ? 
+(
+  buf=0;
+  ep=fftsize*2;
+  fv=0;
+  hsize=fftsize*0.5;
+  loop(hsize,
+    v=buf ? 2.0 : 0;
+    buf[0]=v;
+    buf[1]=0;
+    ep-=2;
+    buf+=2;
+    ep[0]=0;
+    ep[1]=0;
+  );
+  fft_ipermute(0,fftsize);
+  ifft(0,fftsize);
+  rdpos=0;
+);
+
+@sample
+
+spl0=rdpos[0]*vol;
+spl1=rdpos[0]*vol;
+rdpos+=2;
+rdpos>=fftsize*2?rdpos=0;

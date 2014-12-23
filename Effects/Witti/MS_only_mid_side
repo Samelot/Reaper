@@ -1,0 +1,41 @@
+slider1:0<0,2,1{do nothing,only mid,only side}>mode
+slider2:0<0,1,1{default,inverted}>mid polarity
+slider3:0<0,1,1{default,inverted}>side polarity
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@sample
+
+slider1 == 0 ? (
+spl0 = spl0;
+spl1 = spl1;
+);
+
+slider1 == 1 ? (
+spl0orig=spl0;
+spl1orig=spl1;
+spl0 = (spl0orig+spl1orig) * 0.5;
+
+slider2 == 0 ? (
+spl1 = (spl0orig+spl1orig) * 0.5;
+);
+slider2 == 1 ? (
+spl1 = (spl0orig+spl1orig) * -0.5;
+);
+);
+
+slider1 == 2 ? (
+spl0orig=spl0;
+spl1orig=spl1;
+spl0 = (spl0orig-spl1orig) * 0.5;
+
+slider3 == 0 ? (
+spl1 = (spl0orig-spl1orig) * -0.5;
+);
+slider3 == 1 ? (
+spl1 = (spl0orig-spl1orig) * 0.5;
+);
+);

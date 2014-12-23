@@ -1,0 +1,63 @@
+slider1:12000<20,12000,1>Frequency (Hz)
+slider2:0<0,8,0.001>Resonance
+slider3:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+vibraposA = 0;
+vibraspeedA = 0;
+vibraposB = 0;
+vibraspeedB = 0;
+
+@slider
+resofreq=slider1;
+amp=max(min(slider2,8),0.815);
+
+w = 2.0*$pi*resofreq/srate;
+q = 1.0-w/(2.0*(amp+0.5/(1.0+w))+w-2.0);
+r = q*q;
+c = r+1.0-2.0*cos(w)*q;
+
+gain=10^(slider3/20);
+
+@sample
+inA=spl0;
+inB=spl1;
+
+/* Accelerate vibra by signal-vibra, multiplied by lowpasscutoff */
+vibraspeedA += (inA - vibraposA) * c;
+/* Add velocity to vibra's position */
+vibraposA += vibraspeedA;
+/* Attenuate/amplify vibra's velocity by resonance */
+vibraspeedA *= r;
+/* Check clipping */
+tempA = vibraposA;
+(tempA > 32767)?(
+tempA = 32767;
+):(
+tempA < -32768)?(
+tempA = -32768;
+);
+
+/* Accelerate vibra by signal-vibra, multiplied by lowpasscutoff */
+vibraspeedB += (inB - vibraposB) * c;
+/* Add velocity to vibra's position */
+vibraposB += vibraspeedB;
+/* Attenuate/amplify vibra's velocity by resonance */
+vibraspeedB *= r;
+/* Check clipping */
+tempB = vibraposB;
+(tempB > 32767)?(
+tempB = 32767;
+):(
+tempB < -32768)?(
+tempB = -32768;
+);
+
+/* Store new value */
+spl0=tempA*gain;
+spl1=tempB*gain;

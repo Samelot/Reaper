@@ -1,0 +1,54 @@
+desc: Can be loud !  (Output clips at 0dB)
+
+slider1:0<0,200,1>selectivity
+slider2:1<1,100,1>ratio
+slider3:0<-30,30,0.1>gain
+slider5:1<0,1,0.01>mix in
+
+@init
+src_selectivity = tgt_selectivity = slider1;
+src_ratio = tgt_ratio = slider2;
+
+@slider
+tgt_selectivity=slider1;
+tgt_ratio=slider2;
+gain2=10^(slider3/20);
+
+mixA = 1 - slider5;
+mixB = slider5;
+
+@block
+d_selectivity = (tgt_selectivity-src_selectivity)/samplesblock;
+tselectivity = src_selectivity;
+src_selectivity = tgt_selectivity;
+
+d_ratio = (tgt_ratio-src_ratio)/samplesblock;
+tratio = src_ratio;
+src_ratio = tgt_ratio;
+
+@sample
+tselectivity += d_selectivity;
+selectivity = tselectivity;
+
+tratio += d_ratio;
+ratio = tratio;
+
+in0=spl0;
+in1=spl1;
+
+gain1 = 1/(selectivity + 1);
+
+cap0 = (in0 + cap0*selectivity )*gain1;
+output0 = ((in0 + cap0*ratio)*gain2)*0.5;
+
+cap1 = (in1 + cap1*selectivity )*gain1;
+output1 = ((in1 + cap1*ratio)*gain2)*0.5;
+
+s0 = output0*mixB;
+s1 = output1*mixB;
+
+spl0 = spl0*mixA+s0;
+spl1 = spl1*mixA+s1;
+
+spl0 = min(max(spl0,-1),1);
+spl1 = min(max(spl1,-1),1);

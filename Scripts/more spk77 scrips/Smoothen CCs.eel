@@ -1,0 +1,261 @@
+// Smoothen CCs (original script by gofer)
+// 9.4.2014 spk77
+
+function get_events(take) local(i, index, selectedOut, mutedOut, startppqpos, endppqposOut, chanOut, pitchOut, event_value)
+(
+  drag_started == 1 ? (
+    memset(note_list, 0, sel_event_count * 2);
+    sel_event_count = 0;
+    //event_value_sum = 0;
+    //average_event_value = 0;
+    index = -1;
+    i = 0;
+    while ((index = MIDI_EnumSelCC(take, index)) != -1) (
+      //bool MIDI_GetCC(MediaItem_Take* take, int ccidx, bool &selectedOut, bool &mutedOut, &ppqposOut, int &chanmsgOut, int &chanOut, int &msg2Out, int &msg3Out)
+      MIDI_GetCC(take, index, selectedOut, mutedOut, startppqpos, chanmsgOut, chanOut, msg2Out, event_value);
+      msg2Out == last_clicked_cc_lane ? (
+        note_list[i] = index;
+        note_list[i + 1] = event_value;
+        i += 2;
+        sel_event_count += 1;
+      );
+    );
+  );
+);
+
+function set_default_colors()
+(
+  gfx_r = 0.5;
+  gfx_g = 0.8;
+  gfx_b = 0.5;
+);
+
+ function check_cc_lane(s_w, s_h) local (cc_info_w, cc_info_h)
+( 
+  gfx_a = 1;
+  gfx_r = 0.8;
+  gfx_g = 1;
+  gfx_b = 0.8;
+  #cc_info = "";
+  last_clicked_cc_lane == -1 ? (
+    #cc_info = "Select a CC lane";
+  ) : last_clicked_cc_lane > 127 && last_clicked_cc_lane < 512 ? (
+    #cc_info = "14-bit values not supported";
+  ) : last_clicked_cc_lane >= 512 ? (
+    #cc_info = "Not a CC lane (click/select a CC lane)";
+  ) : (
+    #cc_info = "CC";
+    #cc_info += sprintf(#, "%d", last_clicked_cc_lane);
+  );
+  gfx_measurestr(#cc_info, cc_info_w, cc_info_h);
+  gfx_x = center_x - cc_info_w / 2;
+  gfx_y = draw_start_y + 2 * gfx_texth;
+  gfx_printf(#cc_info);
+);
+  
+function scale_x_to_range(range_start, range_end, x_coord, x_start_offs, x_end_offs) local (scaled_x)
+(
+  //scaled_x = floor(range_end - (range_end - range_start) * (x_coord - x_start_offs) / (gfx_w - x_start_offs - x_end_offs) + 0.5);
+  scaled_x = range_end - (range_end - range_start) * (x_coord - x_start_offs) / (gfx_w - x_start_offs - x_end_offs);
+  scaled_x > range_end ? scaled_x = range_end;
+  scaled_x < range_start ? scaled_x = range_start;
+  scaled_x;
+);
+
+function slider (x,y,r) local (m_x, fill, s_w, s_h)
+(
+  fill = 0;
+  gfx_r = 0.8;
+  gfx_g = 0.8;
+  gfx_b = 0.8;
+  m_x = draw_start_x;
+  (mouse_x >= draw_start_x - r && mouse_x <= draw_end_x && mouse_y >= y - r && mouse_y <= y + r) || drag_started == 1 && lmb_click_outside_window == 0 && lmb_down == 0 ? (
+    gfx_b += 0.1;
+    mouse_cap == 1 ? (
+      drag_started = 1;
+      gfx_b += 0.2;
+      m_x = mouse_x;
+      mouse_x > draw_end_x ? m_x = draw_end_x;
+      mouse_x < draw_start_x ? m_x = draw_start_x;
+      fill = 1;
+      //slider_last_x = m_x;
+    ) : (
+      //m_x = center_x;
+      drag_started = 0;
+      m_x = draw_start_x;
+      fill = 1;
+    );
+  );
+  
+  slider_val = 100-scale_x_to_range (0, 100, m_x, draw_start_x, gfx_w - draw_end_x);
+  gfx_measurestr(sprintf(slider_val_str, "%d", slider_val), s_w, s_h);
+  gfx_circle(m_x, y, r, fill);
+
+  slider_last_x = m_x;
+);
+
+function smoothen() local (i, selectedOut, mutedOut, startppqposOut, chanmsgOut, chanOut, msg2Out, value)
+(
+  (take = MIDIEditor_GetTake(MIDIEditor_GetActive())) ? (
+    last_clicked_cc_lane = MIDIEditor_GetSetting_int(MIDIEditor_GetActive(), "last_clicked_cc_lane");
+    drag_started == 1 && last_clicked_cc_lane >= 0 && last_clicked_cc_lane <= 127 ? (
+      get_events(take);
+      i = 0;
+      pos_diff = last_event_pos - first_event_pos;
+      loop(sel_event_count,
+        slider_val != last_slider_val ? (
+          undo_block == 0 ? ( 
+            undo_block = 1;
+          );
+          c = slider_val / 100;
+          slider_val > last_slider_val ? (
+            i + 4 + 1 < sel_event_count * 2 ? (
+              avr = (note_list[i + 1] + note_list[i + 2 + 1] + note_list[i + 4 + 1])/3;
+              //avr = floor(avr + 0.5);
+              MIDI_GetCC(take, note_list[i+2], selectedOut, mutedOut, startppqposOut, chanmsgOut, chanOut, msg2Out, value);
+              MIDI_SetCC(take, note_list[i+2], selectedOut, mutedOut, startppqposOut, chanmsgOut, chanOut, msg2Out, floor(value - c*(value-avr) + 0.5));
+            );
+          );
+        );
+        i += 2;
+      );
+      last_slider_val = slider_val;
+    );
+  );
+);
+
+function run() local (s_w, s_h, range_start, range_end)
+(
+  set_default_colors();
+  gfx_a = 1;
+  
+  //draw_start_x = 22;
+  //draw_start_y = 20;
+
+  draw_end_x = gfx_w - 22;
+  draw_end_y = gfx_h - 80;
+  gfx_x = draw_start_x;
+  gfx_y = draw_start_y;
+  
+  center_y = draw_start_y + (draw_end_y - draw_start_y) / 2;
+  center_x = draw_start_x + (draw_end_x - draw_start_x) / 2;
+  
+  gfx_h != last_h ? (
+    center_y = floor(draw_start_y + (draw_end_y - draw_start_y) / 2 + 0.5);
+    last_h = gfx_h;
+  );
+  
+  gfx_w != last_w ? (
+    center_x = floor(draw_start_x + (draw_end_x - draw_start_x) / 2 + 0.5);
+    slider_last_x = center_x;
+    last_w = gfx_w;
+  );
+
+  // check if "lmb down" and "mouse cursor is not in window" and "not currently moving slider"
+  mouse_cap >= 1 && (mouse_x <= 0 || mouse_x >= gfx_w || mouse_y < 2 || mouse_y >= gfx_h) && drag_started == 0 ? (
+    lmb_click_outside_window = 1;
+  ) : mouse_cap == 0 ? (
+    lmb_click_outside_window = 0;
+  );
+  
+  //center_y = floor(draw_start_y + (draw_end_y - draw_start_y) / 2 + 0.5);
+  //center_x = floor(draw_start_x + (draw_end_x - draw_start_x) / 2 + 0.5);
+
+  gfx_r = 0;
+  gfx_g = 0.6;
+  gfx_b = 0.3;
+  gfx_a = 0.5;
+  
+  check_cc_lane(s_w, s_h);
+  
+  set_default_colors();
+  
+  //gfx_line(draw_start_x, draw_start_y, draw_end_x, draw_start_y);
+  //gfx_line(draw_start_x, center_y, draw_end_x, center_y);
+  //gfx_line(draw_start_x, draw_end_y, draw_end_x, draw_end_y);
+  
+  gfx_setfont(1, "Verdana", 12, 'b');
+
+  gfx_a = 1;
+  slider(center_x, gfx_h - 70, 4);
+
+  gfx_r = 0.7;
+  gfx_g = 0.7;
+  gfx_b = 1;
+  gfx_a = 0.2;
+  
+  gfx_line(draw_start_x, gfx_h - 70, draw_end_x, gfx_h - 70);
+  gfx_line(draw_start_x, gfx_h - 70 - 10, draw_start_x, gfx_h - 70 + 10);
+  gfx_line(draw_end_x, gfx_h - 70 - 10, draw_end_x, gfx_h - 70 + 10);
+
+  gfx_a = 0.5;
+  gfx_y = gfx_h - 70 - gfx_texth / 2;
+  
+  gfx_measurestr("Smooth CC values ->", e_w, e_h);
+  gfx_x = center_x - floor(e_w / 2 + 0.5);
+  gfx_drawstr("Smooth CC values ->");
+   
+  smoothen();
+  
+  // add undo point if necessary
+  undo_block == 1 && drag_started == 0 ? (
+    undo_block = 0;
+    Undo_OnStateChange("Smoothen CCs");
+  );
+  
+  // just to make sure that the point states are "reseted"
+  mouse_cap == 0 ? (
+    drag_started = 0; lmb_down = 0;
+  );
+  
+  char = gfx_getchar();
+  char == 26 ? (
+    Main_OnCommand(40029, 0); // undo
+  );
+  char == 27 ? (
+    undo_block == 1 ? (
+      Undo_OnStateChange("Smoothen CCs");
+    );
+    gfx_quit();
+  );
+  char >= 0 ? (
+    defer("run();");
+  );
+
+  last_mouse_x = mouse_x;
+  last_h = gfx_h;
+  last_w = gfx_w;
+  gfx_update();
+);
+
+// init
+function init()
+(
+  gfx_init("Smoothen CCs",220,180);
+
+  last_w = gfx_w;
+  last_h = gfx_h;
+
+  draw_start_x = 22;
+  draw_end_x = gfx_w - 22;
+  draw_start_y = 30;
+  draw_end_y = gfx_h - 80;
+  //center_x = floor(draw_start_x + (draw_end_x - draw_start_x) / 2 + 0.5);
+  //center_y = floor(draw_start_y + (draw_end_y - draw_start_y) / 2 + 0.5);
+  center_x = draw_start_x + (draw_end_x - draw_start_x) / 2;
+  center_y = draw_start_y + (draw_end_y - draw_start_y) / 2;
+
+  gfx_setfont(1, "Verdana", 12, 'b');
+
+  slider_last_x = draw_start_x;
+
+  //adjusting_vel = 0;
+  lmb_click_outside_window = 0;
+
+  note_list = 10000;
+  
+  last_clicked_cc_lane == -1;
+);
+
+init();
+run();

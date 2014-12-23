@@ -1,0 +1,16 @@
+desc:gmem Send
+slider1:0<0,4,1{1+2,3+4,5+6,7+8,9+10}>From Channels
+slider2:0<0,99,1>To Slot
+
+@block
+pos=slider2*2*samplesblock;
+
+@sample
+
+slider1 == 0 ? (gmem[pos] = spl0; gmem[pos+1] = spl1;);
+slider1 == 1 ? (gmem[pos] = spl2; gmem[pos+1] = spl3;);
+slider1 == 2 ? (gmem[pos] = spl4; gmem[pos+1] = spl5;);
+slider1 == 3 ? (gmem[pos] = spl6; gmem[pos+1] = spl7;);
+slider1 == 4 ? (gmem[pos] = spl8; gmem[pos+1] = spl9;);
+
+pos+=2;

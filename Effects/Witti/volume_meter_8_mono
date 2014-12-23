@@ -1,0 +1,193 @@
+slider1:350<0,1000,10>RMS Window (ms)
+slider2:0<-60,6,0.1>Channel 1 (dB)
+slider3:0<-60,6,0.1>Channel 2 (dB)
+slider4:0<-60,6,0.1>Channel 3 (dB)
+slider5:0<-60,6,0.1>Channel 4 (dB)
+slider6:0<-60,6,0.1>Channel 5 (dB)
+slider7:0<-60,6,0.1>Channel 6 (dB)
+slider8:0<-60,6,0.1>Channel 7 (dB)
+slider9:0<-60,6,0.1>Channel 8 (dB)
+
+@init
+spl0=spl1=spl2=spl3=spl4=spl5=spl6=spl7=0;
+
+RMS_MS = slider1;
+
+decay = exp(-1.0/(RMS_MS*srate*0.001));
+DB_LO = -60.0;
+
+peak0=peak1=peak2=peak3=peak4=peak5=peak6=peak7=0.0;
+peakdb0=peakdb1=peakdb2=peakdb3=peakdb4=peakdb5=peakdb6=peakdb7=DB_LO;
+
+@block
+peak0 <= 0.001 ? peakdb0 = DB_LO : peakdb0 = 8.6562*log(peak0);
+peak1 <= 0.001 ? peakdb1 = DB_LO : peakdb1 = 8.6562*log(peak1);
+peak2 <= 0.001 ? peakdb2 = DB_LO : peakdb2 = 8.6562*log(peak2);
+peak3 <= 0.001 ? peakdb3 = DB_LO : peakdb3 = 8.6562*log(peak3);
+peak4 <= 0.001 ? peakdb4 = DB_LO : peakdb4 = 8.6562*log(peak4);
+peak5 <= 0.001 ? peakdb5 = DB_LO : peakdb5 = 8.6562*log(peak5);
+peak6 <= 0.001 ? peakdb6 = DB_LO : peakdb6 = 8.6562*log(peak6);
+peak7 <= 0.001 ? peakdb7 = DB_LO : peakdb7 = 8.6562*log(peak7);
+
+@slider
+RMS_MS = slider1;
+decay = exp(-1.0/(RMS_MS*srate*0.001));
+
+vol0 = slider2 <= -60.0 ? 0.0 : 10 ^ (slider2 / 20);
+vol1 = slider3 <= -60.0 ? 0.0 : 10 ^ (slider3 / 20);
+vol2 = slider4 <= -60.0 ? 0.0 : 10 ^ (slider4 / 20);
+vol3 = slider5 <= -60.0 ? 0.0 : 10 ^ (slider5 / 20);
+vol4 = slider6 <= -60.0 ? 0.0 : 10 ^ (slider6 / 20);
+vol5 = slider7 <= -60.0 ? 0.0 : 10 ^ (slider7 / 20);
+vol6 = slider8 <= -60.0 ? 0.0 : 10 ^ (slider8 / 20);
+vol7 = slider9 <= -60.0 ? 0.0 : 10 ^ (slider9 / 20);
+
+@sample
+s0=spl0;
+s1=spl1;
+s2=spl2;
+s3=spl3;
+s4=spl4;
+s5=spl5;
+s6=spl6;
+s7=spl7;
+
+spl0=vol0*s0;
+new = abs(spl0);
+new > peak0 ? peak0 = new : peak0 = peak0*decay;
+
+spl1=vol1*s1;
+new = abs(spl1);
+new > peak1 ? peak1 = new : peak1 = peak1*decay;
+
+spl2=vol2*s2;
+new = abs(spl2);
+new > peak2 ? peak2 = new : peak2 = peak2*decay;
+
+spl3=vol3*s3;
+new = abs(spl3);
+new > peak3 ? peak3 = new : peak3 = peak3*decay;
+
+spl4=vol4*s4;
+new = abs(spl4);
+new > peak4 ? peak4 = new : peak4 = peak4*decay;
+
+spl5=vol5*s5;
+new = abs(spl5);
+new > peak5 ? peak5 = new : peak5 = peak5*decay;
+
+spl6=vol6*s6;
+new = abs(spl6);
+new > peak6 ? peak6 = new : peak6 = peak6*decay;
+
+spl7=vol7*s7;
+new = abs(spl7);
+new > peak7 ? peak7 = new : peak7 = peak7*decay;
+
+@gfx 456 300
+gfx_a = 1.0;
+segh=(gfx_h-2)/66.0;
+segw=(gfx_w-96)/8.0;
+
+gfx_x=segw;
+gfx_y=segh;
+
+gfx_r = 0.2;
+gfx_g = 0.8;
+gfx_b = 0.3;
+modh=segh*(60.0+peakdb0);
+gfx_rectto(segw*2,modh);
+
+gfx_r = 0.2;
+gfx_g = 0.8;
+gfx_b = 0.3;
+gfx_x=2*segw+2;
+gfx_y=segh;
+modh=segh*(60.0+peakdb1);
+gfx_rectto(segw*3,modh);
+
+gfx_r = 0.2;
+gfx_g = 0.8;
+gfx_b = 0.8;
+gfx_y=segh;
+gfx_x=3*segw+2;
+modh=segh*(60.0+peakdb2);
+gfx_rectto(segw*4,modh);
+
+gfx_r = 0.2;
+gfx_g = 0.8;
+gfx_b = 0.8;
+gfx_x=4*segw+2;
+gfx_y=segh;
+modh=segh*(60.0+peakdb3);
+gfx_rectto(segw*5,modh);
+
+gfx_r = 0.8;
+gfx_g = 0.2;
+gfx_b = 0.3;
+gfx_x=5*segw+2;
+gfx_y=segh;
+modh=segh*(60.0+peakdb4);
+gfx_rectto(segw*6,modh);
+
+gfx_r = 0.8;
+gfx_g = 0.2;
+gfx_b = 0.3;
+gfx_x=6*segw+2;
+gfx_y=segh;
+modh=segh*(60.0+peakdb5);
+gfx_rectto(segw*7,modh);
+
+gfx_r = 0.9;
+gfx_g = 0.4;
+gfx_b = 0.0;
+gfx_x=7*segw+2;
+gfx_y=segh;
+modh=segh*(60.0+peakdb6);
+gfx_rectto(segw*8,modh);
+
+gfx_r = 0.9;
+gfx_g = 0.4;
+gfx_b = 0.0;
+gfx_x=gfx_x+2;
+gfx_y=segh;
+modh=segh*(60.0+peakdb7);
+gfx_rectto(segw*9,modh);
+
+db = 60;
+while 
+(
+gfx_r=gfx_g=gfx_b=0.1;
+gfx_x = 4;
+gfx_y = gfx_h-segh*db-0.5;
+gfx_lineto(gfx_w-4, gfx_y, 0);
+db = db-3;
+i = i+1;
+db > 0.0;
+);
+
+gfx_r=gfx_g=gfx_b=0.0;
+gfx_x = segw+segw/2-3;
+gfx_y = segh*3;
+gfx_drawchar($'1');
+
+gfx_x = 2*segw+segw/2-3;
+gfx_drawchar($'2');
+
+gfx_x = 3*segw+segw/2-3;
+gfx_drawchar($'3');
+
+gfx_x = 4*segw+segw/2-3;
+gfx_drawchar($'4');
+
+gfx_x = 5*segw+segw/2-3;
+gfx_drawchar($'5');
+
+gfx_x = 6*segw+segw/2-3;
+gfx_drawchar($'6');
+
+gfx_x = 7*segw+segw/2-3;
+gfx_drawchar($'7');
+
+gfx_x = 8*segw+segw/2-3;
+gfx_drawchar($'8');

@@ -1,0 +1,38 @@
+slider1:-30<-120,0,0.1>Threshold (dB)
+slider2:100<1,500,1>Release (ms)
+slider3:50<1,500,1>Env Decay (ms)
+slider4:0<-24,24,0.1>Output (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+output = 1;
+transfer = 1;
+gain = 1;
+env = 0;
+attack = exp(-1/(0.004/1000*srate));
+
+@slider
+threshold = 10^(slider1/20);
+transfer = output * pow(threshold,0);
+
+release = exp(-1/(slider2/1000*srate));
+envelope_decay = exp(-1/(slider3/1000*srate));
+
+vol = 10^(slider4/20);
+
+@sample
+inL = spl0;
+inR = spl1;
+
+det = max(abs(inL),abs(inR));
+det += 0.000000000001;
+env = det >= env ? det : det+envelope_decay*(env-det);
+transfer_gain = env > threshold ? pow(env,0)*transfer:0;
+gain = transfer_gain < gain ? transfer_gain+release *(gain-transfer_gain) : transfer_gain+attack*(gain-transfer_gain);
+
+spl0 = inL * gain * vol;
+spl1 = inR * gain * vol;

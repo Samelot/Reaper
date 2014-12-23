@@ -1,0 +1,30 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+
+desc: low pass filter
+
+slider1:800<1,20000>frequency (Hz)
+slider2:0.2<0,1>size (0=sharp, 1=dull)
+
+@slider
+  damp=0.01+slider2*20;
+  c = 1/tan($pi*slider1/srate);
+  fk = 1 / (1 + c*(c+damp));
+  fa1 = 2 * (1 - c*c) * fk;
+  fa0 = (1 + c*(c-damp)) * fk;
+  //damp!=oldamp ? fd1l=fd2l=fd1r=fd2r=0;
+  oldamp=damp;
+
+@sample
+
+fd0l = (fk*spl0) - (fa1*fd1l) - (fa0*fd2l);
+fd0r = (fk*spl1) - (fa1*fd1r) - (fa0*fd2r);
+
+spl0 = fd0l + fd1l + fd1l + fd2l;
+spl1 = fd0r + fd1r + fd1r + fd2r;
+
+fd2l = fd1l;
+fd2r = fd1r;
+
+fd1l = fd0l;
+fd1r = fd0r;

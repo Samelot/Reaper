@@ -1,0 +1,10 @@
+fxp = 1;
+// OscLocalMessageToHost("/track/1/volume", TrackCountNew);
+
+OscLocalMessageToHost("reaper/track/3/volume", 0.5);
+// OscLocalMessageToHost("/track/3/fx/2/openui", 1.0);
+// OscLocalMessageToHost("/reaper/track/count", fxp);
+
+// GetSelectedTrack(0, 0);
+
+// Track

@@ -1,0 +1,1204 @@
+// Source Time Position Tool. 
+// Test beta version 0.11 - 22-Aug-14.
+// Original code by spk77, modifications by Planet Nine.
+// local/global variables "need tidying" ;)
+// Next: what to do with project markers included in selected item... :)
+
+// The "main" function runs in a loop -> other functions are called from the main function.
+// gfx_r, gfx_g, gfx_b are RGB values (from 0 to 1)
+// gfx_a is "alpha value" (from 0 to 1, 1 being "brightest")
+ 
+function xs(x) local(new_x)
+(
+	// calculates x-position for any font size using orig 16pt x-values
+	// -excludes 10pt LHS pad from scaling...
+	new_x=(((x-10)/16)*font_size) +10; // h_pixppt
+	new_x
+);
+
+function hw_sz(fs)
+(
+	// calculates horz window size based upon required width at font 16ppt
+	hw_size = h_pixppt*fs+20;
+	hw_size;
+);
+
+function vw_sz(fs)
+(
+	// calculates vert window size based upon required height at font 16ppt
+	vw_size = v_pixppt*fs+20;
+	vw_size;
+);
+
+	
+
+// === adjust font and window size upon mousewheel change ===
+function adjust_font_size(mouse_wheel_val)
+(
+	mouse_x <= 50 && mouse_y <= 50 ? // check mouse is in 10x10 resizing landing-zone...
+	(
+		mouse_wheel_val > 0 ? 
+		(
+			font_size < 32 ? 
+			(
+				font_size += 1;
+			);
+		);
+	  
+		mouse_wheel_val < 0 ? 
+		(
+			(font_size > 8 ) ? 
+			(
+				font_size -= 1;
+			);
+		);
+		gfx_quit();
+		gfx_init(version_num, hw_sz(font_size), vw_sz(font_size)); // quit and reinitialise window to match font size
+		gfx_setfont(1, font_name, font_size);
+		
+	);
+	
+	mouse_wheel = 0; // reset parameter before reusing...
+);
+function left_clk_cap()
+(
+	
+	mouse_cap == 1 ? 
+	(
+		mouse_state == 0 && ecp_zone == 1 ? 
+		( //detect mouse left-click on ecp zone and cycle through ecp formats...
+			mouse_state = 1; // stops re-triggering
+			ecp_count < 3 ? 
+			(
+				ecp_count += 1; 
+			):( 
+				ecp_count = 0;
+			);
+			ecp_format = ecp_count + 3; // add 3 to go from count to format
+			(ecp_count == 3) ? (ecp_format = 0); // except where count =3, format needs to be 0 (h:mm:ss.sss)
+		);
+		mouse_state == 0 && m_zone == 1 ? // left-click and mouseover [M] ?
+		(
+			mouse_state = 1; // stops re-triggering
+			mdf_toggle == 0 ? // if toggle == 0
+			(
+				mdf_toggle = 1; // then toggle = 1
+			):(
+				mdf_toggle = 0; // else toggle = 0
+			);
+		);
+	);
+	mouse_cap == 0 ? (mouse_state = 0;);
+);	
+
+
+
+ 
+ function get_cdframe_count(pos) local(frame_size, fps) //This gets the closest frame number (fr)
+(
+	frame_size = 1/75; fps = 75;
+	floor((pos * fps)+0.5);
+ );
+
+function get_cdframe_dev(pos) local(frame_size, fps) //This gets the +/- frame deviation from closest frame (prop of frame, x100=%)
+(
+	frame_size = 1/75; fps = 75;
+	(pos * fps) - floor((pos * fps)+0.5);
+);
+
+function get_cdframe_qpos(pos) local(frame_size, fps) //This gets the pos'n of the closest frame to a given pos'n (s)
+(
+	frame_size = 1/75; fps = 75;
+	(floor((pos * fps)+0.5))/ fps;
+);
+
+ 
+ 
+function show_edit_cursor_position(x, y) local(frame_size, frame_div, frame_count, frame_dev, edit_cursor_position)
+(
+	edit_cursor_pos = GetCursorPosition();
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set white colour
+	gfx_printf("Edit Cursor Position:     ");
+	x_ecp = gfx_x; y_ecp = gfx_y; // save ecp x+y values
+	gfx_a = 1; // set brighter text (alpha value) - gfx_r, gfx_g and gfx_b stays the same as above
+  
+	// format "GetCursorPosition() (return) value" and store the value to "#ec_buf" string variable
+	//    the last parameter "0" here is "(h:)m:s.ms"
+	//    -this replaced by ecp_format value, for all uses here
+	format_timestr_pos(edit_cursor_pos, #ec_buf, ecp_format); // the formatted GetCursorPosition() value is stored to #ec_buf
+	format_timestr_pos(get_cdframe_qpos(edit_cursor_pos), #qec_buf, ecp_format); // the formatted qpos value is stored to #qec_buf
+	gfx_measurestr(#ec_buf, w_ecp, 0);
+	
+	mouse_x > x_ecp && mouse_x < x_ecp + w_ecp && mouse_y > y_ecp && mouse_y < y_ecp + gfx_texth /*&& mouse_state == 0*/ ? 
+	(
+		ecp_zone = 1;
+		gfx_x = xs(395); gfx_y += gfx_texth; // move to free space to print format message...
+		
+		ecp_format == 0 ? (
+			gfx_printf("Time formatting mode:(h:)m:s.ms");
+		) : ecp_format == 1 ? (
+			gfx_printf("Time formatting mode: measures.beats.time");
+		) : ecp_format == 2 ? (
+			gfx_printf("Time formatting mode: measures.beats"); // unused for STPT
+		) : ecp_format == 3 ? (
+			gfx_printf("Time formatting mode: seconds"); // unused for STPT
+		) : ecp_format == 4 ? (
+			gfx_printf("Time formatting mode: samples");
+		) : ecp_format == 5 ? (
+			gfx_printf("Time formatting mode: h:m:s:frames");
+		);
+		gfx_r = 0.5; gfx_g = 0.5; // blue mouseover
+		//mouse_cap == 1 ? (
+			//gfx_r = 0.5; gfx_g = 0.5;
+			//mouse_state == 0 ? ( //detect mouse left-click on ecp zone and cycle through ecp formats...
+				//mouse_state = 1;
+				//ecp_count < 3 ? (
+					//ecp_count += 1 ):( ecp_count = 0;
+				//);
+			//);
+		ecp_format = ecp_count + 3; // add 3 to go from count to format
+		(ecp_count == 3) ? (ecp_format = 0); // except where count =3, format needs to be 0 (h:mm:ss.sss)
+//		);
+	):(
+		ecp_zone = 0;
+	);
+	
+	gfx_x = x_ecp; gfx_y = y_ecp; // restore ecp x+y positions...
+	
+	gfx_printf(#ec_buf);   // now it's formatted -> draw the formatted string
+	gfx_a = 1; gfx_r = 1; gfx_g = 1; gfx_b = 1; // white after blue mouseover
+	gfx_a = 0.6; // dim for cd frame info...
+  
+	(edit_cursor_pos == get_cdframe_qpos(edit_cursor_pos)) ? // is ecp already at a CD frame quantised position?
+	(
+      gfx_r = 0; gfx_g = 1; gfx_b = 0; // set to green
+	):(
+	  gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to white
+	);
+  
+	gfx_printf("  (nrst CD frame: ");  // print CD frame and quantised pos'n info...
+	gfx_printf("%d", get_cdframe_count(edit_cursor_pos)); 
+	gfx_printf(" at: ");
+	gfx_printf(#qec_buf);
+	gfx_printf(", dev: ");  
+	gfx_printf("%0.2f", get_cdframe_dev(edit_cursor_pos)*100);  
+	gfx_printf("%%)"); 
+	
+	//mouse_cap == 0 ? mouse_state = 0;// : mouse_state = 1;
+
+  
+);
+
+function show_source_time_position(x, y, item, take)
+local(item_pos, bound_flag repeat_num, item_length, source_length, take_pcm_source, edit_cursor_pos, take_start_offset, take_playrate, active_take_number, stp)
+(
+	#src_len_buf = ""; // clear #src_len_buf - (global)
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 0; gfx_g = 1; gfx_b = 0; // set green colour
+	gfx_printf("Source Time Position:   ");
+  
+	item ? ( // if item exists (if there are at least one item selected) -> get item position
+		item_pos = GetMediaItemInfo_value(item, "D_POSITION");
+		item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+		edit_cursor_pos = GetCursorPosition();
+		// take_pcm_source = GetMediaItemTake_Source(take);
+		PCM_Source_GetSectionInfo(GetMediaItemTake_Source(take), offset, source_length, reverse); // to obtain source_length
+		format_timestr_pos(source_length, #src_len_buf, ecp_format); // source_length value is stored to #src_len_buf as (h:)mm:ss.sss
+	
+		// if edit cursor is within item
+		item_pos <= edit_cursor_pos && (item_pos + item_length) >= edit_cursor_pos ? ( // if item > 0 ("item" variable is TRUE)
+			gfx_r = 0; gfx_g = 1; gfx_b = 0; bound_flag = 0; // yellow +within item flag.
+		) : ( // ...else edit cursor is not within item
+			gfx_r = 1; gfx_g = 0; gfx_b = 0; bound_flag = 1; // red and outside item flag.
+		);  
+		take ? (// if take_pointer > 0 
+			take_start_offset = GetMediaItemTakeInfo_value(take, "D_STARTOFFS");
+			take_playrate = GetMediaItemTakeInfo_value(take, "D_PLAYRATE");
+        
+			// get active take number
+			active_take_number = GetMediaItemTakeInfo_value(take, "IP_TAKENUMBER");
+			gfx_a = 1; // set brighter text (alpha value) - gfx_r, gfx_g and gfx_b stays the same as above
+        
+			// Print "edit cursor position in source", using this formula:
+			// STP = ((ECP-MIP)*PBR)+SIS
+			stp = (edit_cursor_pos - item_pos) * take_playrate + take_start_offset;
+			repeat_num = ceil(stp/source_length)-1;
+			stp = stp - (source_length * (ceil(stp/source_length)-1)); // modulus = n-d*int(n/d)
+			format_timestr_pos(stp, #stp_buf, ecp_format); // stp value is stored to #stp_buf
+			gfx_printf(#stp_buf);
+			repeat_num ? ( // source repeated at cursor position?
+				gfx_printf(" (repeat: ");
+				gfx_printf("%d", repeat_num);
+				gfx_printf(")");
+			);
+			bound_flag ? ( // cursor beyond selected item edge?
+				gfx_printf(" [beyond item edge] ");
+			);
+		);
+	);
+);
+
+function show_source_length(x, y, item, take) local(take_playrate, source_type, sample_rate)
+(
+	#type_buf = "";
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // yellow
+	gfx_printf("Source: "); // print source type...
+	
+	item && take ? // check item selected
+	( 
+		source_type = GetMediaSourceType(GetMediaItemTake_Source(take), #typebuf);
+		sample_rate = GetMediaSourceSampleRate(GetMediaItemTake_Source(take));
+		gfx_a = 1; // brighter text
+		gfx_printf(#typebuf);
+		(sample_rate != 0) ? ( // print sample rate if not ==0
+			gfx_a = 0.7; 
+			gfx_printf("  SRate: ");
+			gfx_a = 1; // brighter text
+			gfx_printf("%d", sample_rate);
+			gfx_a = 0.7; 
+			gfx_printf("Hz");
+		);
+		gfx_a = 0.7; 
+		gfx_printf("   Length: "); // print source length...
+		gfx_a = 1; // brighter text
+		gfx_printf(#src_len_buf);
+		gfx_a = 0.7; 
+
+		//item && take ? ( // check item selected
+		take_playrate = GetMediaItemTakeInfo_value(take, "D_PLAYRATE");
+		gfx_a = 0.7;
+		gfx_printf("   take pb rate: "); // print playback rate...
+		gfx_a = 1; // brighter text
+		gfx_printf("%0.3f", take_playrate);
+	):(
+		gfx_a = 1; gfx_r = 1; gfx_g = 0; gfx_b = 0; // red colour
+		gfx_printf(" None selected...");
+	);
+);
+
+function show_item_header(x, y, item, take)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set white colour
+	gfx_printf("Item in timeline: ");
+);
+
+function show_source_header(x, y, item, take)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // set yellow colour
+	gfx_printf("Item in source time: ");
+);
+
+
+function show_item_start_time(x, y, item, take) local(item_pos)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set white colour
+	gfx_printf("Start: ");
+	
+	item ? ( // if item exists (if there are at least one item selected) -> get item position
+		item_pos = GetMediaItemInfo_value(item, "D_POSITION");
+		format_timestr_pos(item_pos, #itm_stt_buf, ecp_format); // item_pos value is stored to #itm_stt_buf in ecp format
+		gfx_a = 1; // set brighter text (alpha value) - 
+		gfx_printf(#itm_stt_buf);
+	);
+);
+
+function show_item_length(x, y, item, take) local(item_length)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set white colour
+	gfx_printf("Length: ");
+	
+	item ? ( // if item exists (if there are at least one item selected) -> get item position
+		item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+		format_timestr_pos(item_length, #itm_len_buf, ecp_format); // item_length value is stored to #itm_len_buf in ecp format
+		gfx_a = 1; // set brighter text (alpha value) -
+		gfx_printf(#itm_len_buf);
+	);
+);
+
+function show_item_end_time(x, y, item, take) local(item_pos, item_length, item_end)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set white colour
+	gfx_printf("End: ");
+
+	item ? ( // if item exists (if there are at least one item selected) -> get item position
+		item_pos = GetMediaItemInfo_value(item, "D_POSITION");
+		item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+		item_end = item_pos + item_length;
+		format_timestr_pos(item_end, #itm_end_buf, ecp_format); // item_end value is stored to #itm_end_buf in ecp format
+		gfx_a = 1; // set brighter text (alpha value) 
+		gfx_printf(#itm_end_buf);
+	);
+);
+
+function show_source_item_start_time(x, y, item, take) 
+local(src_item_stt_time, take_start_offset)
+	(
+	#src_len_buf = ""; // clear #src_len_buf - (global)
+	#src_itm_stt_buf = ""; // clear #src_itm_stt_buf - (global)
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // set yellow colour
+  
+	gfx_printf("Start: ");
+	item ? ( // if item exists (if there are at least one item selected) -> get item position
+		gfx_r = 1; gfx_g = 1; gfx_b = 0;  // yellow 
+	);  
+	take ? (// if take_pointer > 0 
+		take_start_offset = GetMediaItemTakeInfo_value(take, "D_STARTOFFS");
+		gfx_a = 1; // set brighter text (alpha value) 
+		src_item_stt_time = take_start_offset;
+		format_timestr_pos(src_item_stt_time, #src_itm_stt_buf, ecp_format); // src_item_stt_time value is stored to #src_itm_stt_buf
+		gfx_printf(#src_itm_stt_buf);
+	);
+);
+
+function show_source_item_length(x, y, item, take) 
+local(len_percent, src_item_length, item_length, source_length, take_start_offset, take_playrate)
+	(
+	#src_len_buf = ""; // clear #src_len_buf - (global)
+	#src_itm_len_buf = ""; // clear #src_itm_len_buf - (global)
+	#src_len_perc_buf = "";
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0;  // set yellow colour
+	gfx_printf("Length: ");
+  
+  item ? ( // if item exists (if there are at least one item selected) -> get item position
+    item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+	PCM_Source_GetSectionInfo(GetMediaItemTake_Source(take), offset, source_length, reverse); // to obtain source_length
+		gfx_r = 1; gfx_g = 1; gfx_b = 0;  // yellow 
+	);  
+    take ? (// if take_pointer > 0 
+		take_playrate = GetMediaItemTakeInfo_value(take, "D_PLAYRATE");
+		gfx_a = 1; // set brighter text (alpha value)
+		src_item_length = item_length * take_playrate;
+		len_percent = (src_item_length / source_length) * 100;
+		format_timestr_pos(src_item_length, #src_itm_len_buf, ecp_format); // src_item_length value is stored to #src_itm_len_buf
+		sprintf(#src_len_perc_buf,"%0.1f",len_percent); // len_percent value is stored to #src_len_perc_buf
+		gfx_printf(#src_itm_len_buf);
+    );
+);
+
+function show_source_item_end_time(x, y, item, take) 
+local(src_item_end_time, src_item_length, src_item_stt_time, item_pos, repeat_num, item_length, source_length, take_start_offset, take_playrate)
+(
+	#src_itm_end_buf = ""; // clear #src_itm_end_buf - (global)
+	#src_len_buf = ""; // clear #src_len_buf - (global)
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // set yellow colour
+	gfx_printf("End: ");
+  
+	item ? ( // if item exists (if there are at least one item selected) -> get item position
+		item_pos = GetMediaItemInfo_value(item, "D_POSITION");
+		item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+		PCM_Source_GetSectionInfo(GetMediaItemTake_Source(take), offset, source_length, reverse); // to obtain source_length
+		gfx_r = 1; gfx_g = 1; gfx_b = 0;  // yellow.
+	);  
+	take ? (// if take_pointer > 0 
+		take_start_offset = GetMediaItemTakeInfo_value(take, "D_STARTOFFS");
+		take_playrate = GetMediaItemTakeInfo_value(take, "D_PLAYRATE");
+		gfx_a = 1; // set brighter text (alpha value) - gfx_r, gfx_g and gfx_b stays the same as above
+		src_item_stt_time = take_start_offset;
+		src_item_end_time = src_item_stt_time + (item_length * take_playrate);
+		// stp = (edit_cursor_pos - item_pos) * take_playrate + take_start_offset;
+		repeat_num = ceil(src_item_end_time/source_length)-1;
+		src_item_end_time = src_item_end_time - (source_length * (ceil(src_item_end_time/source_length)-1)); // modulus = n-d*int(n/d)
+		format_timestr_pos(src_item_end_time, #src_itm_end_buf, ecp_format); // src_item_end_time value is stored to #src_itm_end_buf
+		gfx_printf(#src_itm_end_buf);
+		repeat_num ? ( // source repeated at cursor position?
+			gfx_printf(" (r:");
+			gfx_printf("%d", repeat_num);
+			gfx_printf(")");
+		);
+	);
+);
+
+
+function show_source_length_percent(x, y, item, take) local(item_length)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0;  // set white colour
+	item ? ( // if item exists (if there are at least one item selected) -> get item position
+		gfx_printf(" (");
+		gfx_printf(#src_len_perc_buf);
+		gfx_printf("%% of source");
+		gfx_printf(")");
+	);
+);
+
+function show_source_item_end_remain(x, y, item, take) 
+local(src_rem_aft_itm, src_item_end_time, src_item_stt_time, source_length, repeat_num, take_start_offset, item_length)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // set yellow colour
+  
+	item ? // if item exists (if there are at least one item selected) -> get item position
+	( 
+		// item_pos = GetMediaItemInfo_value(item, "D_POSITION");
+		item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+		PCM_Source_GetSectionInfo(GetMediaItemTake_Source(take), offset, source_length, reverse); // to obtain source_length
+		gfx_r = 1; gfx_g = 1; gfx_b = 0;  // yellow.
+	);  
+    take ? // if take_pointer > 0 
+	(
+		take_start_offset = GetMediaItemTakeInfo_value(take, "D_STARTOFFS");
+		take_playrate = GetMediaItemTakeInfo_value(take, "D_PLAYRATE");
+		PCM_Source_GetSectionInfo(GetMediaItemTake_Source(take), offset, source_length, reverse); // to obtain source_length
+      
+		src_item_stt_time = take_start_offset;
+		src_item_end_time = src_item_stt_time + (item_length * take_playrate);
+		repeat_num = ceil(src_item_end_time/source_length)-1;
+		src_item_end_time = src_item_end_time - (source_length * (ceil(src_item_end_time/source_length)-1)); // modulus = n-d*int(n/d)
+		src_rem_aft_itm = source_length - src_item_end_time; // source remaining after item (seconds)
+		format_timestr_pos(src_rem_aft_itm, #src_rem_aft_itm_buf, ecp_format); // format to time format...
+		gfx_printf("(src rem: +%s)", #src_rem_aft_itm_buf);
+    );
+);
+
+
+
+function show_time_selection_header(x, y, item, take)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set white colour
+	gfx_printf("Time-sel, timeline: ");
+);
+
+function show_timesel_source_header(x, y, item, take)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // set yellow colour
+	gfx_printf("Time-sel, source time: ");
+);
+
+
+function show_time_selection_start(x, y, item, take)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1;
+	// GetSet_LoopTimeRange(bool isSet, bool isLoop, &startOut, &endOut, bool allowautoseek)
+	GetSet_LoopTimeRange(is_set, is_loop, time_sel_start, time_sel_end, 0);  // get time selection start/end
+	time_sel_start != time_sel_end ? ( // no time selection -> do nothing
+		gfx_printf("Start: ");
+		gfx_a = 1; // set brighter text (alpha value)
+		format_timestr_pos(time_sel_start, #tim_sel_start_buf, ecp_format);
+		gfx_printf(#tim_sel_start_buf);
+	);
+);
+
+
+function show_time_selection_length(x, y, item, take)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1;
+	// GetSet_LoopTimeRange(bool isSet, bool isLoop, &startOut, &endOut, bool allowautoseek)
+	GetSet_LoopTimeRange(is_set, is_loop, time_sel_start, time_sel_end, 0);  // get time selection start/end
+	time_sel_start != time_sel_end ? ( // no time selection -> do nothing
+		gfx_printf("Length: ");
+		gfx_a = 1; // set brighter text (alpha value)
+		format_timestr_pos(time_sel_end - time_sel_start, #tim_sel_length_buf, ecp_format);
+		gfx_printf(#tim_sel_length_buf);
+	);
+);
+
+
+function show_time_selection_end(x, y, item, take)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1;
+	// GetSet_LoopTimeRange(bool isSet, bool isLoop, &startOut, &endOut, bool allowautoseek)
+	GetSet_LoopTimeRange(is_set, is_loop, time_sel_start, time_sel_end, 0);  // get time selection start/end
+	time_sel_start != time_sel_end ? ( // no time selection -> do nothing
+		gfx_printf("End: ");
+		gfx_a = 1; // set brighter text (alpha value)
+		format_timestr_pos(time_sel_end, #tim_sel_end_buf, ecp_format);
+		gfx_printf(#tim_sel_end_buf);
+	);
+);
+
+function show_timesel_source_start(x, y, item, take)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0;
+	// GetSet_LoopTimeRange(bool isSet, bool isLoop, &startOut, &endOut, bool allowautoseek)
+	GetSet_LoopTimeRange(is_set, is_loop, time_sel_start, time_sel_end, 0);  // get time selection start/end
+	time_sel_start != time_sel_end ? ( // no time selection -> do nothing
+		gfx_printf("Start: ");
+		gfx_a = 1; // set brighter text (alpha value)
+		//format_timestr_pos(time_sel_start, #tim_sel_start_buf, 0);
+		//gfx_printf(#tim_sel_start_buf);
+		
+		item ? ( // if item exists (if there are at least one item selected) -> get item position
+			item_pos = GetMediaItemInfo_value(item, "D_POSITION");
+			item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+			// edit_cursor_pos = GetCursorPosition();
+			// take_pcm_source = GetMediaItemTake_Source(take);
+			PCM_Source_GetSectionInfo(GetMediaItemTake_Source(take), offset, source_length, reverse); // to obtain source_length
+			// format_timestr_pos(source_length, #src_len_buf, 0); // source_length value is stored to #src_len_buf as ecp format
+    
+			// if time_sel_start is within item
+			item_pos <= time_sel_start && (item_pos + item_length) >= time_sel_start ? ( // if item > 0 ("item" variable is TRUE)
+				gfx_r = 0; gfx_g = 1; gfx_b = 0; bound_flag = 0; // yellow +within item flag.
+				) : ( // ...else edit cursor is not within item
+				gfx_r = 1; gfx_g = 0; gfx_b = 0; bound_flag = 1; // red and outside item flag.
+			);  
+			take ? (// if take_pointer > 0 
+				take_start_offset = GetMediaItemTakeInfo_value(take, "D_STARTOFFS");
+				take_playrate = GetMediaItemTakeInfo_value(take, "D_PLAYRATE");
+        
+				// get active take number
+				active_take_number = GetMediaItemTakeInfo_value(take, "IP_TAKENUMBER");
+
+				gfx_a = 1; // set brighter text (alpha value) - gfx_r, gfx_g and gfx_b stays the same as above
+        
+				// Print "time_sel_start position in source", using this formula:
+				// STP = ((ECP-MIP)*PBR)+SIS
+				stp = (time_sel_start - item_pos) * take_playrate + take_start_offset;
+				repeat_num = ceil(stp/source_length)-1;
+				stp = stp - (source_length * (ceil(stp/source_length)-1)); // modulus = n-d*int(n/d)
+				format_timestr_pos(stp, #stp_buf, ecp_format); // stp value is stored to #stp_buf
+				gfx_printf(#stp_buf);
+				repeat_num ? ( // source repeated at time_sel_start position?
+					gfx_printf("(r:");
+					gfx_printf("%d", repeat_num);
+					gfx_printf(")");
+				);
+				bound_flag ? ( // time_sel_start beyond selected item edge?
+					gfx_printf(" [bie] ");
+				);
+			);
+		);
+	);
+);
+
+function show_timesel_source_length(x, y, item, take)
+(
+	#perc_of_item_buf = "";
+	#perc_of_timesel_buf = "";
+
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0;
+	// GetSet_LoopTimeRange(bool isSet, bool isLoop, &startOut, &endOut, bool allowautoseek)
+	GetSet_LoopTimeRange(is_set, is_loop, time_sel_start, time_sel_end, 0);  // get time selection start/end
+	time_sel_start != time_sel_end ? ( // no time selection -> do nothing
+		gfx_printf("Length: ");
+		gfx_a = 1; // set brighter text (alpha value)
+
+		item ? ( // if item exists (if there are at least one item selected) -> get item position
+			item_pos = GetMediaItemInfo_value(item, "D_POSITION");
+			item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+			item_end = item_pos + item_length;
+			// edit_cursor_pos = GetCursorPosition();
+			// take_pcm_source = GetMediaItemTake_Source(take);
+			PCM_Source_GetSectionInfo(GetMediaItemTake_Source(take), offset, source_length, reverse); // to obtain source_length
+			// format_timestr_pos(source_length, #src_len_buf, 0); // source_length value is stored to #src_len_buf as ecp format
+    
+			// test if time_sel_start is within item...
+			intersect = 1; // true
+			(item_pos <= time_sel_start) && (time_sel_start < item_end) ?  // ts start inside item?
+			( 
+				start = time_sel_start; // use ts start as start...
+			):(
+				(time_sel_start < item_pos) ? // ts start to left of item?
+				(
+					start = item_pos; // use item start as start...
+				):( 
+					intersect = 0; // no intersection.
+				);
+			);
+			(item_pos < time_sel_end) && (time_sel_end <= item_end) ?  // ts end inside item?
+			(
+				end = time_sel_end; // use ts end as end...
+			):(
+				(item_end < time_sel_end) ? // ts end to right of item?
+				(
+					end = item_end; //  use item end as end...
+				):(
+					intersect = 0; // no intersection.
+				);
+			);
+			
+			take ? (// if take_pointer > 0 
+				take_playrate = GetMediaItemTakeInfo_value(take, "D_PLAYRATE");
+				gfx_a = 1; // set brighter text (alpha value) 
+				intersect ? (
+					src_item_length = (end - start) * take_playrate;
+					format_timestr_pos(src_item_length, #src_itm_len_buf, ecp_format); // src_item_length value is stored to #src_itm_len_buf
+					gfx_printf(#src_itm_len_buf);
+				):(
+					gfx_printf("[no intersection]");
+				);
+			);
+		);
+	);
+);
+
+function show_timesel_source_end(x, y, item, take)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0;
+	// GetSet_LoopTimeRange(bool isSet, bool isLoop, &startOut, &endOut, bool allowautoseek)
+	GetSet_LoopTimeRange(is_set, is_loop, time_sel_start, time_sel_end, 0);  // get time selection start/end
+	time_sel_start != time_sel_end ? ( // no time selection -> do nothing
+		gfx_printf("End: ");
+		gfx_a = 1; // set brighter text (alpha value)
+
+		item ? ( // if item exists (if there are at least one item selected) -> get item position
+			item_pos = GetMediaItemInfo_value(item, "D_POSITION");
+			item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+			PCM_Source_GetSectionInfo(GetMediaItemTake_Source(take), offset, source_length, reverse); // to obtain source_length
+    
+			// test if time_sel_start is within item...
+			item_pos <= time_sel_end && (item_pos + item_length) >= time_sel_end ? ( // if item > 0 ("item" variable is TRUE)
+				gfx_r = 0; gfx_g = 1; gfx_b = 0; bound_flag = 0; // yellow +within item flag.
+				) : ( // ...else edit cursor is not within item
+				gfx_r = 1; gfx_g = 0; gfx_b = 0; bound_flag = 1; // red and outside item flag.
+			);  
+			take ? (// if take_pointer > 0 
+				take_start_offset = GetMediaItemTakeInfo_value(take, "D_STARTOFFS");
+				take_playrate = GetMediaItemTakeInfo_value(take, "D_PLAYRATE");
+				active_take_number = GetMediaItemTakeInfo_value(take, "IP_TAKENUMBER"); // get active take number
+				gfx_a = 1; // set brighter text (alpha value)
+				stp = (time_sel_end - item_pos) * take_playrate + take_start_offset; // STP = ((ECP-MIP)*PBR)+SIS
+				repeat_num = ceil(stp/source_length)-1;
+				stp = stp - (source_length * (ceil(stp/source_length)-1)); // modulus = n-d*int(n/d)
+				format_timestr_pos(stp, #stp_buf, ecp_format); // stp value is stored to #stp_buf
+				gfx_printf(#stp_buf);
+				repeat_num ? ( // source repeated at time_sel_start position?
+					gfx_printf("(r:");
+					gfx_printf("%d", repeat_num);
+					gfx_printf(")");
+				);
+				bound_flag ? ( // time_sel_start beyond selected item edge?
+					gfx_printf(" [bie] ");
+				);
+			);
+		);
+	);
+);
+
+
+function show_mkr_disp_flag(x, y)
+(
+	gfx_x = xs(x); gfx_y = y;
+	
+	mdf_toggle == 1 ?
+	(
+		lna=1.0; lnr=1; lng=0; lnb=0;  // red, mdf toggle on
+	):(
+		lna=0.5; lnr=1; lng=0; lnb=0;  // dim red, mdf toggle off
+	);
+	//gfx_a = lna; gfx_r= lnr; gfx_g = lng; gfx_b = lnb;
+	
+	mouse_x >= xs(x) && mouse_x < xs(x+100) && mouse_y >= y && mouse_y < y+gfx_texth ?
+	(
+		gfx_a = bla; gfx_r= blr; gfx_g = blg; gfx_b = blb;
+		m_zone = 1;
+	):(
+		gfx_a = lna; gfx_r= lnr; gfx_g = lng; gfx_b = lnb;
+		m_zone = 0;
+	); 
+	gfx_printf("[M] %d inc of %d.", inc_mkr_count, mkr_count); // gfx_printf(" i:%d mkr:%d  inc:%d", i, mkr_count, inc_mkr_count);
+		
+);
+
+
+function show_time_sel_length_perc(x, y, item, take)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set white colour
+	// GetSet_LoopTimeRange(bool isSet, bool isLoop, &startOut, &endOut, bool allowautoseek)
+	GetSet_LoopTimeRange(is_set, is_loop, time_sel_start, time_sel_end, 0);  // get time selection start/end
+	time_sel_start != time_sel_end ? ( // no time selection -> do nothing
+		item ? ( // if item exists (if there are at least one item selected) -> get item position
+			item_pos = GetMediaItemInfo_value(item, "D_POSITION");
+			item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+			item_end = item_pos + item_length;
+    
+			// test if time_sel_start is within item
+			intersect = 1; // true
+			(item_pos <= time_sel_start) && (time_sel_start < item_end) ?  // ts start inside item?
+			( 
+				start = time_sel_start; // use ts start as start...
+			):(
+				(time_sel_start < item_pos) ? // ts start to left of item?
+				(
+					start = item_pos; // use item start as start...
+				):( 
+					intersect = 0; // no intersection.
+				);
+			);
+			(item_pos < time_sel_end) && (time_sel_end <= item_end) ?  // ts end inside item?
+			(
+				end = time_sel_end; // use ts end as end...
+			):(
+				(item_end < time_sel_end) ? // ts end to right of item?
+				(
+					end = item_end; //  use item end as end...
+				):(
+					intersect = 0; // no intersection.
+				);
+			);
+			intersect ? // if item & time selection intersect...
+			(
+				perc_of_item = ((end-start)/item_length) * 100;
+				perc_of_timesel = ((end - start)/(time_sel_end - time_sel_start)) * 100;
+				gfx_printf("Intersection: %0.1f %% of item, %0.1f %% of time-selection", perc_of_item, perc_of_timesel);
+			);
+		);
+	);
+);
+
+// === This counts the markers in the project and in the item and displays the item mkrs if the toggle switch is ON.
+function show_proj_marker_names(x, y, item, take) local(i, is_region, pos, rgn_end, markrgn_index_number)
+(
+	//	changes additions left to make...
+	//	rearrange order of mkr columns
+	//	decide on parameter colours
+	//	decide if frame quantisation is important + how implemented <== ^^ -these depend on user feedback...
+	//	decide if blue mouseover used again (simplified, as only one zone for mkrs-only)
+	//	implement screen size change calcs and function for incl mkr presence and number
+	//	...wait until screen position is addressable for above ;)
+	//	implement 50x50 area only for mouseover screen scaling *X*
+	//	bugfix -inc_mkrs persist even when no item selected upon project change (3rd tab) *X*
+	
+
+	gfx_x = x; // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	//gfx_a = 1; gfx_r = 1; gfx_g = 0.9; gfx_b = 0.9; // set pinky-white colour
+  
+	//  These from parallel project, may be used in later version...
+	//edit_cursor_pos = GetCursorPosition();
+	//sh_dist_to_ecp = 86400; // set to an init shortest dist of 24hrs
+	//x_mkrgn1 = x; x_mkrgn2 = x+230; x_mkrgn3 = x+230+190; x_mkrgn_end = x+230+190+190;
+	//y_mkrgn = y + 2 * gfx_texth;
+	//w_mkrgn = 600;
+	//gfx_printf("            <<< Project Markers: >>> ");
+	//gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // set yellow colour
+	//gfx_printf(" i: %d  msov_i: %d  last_i %d  xz: %d", i, msov_i, last_i, x_zone); //bugfix line...
+  
+
+	//===Find markers within item boundaries ===
+	i = 0;
+	item ? ( // if item exists (if there are at least one item selected) -> get item position
+		item_pos = GetMediaItemInfo_value(item, "D_POSITION");
+		item_length = GetMediaItemInfo_value(item, "D_LENGTH");
+		item_end = item_pos + item_length;
+		take ? (// if take_pointer > 0 
+			take_start_offset = GetMediaItemTakeInfo_value(take, "D_STARTOFFS");
+			take_playrate = GetMediaItemTakeInfo_value(take, "D_PLAYRATE");
+			active_take_number = GetMediaItemTakeInfo_value(take, "IP_TAKENUMBER");
+			PCM_Source_GetSectionInfo(GetMediaItemTake_Source(take), offset, source_length, reverse); // to obtain source_length
+		);
+		// The above are needed to convert timeline time into source file time...
+	);	
+		
+	
+	
+	mkr_count = 0; inc_mkr_count = 0; // reset marker count and inclusive marker count
+	
+	//msov_i =-1; // invalidate msov mkrgn No so will not linger if mouse pulled off table...
+	//msov_line = -1;
+	//x_zone = 0;
+	while (EnumProjectMarkers3(0, i, is_region, mkr_pos, rgn_end, #name, markrgn_num,0) > 0) 
+	(	// determine closest mkrgn index to 
+		(is_region ==0) ? // is index NOT a region?
+		(
+			mkr_count +=1; // count markers in project
+			item && mkr_pos >= item_pos && mkr_pos <= item_end ? // inside item bounds
+			(
+				inc_mkr_count +=1;
+			);
+			//not used in this version...
+			//dist_to_ecp = abs(edit_cursor_pos-mkr_pos); //determine dist to ecp
+			//(dist_to_ecp < sh_dist_to_ecp) ? // is dist less than prev measured?
+			//(
+				//sh_dist_to_ecp = dist_to_ecp; // if so set new "shortest dist"
+				//clos_mkr = i;  // ...and set clos_mkr num to current.
+			//);
+		);
+		i += 1;
+	);
+	
+	last_i = i - 1; // last_i gives number of markers and regions.
+	//inc_mkr_count != last_inc_mkr_count ? ( chg_scrn_size(inc_mkr_count); // **change screen size if inc_mkr_count has changed
+	// Above used in later version once screen position is addressable...
+	last_mkr_count = mkr_count;
+	last_inc_mkr_count = inc_mkr_count; // remember last inc_mkr_count as flag for poss next screen size change ***
+		
+	item ? // if item is selected and mkr displ flag on...
+	(
+		inc_mkr_count !=0 && mdf_toggle ? 
+		(
+			gfx_x = x; // update "draw x-pos to x"
+			gfx_y = y; // update "draw y-pos" to y"
+			gfx_a = 1; gfx_r = 1; gfx_g = 0.0; gfx_b = 0.4; // set crimson colour for column titles **
+			
+			gfx_x=xs(x);  //       Print marker-region column headers...
+			gfx_y +=gfx_texth;
+			//gfx_printf(" i");
+			gfx_x=xs(x+30);
+			gfx_printf("idx");
+			gfx_x=xs(x+60);
+			gfx_printf("name");
+			gfx_x=xs(x+230);
+			gfx_printf("position");
+			gfx_x=xs(x+310);
+			gfx_printf("n CD fr");
+			//gfx_x=x+360;
+			//gfx_printf("dev s");
+			gfx_x=xs(x+360);
+			gfx_printf("dev %%f");
+			gfx_x=xs(x+420);
+			gfx_printf("src pos'n");
+			//gfx_x=xs(x)+500;
+			//gfx_printf("nrst fr");
+			//gfx_x=xs(x)+550;
+			//gfx_printf("dev %%f");
+			gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 0; // set to yellow
+
+			i=0;
+			while (EnumProjectMarkers3(0, i, is_region, mkr_pos, rgn_end, #name, markrgn_num,0) > 0) 
+			(
+				is_region ==0 ?
+				(
+					mkr_pos >= item_pos && mkr_pos <= item_end ? // inside item bounds?
+					(
+				
+						// check if any values are mouseover (for later version CDframe quantisation...
+						mouse_x >= x_mkrgn1 && mouse_x < x_mkrgn2 && mouse_y > y_mkrgn + i* gfx_texth && mouse_y < y_mkrgn +  (i+1) * gfx_texth  /*&& mouse_state == 0*/ ? 
+						(	// mouse over zone1 -marker, or region in & out...
+							gfx_x = 180;  // move to free space to print format message...
+							msov_i = i;
+							x_zone = 1;
+							//gfx_printf("%d", msov_i); gfx_printf(" z: "); gfx_printf("%d", x_zone); gfx_printf(" (x: %d)", mouse_x);
+						);
+						mouse_x >= x_mkrgn2 && mouse_x < x_mkrgn3 && mouse_y > y_mkrgn + i* gfx_texth && mouse_y < y_mkrgn +  (i+1) * gfx_texth  /*&& mouse_state == 0*/ ? 
+						(	// mouse over zone2 -marker, or region in only...
+							gfx_x = 180;  // move to free space to print format message...
+							msov_i = i;
+							x_zone = 2;
+							//gfx_printf("%d", msov_i); gfx_printf(" z: "); gfx_printf("%d", x_zone);
+						);
+						mouse_x >= x_mkrgn3 && mouse_x < x_mkrgn_end && mouse_y > y_mkrgn + i* gfx_texth && mouse_y < y_mkrgn +  (i+1) * gfx_texth  /*&& mouse_state == 0*/ ? 
+						( // mouse over zone 3 -marker, or region out only...
+							gfx_x = 180; // move to free space to print format message...
+							msov_i = i;
+							x_zone = 3;
+							//gfx_printf("%d", msov_i); gfx_printf(" z: "); gfx_printf("%d", x_zone);
+						);
+						
+				
+						// === Loop to print marker/region rows with blue highlight for mouseover mkr/rgn positions ===
+					
+						gfx_a = 0.8; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to white
+						gfx_x=xs(x);
+						gfx_y +=gfx_texth; // add 1 to line position (y)
+						//i == msov_i ? (gfx_a = 1; gfx_r = 0.5; gfx_g = 0.5; gfx_b = 1;); // blue if mouseover
+						//gfx_printf("[");
+						//gfx_printf("%d", i);
+						//gfx_printf("]");
+						//gfx_a = 0.5;
+					
+					
+						gfx_x=xs(x+30); 
+						//is_region ?
+						//(
+							//gfx_printf("R%d", markrgn_num);
+						//):(
+						gfx_printf("%d", markrgn_num);
+						//);
+					  
+						gfx_x=xs(x+60);
+						strlen(#name) <= 24 ?
+						(
+							gfx_printf("%.24s", #name);
+						):(
+							gfx_printf("%.24s...", #name);
+						);
+					
+						gfx_x=xs(x+230);
+						//dist_to_ecp = abs(edit_cursor_pos-mkr_pos); //determine dist to ecp THIS PROBABLY REDUNDANT IF dist_... global
+						(mkr_pos == get_cdframe_qpos(mkr_pos)) ? // is mkr_pos already at quantised position?
+						(
+							//lna=0.5; lnr=0; lng=1; lnb=0;
+							gfx_a = 0.8; gfx_r = 1.0; gfx_g = 1; gfx_b = 1.0; // set to green ** overridden to wht, grn tint
+						):(
+							//lna=0.5; lnr=1; lng=1; lnb=0;
+							gfx_a = 0.8; gfx_r = 1; gfx_g = 1; gfx_b = 1.0; // set to yellow ** overridden to wht, yel tint
+						);
+						// Below may be used for later version mouseover marker and region parameters
+						// clicking will quantise to nearest CD frame for continuous audio tracks...
+						//is_region ?
+						//(
+							//lna=0.5; lnr=1; lng=1; lnb=1;
+							//gfx_a = 0.5; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set to white
+						//);
+				  
+						//(i == clos_mkr) ? (gfx_a = 1; lna=1;):(gfx_a = 0.7; lna=0.7); // check if current marker (row) if closest to ecp
+						//i==msov_i  && x_zone==1 ? ( // blue position time...
+							//gfx_a = bla; gfx_r = blr; gfx_g = blg; gfx_b = blb; ); //  mouse over line at x zone 1 
+						//i==msov_i && x_zone==2 ? (
+							//gfx_a = bla; gfx_r = blr; gfx_g = blg; gfx_b = blb; ); // or x zone 2...
+						//msov_line == pq_line && i == clos_mkr ? (
+							//gfx_a = bla; gfx_r = blr; gfx_g = blg; gfx_b = blb; ); // or pq line if this marker is the closest to ecp
+
+						
+						format_timestr_pos(mkr_pos, #dum_pos_buf, ecp_format);
+						gfx_printf("%12s",#dum_pos_buf);
+						
+						gfx_x=xs(x+310);
+						(mkr_pos == get_cdframe_qpos(mkr_pos)) ? // is time_sel_start already at quantised position?
+						(
+							gfx_a = 0.8; gfx_r = 0.8; gfx_g = 1; gfx_b = 0.4; // set to green tint
+						):(
+							gfx_a = 0.8; gfx_r = 1; gfx_g = 1; gfx_b = 0.4; // set to yellow tint
+						);
+						gfx_printf("%df", get_cdframe_count(mkr_pos));  
+
+						gfx_x=xs(x+360);
+						gfx_printf("%0.1f%%", get_cdframe_dev(mkr_pos) * 100);  
+						gfx_a = lna; gfx_r = lnr; gfx_g = lng; gfx_b = lnb; // revert to prev colour...
+						
+						gfx_a = 0.9; gfx_r = 1; gfx_g = 1; gfx_b = 0; // set to yellow
+						gfx_x=xs(x+420);
+						src_mkr_pos = (mkr_pos - item_pos) * take_playrate + take_start_offset;
+						repeat_num = ceil(src_mkr_pos/source_length)-1;
+						src_mkr_pos = src_mkr_pos - (source_length * (ceil(src_mkr_pos/source_length)-1)); // modulus = n-d*int(n/d)
+						format_timestr_pos(src_mkr_pos, #src_mkr_pos_buf, ecp_format); // src_mkr_pos value is stored to #src_mkr_pos_buf
+						gfx_printf(#src_mkr_pos_buf);
+						repeat_num ? ( // source repeated at cursor position?
+							gfx_printf(" (r:");
+							gfx_printf("%d", repeat_num);
+							gfx_printf(")");
+						);
+						
+						// Again, this may be used in a later version where position values can be 
+						// quantised to nearest CD frame, and mousewheel can nudge to next/prev frame...
+						//is_region ? 
+						//(
+							//gfx_x=x+420;
+							//i==msov_i  && x_zone==1 ? ( // blue position time...
+								//gfx_a = bla; gfx_r = blr; gfx_g = blg; gfx_b = blb; );
+							//i==msov_i && x_zone==3 ? (
+								//gfx_a = bla; gfx_r = blr; gfx_g = blg; gfx_b = blb; );
+						
+							//format_timestr_pos(rgn_end, #dum_pos_buf, ecp_format);
+							//gfx_printf("%12s",#dum_pos_buf);
+							
+							//gfx_x=xs(x)+500;
+							//(rgn_end == get_cdframe_qpos(rgn_end)) ? // is time_sel_start already at quantised position?
+							//(
+								//gfx_a = 0.5; gfx_r = 0; gfx_g = 1; gfx_b = 0; // set to green
+							//):(
+								//gfx_a = 0.5; gfx_r = 1; gfx_g = 1; gfx_b = 0; // set to yellow
+							//);
+							//gfx_printf("%df", get_cdframe_count(rgn_end));  
+
+							//gfx_x=xs(x)+550;
+							//gfx_printf("%0.1f%%", get_cdframe_dev(rgn_end) * 100);  
+							//gfx_a = lna; gfx_r = lnr; gfx_g = lng; gfx_b = lnb; // revert to prev colour...
+						//);
+					);
+				);
+				i += 1; // next line...
+			);
+			gfx_y +=gfx_texth;
+		);
+	);
+);
+
+
+
+function show_take_name(x, y, item, take)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set white colour
+	gfx_printf("Take name:        ");
+	gfx_a = 1; // brighter text
+  
+	item && take ? ( // if item_pointer > 0 and take_pointer > 0
+		GetTakeName(#take_name, take); //store take name to "#take_name" variable
+		gfx_printf(#take_name);
+	) : ( // no selected item or item has no takes
+		gfx_r = 1; gfx_g = 0; gfx_b = 0; // red
+		gfx_printf("No selected item (or empty item)");
+	);
+);
+
+function show_number_of_takes_in_item(x, y, item, take) local(active_take_number)
+(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.6; gfx_r = 1; gfx_g = 1; gfx_b = 1; // set white colour
+	gfx_printf("Active take:        ");
+  
+	item ? (
+		take ? (
+			// get active take number
+			active_take_number = GetMediaItemTakeInfo_value(take, "IP_TAKENUMBER");
+			gfx_a = 1; //alpha to brightest
+			// active take No. zero based -> add 1 to value
+			gfx_printf("%d of %d", (active_take_number + 1), CountTakes(item)) // %d converts to string, (direct format)
+		);
+	);
+);
+
+
+function show_take_filename(x, y, take) local(count, fn_length)
+(
+	#filenamebuf = ""; // clear #filenamebuf 
+	#filenameonly = ""; // empty string for file name only
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // set yellow colour
+	gfx_printf("Source filename: ");
+	gfx_a = 1; // set brighter text (alpha value) - gfx_r, gfx_g and gfx_b stays the same as above
+  
+	// GetMediaItemTake_Source(take) returns PCM_source
+	// GetMediaSourceFileName(PCM_source) returns file name of the PCM_source
+	GetMediaSourceFileName(GetMediaItemTake_Source(take), #filenamebuf); // store file name to #filenamebuf
+	#pathbuf = #filenamebuf; // whole path stored to #pathbuf, later cropped to path-only...
+	strlen(#filenamebuf) ? (
+		count = strlen(#filenamebuf);
+		while (str_getchar(#filenamebuf, count, c) != 92) // count down from end to find "\" char.
+		(
+			count -=1; // count down from end
+		);
+		str_setlen(#pathbuf, count +1); // trims length of #pathbuf to "path only"
+		fn_length = strlen(#filenamebuf)-count; // length for #filenameonly determined
+		str_setlen(#filenameonly, fn_length);   // length of #filenameonly set...
+	
+		while (count <= strlen(#filenamebuf)) // count back up and load filename chars into #filenameonly
+		(
+			sprintf(#char, "%c", str_getchar(#filenamebuf, count, c)); // get character as string at position "count"
+			str_insert(#filenameonly, #char, count - strlen(#pathbuf)); // insert into #filenameonly at corrected position 
+			count +=1; // count up
+		);
+		gfx_printf(#filenameonly);
+	);
+);
+
+function show_take_path(x, y, take) local(count, fn_length)
+	(
+	gfx_x = xs(x); // update "draw x-pos to x"
+	gfx_y = y; // update "draw y-pos" to y"
+	gfx_a = 0.7; gfx_r = 1; gfx_g = 1; gfx_b = 0; // set yellow colour
+	gfx_printf("Source path:       ");
+	gfx_a = 1; // set brighter text (alpha value)
+	gfx_printf(#pathbuf);
+);
+
+
+// this function runs in a loop - "sel_item" and "active_take" variables are updated at each iteration
+// variables are "local variables" - it's easier to "keep the namespace clean"
+function main() local(sel_item, active_take)
+( 
+	// get first selected item's pointer (at index 0) - returns 0 if nothing is selected
+	// pointer is an integer value (and >0)
+	sel_item = GetSelectedMediaItem(0, 0);
+  
+	// get active take's pointer from selected item  - returns 0 if there are no takes in item
+	// pointer is an integer value (and >0)
+	active_take = GetActiveTake(sel_item);
+  
+	// set font size (and window, x-placement, etc)
+	mouse_wheel != 0 ? adjust_font_size(mouse_wheel);
+  
+  
+	//// Calling the "drawing" functions ////
+	// call "function(x, y, item_pointer, take_pointer)"
+  
+	show_edit_cursor_position(10, 10);
+	show_source_time_position(10, gfx_y + gfx_texth, sel_item, active_take);
+	show_source_length(10, gfx_y + gfx_texth, sel_item, active_take);
+	left_clk_cap(); // capture mouse left-click and interpret...
+  
+	show_item_header(10, gfx_y + gfx_texth + gfx_texth, sel_item, active_take);
+	show_item_start_time(150, gfx_y, sel_item, active_take);
+	show_item_length(300, gfx_y, sel_item, active_take);
+	show_item_end_time(450, gfx_y, sel_item, active_take);
+
+	show_source_header(10, gfx_y + gfx_texth, sel_item, active_take); //  + gfx_texth
+	show_source_item_start_time(150, gfx_y, sel_item, active_take);
+	show_source_item_length(300, gfx_y, sel_item, active_take);
+	show_source_item_end_time(450, gfx_y, sel_item, active_take);
+	show_source_length_percent(300, gfx_y + gfx_texth, sel_item, active_take);
+	show_source_item_end_remain(450, gfx_y, sel_item, active_take);
+
+	show_time_selection_header(10, gfx_y + 2*gfx_texth, sel_item, active_take); //  + gfx_texth
+	show_time_selection_start(150, gfx_y, sel_item, active_take); //  + gfx_texth
+	show_time_selection_length(300, gfx_y, sel_item, active_take); //  + gfx_texth
+	show_time_selection_end(450, gfx_y, sel_item, active_take); //  + gfx_texth
+ 
+	show_timesel_source_header(10, gfx_y + gfx_texth, sel_item, active_take); //  + gfx_texth
+	show_timesel_source_start(150, gfx_y, sel_item, active_take); //  + gfx_texth
+	show_timesel_source_length(300, gfx_y, sel_item, active_take); //  + gfx_texth
+	show_timesel_source_end(450, gfx_y, sel_item, active_take); //  + gfx_texth
+	show_time_sel_length_perc(200, gfx_y + gfx_texth, sel_item, active_take);
+	show_mkr_disp_flag(10, gfx_y + gfx_texth); // display and monitor marker display toggle flag
+	
+	show_proj_marker_names(10, gfx_y, sel_item, active_take);
+  
+	show_number_of_takes_in_item(10, gfx_y + gfx_texth, sel_item, active_take);
+	show_take_name(10, gfx_y + gfx_texth, sel_item, active_take);
+	show_take_filename(10,  gfx_y + gfx_texth, active_take);
+	show_take_path(10,  gfx_y + gfx_texth, active_take);
+
+	// when returning from the "show_take_filename" function -> update GUI window
+	gfx_update(); 
+	// "main" function is running in a loop -> it jumps back to the start of the "main" function here
+	gfx_getchar() >= 0 ? defer("main();");
+);
+
+
+// this function is called first
+function init()
+(
+	// initialize GUI: gfx_init(window title, width, height)
+	version_num = "PL9: Source Time Position Tool beta0.11";
+	font_name = "Arial";
+	font_size = 16;
+	h_pixppt = 37; v_pixppt = 16; // was 36.25 & 15
+	gfx_init(version_num, hw_sz(font_size), vw_sz(font_size)); 
+	gfx_setfont(1,font_name, font_size); 
+	// set font at index 1: gfx_setfont(index, font name, size in pixels)
+	ecp_format = 0; ecp_count = 3;
+	last_inc_mkr_count = 0; // used to test change of: inc_mkr_count for approp screen size change
+	bla=1; blr=0.5; blg=0.5; blb=1; // global mouseover colour
+	mdf_toggle = 0;
+
+);
+
+//// Call the functions ////
+init();
+main();

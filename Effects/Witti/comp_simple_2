@@ -1,0 +1,266 @@
+slider1:0<-30,0,0.1>Threshold (dB)
+slider2:2<1,20,0.1>Ratio
+slider3:3<1,50,1>Attack (ms)
+slider4:100<1,500,1>Release (ms)
+slider5:50<10,100,1>Env Decay (ms)
+slider6:0<-24,24,0.1>Output (dB)
+
+filename:0,comp_simple_2gfx/lampA.png
+filename:1,comp_simple_2gfx/lampB.png
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+output = 1;
+transfer_A = 0;
+transfer_B = 1;
+gain = 1;
+env=0;
+
+log2dB = 8.6858896380650365530225783783321;
+
+//Lamp
+s = 1/101;
+
+@slider
+threshold=10^(slider1/20);
+
+transfer_A = (1/slider2)-1;
+transfer_B = output * pow(threshold,-transfer_A);
+
+attack = exp(-1/(slider3/1000*srate));
+release = exp(-1/(slider4/1000*srate));
+envelope_decay = exp(-1/(slider5/1000*srate));
+
+vol=10^(slider6/20);
+
+@sample
+inL=spl0;
+inR=spl1;
+
+det = max(abs(inL),abs(inR));
+det += 0.000000000001;
+env = det >= env ? det : det+envelope_decay*(env-det);
+transfer_gain = env > threshold ? pow(env,transfer_A)*transfer_B:output;
+gain = transfer_gain < gain ? transfer_gain+attack *(gain-transfer_gain) : transfer_gain+release*(gain-transfer_gain);
+
+spl0 = inL * gain*vol;
+spl1 = inR * gain*vol;
+
+gr = -log(gain)*log2dB;
+m = max(abs(spl0),abs(spl0))*gr;
+m ^= s;
+e = m;
+
+@gfx 455 78
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=422;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>0.1?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=422;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=392;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>1?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=392;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=362;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>2?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=362;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=332;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>3?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=332;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=302;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>4?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=302;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=272;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>5?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=272;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=242;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>6?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=242;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=212;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>7?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=212;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=182;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>8?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=182;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=152;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>9?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=152;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=122;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>10?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=122;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=92;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>11?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=92;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=62;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>12?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=62;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=32;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>13?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=32;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_a=1;
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=2;
+gfx_y=20;
+gfx_blit(0,1,0);
+gr>14?(
+gfx_a=min(e,1);
+gfx_r=gfx_g=gfx_b=0;
+gfx_x=2;
+gfx_y=20;
+gfx_blit(1,1,0);
+);
+
+gfx_r=gfx_g=gfx_b=gfx_a=0.6;
+gfx_x=374;gfx_y=56;gfx_drawchar($'3');
+gfx_x=366;gfx_y=56;gfx_drawchar($'-');
+gfx_x=284;gfx_y=56;gfx_drawchar($'6');
+gfx_x=276;gfx_y=56;gfx_drawchar($'-');
+gfx_x=194;gfx_y=56;gfx_drawchar($'9');
+gfx_x=186;gfx_y=56;gfx_drawchar($'-');
+gfx_x=100;gfx_y=56;gfx_drawchar($'1');
+gfx_x=108;gfx_y=56;gfx_drawchar($'2');
+gfx_x=92;gfx_y=56;gfx_drawchar($'-');
+gfx_x=10;gfx_y=56;gfx_drawchar($'1');
+gfx_x=18;gfx_y=56;gfx_drawchar($'5');
+gfx_x=2;gfx_y=56;gfx_drawchar($'-');

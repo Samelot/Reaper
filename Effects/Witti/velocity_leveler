@@ -1,0 +1,101 @@
+/*
+dB to Velocity converter.
+
+Measure the RMS value of your media items. (Max is 10 items)
+(You can do this in Reaper with the Xenakios Label Proessor
+using /r or/R)
+
+The loudest item is slider1.
+So adjust slider1 to the RMS value of the loudest item.
+
+Then adjust the other sliders.
+
+The velocity sliders will readout the velocities.
+You can use these values to create a sfz file.
+(Velocity mapping.)
+
+More infos here: http://www.drealm.info/sfz/VelLeveler/
+*/
+
+desc: Read info...
+
+slider1:0<-96,0,0.1>(Velocity 127)  X (dB)
+slider2:-96<-96,0,0.1>A (dB)
+slider3:-96<-96,0,0.1>B (dB)
+slider4:-96<-96,0,0.1>C (dB)
+slider5:-96<-96,0,0.1>D (dB)
+slider6:-96<-96,0,0.1>E (dB)
+slider7:-96<-96,0,0.1>F (dB)
+slider8:-96<-96,0,0.1>G (dB)
+slider9:-96<-96,0,0.1>H (dB)
+slider10:-96<-96,0,0.1>I (dB)
+
+slider12:0,Velocity A
+slider13:0,Velocity B
+slider14:0,Velocity C
+slider15:0,Velocity D
+slider16:0,Velocity E
+slider17:0,Velocity F
+slider18:0,Velocity G
+slider19:0,Velocity H
+slider20:0,Velocity I
+
+in_pin:none
+out_pin:none
+
+@block
+
+diff[0]=slider1-slider2;
+diff[0] < 0 ? diff[0]=diff[0]*-1;
+diff[1]=slider1-slider3;
+diff[1] < 0 ? diff[1]=diff[1]*-1;
+diff[2]=slider1-slider4;
+diff[2] < 0 ? diff[2]=diff[2]*-1;
+diff[3]=slider1-slider5;
+diff[3] < 0 ? diff[3]=diff[3]*-1;
+diff[4]=slider1-slider6;
+diff[4] < 0 ? diff[4]=diff[4]*-1;
+diff[5]=slider1-slider7;
+diff[5] < 0 ? diff[5]=diff[5]*-1;
+diff[6]=slider1-slider8;
+diff[6] < 0 ? diff[6]=diff[6]*-1;
+diff[7]=slider1-slider9;
+diff[7] < 0 ? diff[7]=diff[7]*-1;
+diff[8]=slider1-slider10;
+diff[8] < 0 ? diff[8]=diff[8]*-1;
+
+vel[0]=sqrt(127^2/10^(diff[0]/20));
+slider12=floor(vel[0]*10)/10;
+sliderchange(slider12);
+
+vel[1]=sqrt(127^2/10^(diff[1]/20));
+slider13=floor(vel[1]*10)/10;
+sliderchange(slider13);
+
+vel[2]=sqrt(127^2/10^(diff[2]/20));
+slider14=floor(vel[2]*10)/10;
+sliderchange(slider14);
+
+vel[3]=sqrt(127^2/10^(diff[3]/20));
+slider15=floor(vel[3]*10)/10;
+sliderchange(slider15);
+
+vel[4]=sqrt(127^2/10^(diff[4]/20));
+slider16=floor(vel[4]*10)/10;
+sliderchange(slider16);
+
+vel[5]=sqrt(127^2/10^(diff[5]/20));
+slider17=floor(vel[5]*10)/10;
+sliderchange(slider17);
+
+vel[6]=sqrt(127^2/10^(diff[6]/20));
+slider18=floor(vel[6]*10)/10;
+sliderchange(slider18);
+
+vel[7]=sqrt(127^2/10^(diff[7]/20));
+slider19=floor(vel[7]*10)/10;
+sliderchange(slider19);
+
+vel[8]=sqrt(127^2/10^(diff[8]/20));
+slider20=floor(vel[8]*10)/10;
+sliderchange(slider20);

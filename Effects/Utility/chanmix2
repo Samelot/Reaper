@@ -1,0 +1,22 @@
+desc:channel mixer 2
+
+slider1:0<-120,12,1>left volume (dB)
+slider2:-1<-1,1,0.01>left pan (-1..1)
+slider3:0<0,1,1{normal,invert}>left phase
+slider4:0<-120,12,1>right volume (dB)
+slider5:1<-1,1,0.01>right pan (-1..1)
+slider6:0<0,1,1{normal,invert}>right phase
+
+@slider
+
+llv=(2^(slider1/6))*min(1-slider2,1);
+lrv=(2^(slider4/6))*min(1-slider5,1);
+rlv=(2^(slider1/6))*min(1+slider2,1);
+rrv=(2^(slider4/6))*min(1+slider5,1);
+
+slider3?(llv=-llv; rlv=-rlv;);
+slider6?(lrv=-lrv; rrv=-rrv;);
+
+@sample
+s0=spl0; s1=spl1;
+spl0=s0*llv+s1*lrv; spl1=s0*rlv+s1*rrv;

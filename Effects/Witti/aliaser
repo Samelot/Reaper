@@ -1,0 +1,50 @@
+slider1:10000<500,48000>target sample rate (Hz)
+slider2:0<0,0.5,0.001>lowpass filter
+slider3:0.1<0.1,1,0.01>filter resonance
+slider4:0<-12,6,0.1>input gain (dB)
+
+in_pin:L in
+in_pin:R in
+out_pin:L out
+out_pin:R out
+
+@init
+pos = 0;
+nn_val0 = 0; // For nearest-neighbour interpolation
+nn_val1 = 0;
+
+@slider
+slider1 > srate/2 ? slider1 = srate/2;
+samples = srate/slider1;
+lpf_damp = 0.01+slider3*20;
+lpf_c = 1/tan($pi*slider1*(1-slider2)/srate);
+lpf_fk = 1 / (1+ lpf_c*(lpf_c+lpf_damp));
+lpf_fa1 = 2 * (1-lpf_c*lpf_c) * lpf_fk;
+lpf_fa0 = (1 + lpf_c*(lpf_c-lpf_damp)) * lpf_fk;
+gain=10^(slider4/20);
+gain2=10^(-slider4/20);
+
+@sample
+// Resample using NN interpolation
+(pos % floor(samples) > 0) ? (
+spl0 = nn_val0*gain;
+spl1 = nn_val1*gain;
+pos += 1;
+(pos >= srate) ? (pos = 0);
+) : (
+nn_val0 = spl0*gain;
+nn_val1 = spl1*gain;
+pos += 1;
+);
+
+spl0*=gain2;
+spl1*=gain2;
+
+// Lowpass
+fd0l = (lpf_fk*spl0) - (lpf_fa1*fd1l) - (lpf_fa0*fd2l);
+fd0r = (lpf_fk*spl1) - (lpf_fa1*fd1r) - (lpf_fa0*fd2r);
+ 
+spl0 = fd0l + fd1l + fd1l + fd2l;
+spl1 = fd0r + fd1r + fd1r + fd2r;
+fd2l = fd1l; fd2r = fd1r;
+fd1l = fd0l; fd1r = fd0r;
